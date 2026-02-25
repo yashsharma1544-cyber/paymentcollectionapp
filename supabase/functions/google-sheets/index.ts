@@ -31,7 +31,6 @@ async function getAccessToken(serviceAccountKey: Record<string, string>): Promis
   );
 
   const signatureInput = `${header}.${claimSet}`;
-
   const normalizedPrivateKey = serviceAccountKey.private_key.replace(/\\n/g, "\n");
   if (!normalizedPrivateKey.includes("BEGIN PRIVATE KEY")) {
     throw new Error("Invalid GOOGLE_SERVICE_ACCOUNT_KEY: private_key format is invalid");
@@ -43,23 +42,15 @@ async function getAccessToken(serviceAccountKey: Record<string, string>): Promis
     .replace(/\s+/g, "");
 
   const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
-
   const cryptoKey = await crypto.subtle.importKey(
-    "pkcs8",
-    binaryKey,
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
+    "pkcs8", binaryKey, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]
   );
 
   const signature = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    cryptoKey,
-    new TextEncoder().encode(signatureInput)
+    "RSASSA-PKCS1-v1_5", cryptoKey, new TextEncoder().encode(signatureInput)
   );
 
   const jwt = `${signatureInput}.${base64UrlEncode(new Uint8Array(signature))}`;
-
   const params = new URLSearchParams({
     grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
     assertion: jwt,
@@ -78,6 +69,33 @@ async function getAccessToken(serviceAccountKey: Record<string, string>): Promis
   return tokenData.access_token;
 }
 
+async function appendToSheet(accessToken: string, sheetTab: string, values: string[][]) {
+  const range = encodeURIComponent(`${sheetTab}!A:Z`);
+  const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
+  const response = await fetch(sheetsUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ values }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
+  return data;
+}
+
+async function fetchSheet(accessToken: string, range: string) {
+  const encodedRange = encodeURIComponent(range);
+  const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodedRange}`;
+  const response = await fetch(sheetsUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
+  return data;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -85,119 +103,98 @@ serve(async (req) => {
 
   try {
     const serviceAccountKeyStr = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_KEY");
-    if (!serviceAccountKeyStr) {
-      throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is not configured");
-    }
+    if (!serviceAccountKeyStr) throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY is not configured");
 
     const serviceAccountKey = JSON.parse(serviceAccountKeyStr);
     const url = new URL(req.url);
     const action = url.searchParams.get("action") ?? (req.method === "GET" ? "fetch" : null);
-
-    if (!action) {
-      throw new Error("Invalid action. Use ?action=fetch or ?action=record");
-    }
+    if (!action) throw new Error("Invalid action");
 
     const accessToken = await getAccessToken(serviceAccountKey);
+    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
     if (action === "fetch") {
-      // Fetch Outstanding tab
-      const range = encodeURIComponent("Outstanding!A1:Z5000");
-      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
-
-      const response = await fetch(sheetsUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
-      }
-
+      const data = await fetchSheet(accessToken, "Outstanding!A1:Z5000");
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+
     } else if (action === "record") {
       const body = await req.json();
       const { billNo, customerName, paidAmount } = body;
-
       if (!billNo || !customerName || paidAmount === undefined) {
         throw new Error("Missing required fields: billNo, customerName, paidAmount");
       }
-
-      const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-      const values = [[billNo, customerName, paidAmount, timestamp]];
-
-      const range = encodeURIComponent("Record Payments!A:D");
-      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
-
-      const response = await fetch(sheetsUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ values }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
-      }
-
+      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp]]);
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+
     } else if (action === "record-batch") {
       const body = await req.json();
       const { allocations } = body;
-
       if (!allocations || !Array.isArray(allocations) || allocations.length === 0) {
         throw new Error("Missing or empty allocations array");
       }
-
-      const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
       const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }) => [
         a.billNo, a.customerName, a.paidAmount, timestamp,
       ]);
-
-      const range = encodeURIComponent("Record Payments!A:D");
-      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
-
-      const response = await fetch(sheetsUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ values }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
-      }
-
+      const data = await appendToSheet(accessToken, "Record Payments", values);
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+
     } else if (action === "fetch-payments") {
-      const range = encodeURIComponent("Record Payments!A1:Z10000");
-      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
-
-      const response = await fetch(sheetsUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
-      }
-
+      const data = await fetchSheet(accessToken, "Record Payments!A1:Z10000");
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+
+    } else if (action === "add-followup") {
+      // Columns: Customer Name, Follow Up Date, Follow Up Time, Remarks, Next Follow Up Date, Status, Created At, Type
+      const body = await req.json();
+      const { customerName, remarks, nextFollowUpDate, type } = body;
+      if (!customerName) throw new Error("Missing customerName");
+      const values = [[
+        customerName,
+        new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+        new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }),
+        remarks || "",
+        nextFollowUpDate || "",
+        "Pending",
+        timestamp,
+        type || "Manual",
+      ]];
+      const data = await appendToSheet(accessToken, "Follow Ups", values);
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "fetch-followups") {
+      const data = await fetchSheet(accessToken, "Follow Ups!A1:Z10000");
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "log-whatsapp") {
+      // Columns: Customer Name, Phone, Timestamp
+      const body = await req.json();
+      const { customerName, phone } = body;
+      if (!customerName) throw new Error("Missing customerName");
+      const values = [[customerName, phone || "", timestamp]];
+      const data = await appendToSheet(accessToken, "WhatsApp Log", values);
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "fetch-whatsapp-log") {
+      const data = await fetchSheet(accessToken, "WhatsApp Log!A1:Z10000");
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
-      throw new Error("Invalid action. Use ?action=fetch, ?action=record, or ?action=fetch-payments");
+      throw new Error("Invalid action");
     }
   } catch (error: unknown) {
     console.error("Error:", error);
