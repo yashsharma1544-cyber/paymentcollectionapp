@@ -1,76 +1,49 @@
 import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
 
 interface BeatChartProps {
   invoices: Invoice[];
 }
 
-const COLORS = [
-  "hsl(0, 72%, 55%)",
-  "hsl(217, 72%, 48%)",
-  "hsl(38, 92%, 50%)",
-  "hsl(152, 55%, 42%)",
-  "hsl(280, 60%, 50%)",
-  "hsl(340, 70%, 52%)",
-  "hsl(190, 70%, 42%)",
-  "hsl(25, 80%, 50%)",
-];
-
 export function BeatChart({ invoices }: BeatChartProps) {
-  const data = useMemo(() => {
-    const map = new Map<string, number>();
+  const beats = useMemo(() => {
+    const map = new Map<string, { outstanding: number; customers: Set<string>; count: number }>();
     for (const inv of invoices) {
-      map.set(inv.beat, (map.get(inv.beat) || 0) + inv.outstandingAmount);
+      if (!map.has(inv.beat)) map.set(inv.beat, { outstanding: 0, customers: new Set(), count: 0 });
+      const entry = map.get(inv.beat)!;
+      entry.outstanding += inv.outstandingAmount;
+      entry.customers.add(inv.customerName);
+      entry.count++;
     }
     return Array.from(map.entries())
-      .map(([beat, outstanding]) => ({ beat, outstanding }))
+      .map(([beat, d]) => ({ beat, outstanding: d.outstanding, customers: d.customers.size, invoices: d.count }))
       .sort((a, b) => b.outstanding - a.outstanding);
   }, [invoices]);
 
-  if (data.length === 0) return null;
+  if (beats.length === 0) return null;
 
   return (
-    <Card className="border-0 shadow-sm">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold font-['Space_Grotesk']">
-          Outstanding by Beat
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <ResponsiveContainer width="100%" height={Math.max(200, data.length * 36)}>
-          <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
-            <XAxis
-              type="number"
-              tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
-              fontSize={11}
-              stroke="hsl(220, 10%, 50%)"
-            />
-            <YAxis
-              dataKey="beat"
-              type="category"
-              width={100}
-              fontSize={11}
-              stroke="hsl(220, 10%, 50%)"
-              tickLine={false}
-            />
-            <Tooltip
-              formatter={(value: number) => [`₹${value.toLocaleString("en-IN")}`, "Outstanding"]}
-              contentStyle={{
-                borderRadius: "8px",
-                border: "1px solid hsl(220, 16%, 88%)",
-                fontSize: "12px",
-              }}
-            />
-            <Bar dataKey="outstanding" radius={[0, 4, 4, 0]} maxBarSize={24}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      {beats.map((b) => (
+        <Card key={b.beat} className="border shadow-sm">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 rounded-md bg-primary/10">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <p className="text-xs font-semibold truncate">{b.beat}</p>
+            </div>
+            <p className="text-base font-bold font-['Space_Grotesk'] text-destructive">
+              ₹{b.outstanding.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {b.customers} customer{b.customers !== 1 ? "s" : ""} · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
