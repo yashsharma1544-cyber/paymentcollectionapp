@@ -96,6 +96,22 @@ async function fetchSheet(accessToken: string, range: string) {
   return data;
 }
 
+async function updateSheetCell(accessToken: string, range: string, value: string) {
+  const encodedRange = encodeURIComponent(range);
+  const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodedRange}?valueInputOption=USER_ENTERED`;
+  const response = await fetch(sheetsUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ values: [[value]] }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
+  return data;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -190,6 +206,29 @@ serve(async (req) => {
     } else if (action === "fetch-whatsapp-log") {
       const data = await fetchSheet(accessToken, "WhatsApp Log!A1:Z10000");
       return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "update-followup-status") {
+      // Find the row by matching customerName + createdAt, then update Status column (F)
+      const body = await req.json();
+      const { customerName, createdAt, status } = body;
+      if (!customerName || !createdAt || !status) throw new Error("Missing customerName, createdAt, or status");
+      
+      // Fetch all follow-ups to find the row
+      const data = await fetchSheet(accessToken, "Follow Ups!A:H");
+      const rows = data.values || [];
+      let targetRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === customerName && rows[i][6] === createdAt) {
+          targetRow = i + 1; // 1-indexed
+          break;
+        }
+      }
+      if (targetRow === -1) throw new Error("Follow-up not found");
+      
+      const result = await updateSheetCell(accessToken, `Follow Ups!F${targetRow}`, status);
+      return new Response(JSON.stringify({ success: true, data: result }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
