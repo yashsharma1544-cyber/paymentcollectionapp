@@ -97,7 +97,7 @@ const BeatDetail = () => {
           </div>
         ) : (
           <>
-             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3">
+             <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10">
                 <CardContent className="p-4 text-center">
                   <IndianRupee className="h-5 w-5 text-destructive mx-auto mb-1" />

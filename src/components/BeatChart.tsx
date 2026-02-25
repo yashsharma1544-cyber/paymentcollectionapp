@@ -40,24 +40,24 @@ export function BeatChart({ invoices }: BeatChartProps) {
   if (beats.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
       {beats.map((b, i) => {
         const color = BEAT_COLORS[i % BEAT_COLORS.length];
         return (
           <Link
             key={b.beat}
             to={`/beat/${encodeURIComponent(b.beat)}`}
-            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block`}
+            className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block`}
           >
-            <div className="flex items-center justify-center gap-1.5 mb-2">
-              <MapPin className="h-4 w-4 opacity-80" />
-              <p className="text-sm font-bold truncate">{b.beat}</p>
+            <div className="flex items-center justify-center gap-1 mb-1.5">
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-80 shrink-0" />
+              <p className="text-xs sm:text-sm font-bold truncate">{b.beat}</p>
             </div>
-            <p className="text-2xl font-black tracking-tight">
+            <p className="text-lg sm:text-2xl font-black tracking-tight">
               ₹{b.outstanding.toLocaleString("en-IN")}
             </p>
-            <p className="text-[11px] opacity-75 mt-1">
-              {b.customers} customer{b.customers !== 1 ? "s" : ""} · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
+            <p className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">
+              {b.customers} cust · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
             </p>
           </Link>
         );

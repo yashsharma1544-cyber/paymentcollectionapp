@@ -49,19 +49,19 @@ function KPICards({ invoices }: { invoices: Invoice[] }) {
   }, [invoices]);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-3">
       <Card className="border-0 shadow-sm bg-destructive/10">
         <CardContent className="p-3 text-center">
-          <IndianRupee className="h-4 w-4 text-destructive mx-auto mb-0.5" />
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
-          <p className="text-lg font-black text-destructive leading-tight">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
+          <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive mx-auto mb-0.5" />
+          <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
+          <p className="text-sm sm:text-lg font-black text-destructive leading-tight">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
         </CardContent>
       </Card>
       <Card className="border-0 shadow-sm bg-success/10">
-        <CardContent className="p-3 text-center">
-          <TrendingUp className="h-4 w-4 text-success mx-auto mb-0.5" />
-          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
-          <p className="text-lg font-black text-success leading-tight">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+        <CardContent className="p-2 sm:p-3 text-center">
+          <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
+          <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
+          <p className="text-sm sm:text-lg font-black text-success leading-tight">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
         </CardContent>
       </Card>
       <Card className="border-0 shadow-sm bg-primary/10">
@@ -192,24 +192,24 @@ function InvoiceList({
           WhatsApp All ({customerGroups.length})
         </Button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
         {beatGroups.map((bg, i) => {
           const color = BEAT_COLORS[i % BEAT_COLORS.length];
           return (
             <Link
               key={bg.beat}
               to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
-              className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
+              className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
             >
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <MapPin className="h-4 w-4 opacity-80" />
-                <p className="text-sm font-bold truncate">{bg.beat}</p>
+              <div className="flex items-center justify-center gap-1 mb-1.5">
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-80 shrink-0" />
+                <p className="text-xs sm:text-sm font-bold truncate">{bg.beat}</p>
               </div>
-              <p className="text-2xl font-black tracking-tight">
+              <p className="text-lg sm:text-2xl font-black tracking-tight">
                 ₹{bg.totalOutstanding.toLocaleString("en-IN")}
               </p>
-              <p className="text-[11px] opacity-75 mt-1">
-                {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
+              <p className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">
+                {bg.customers} cust · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
               </p>
             </Link>
           );
@@ -267,13 +267,13 @@ const DueToday = () => {
           </div>
         ) : (
           <Tabs defaultValue="due-today">
-            <TabsList className="mb-4">
-              <TabsTrigger value="due-today" className="gap-1.5">
-                <CalendarClock className="h-3.5 w-3.5" />
+            <TabsList className="mb-4 w-full sm:w-auto">
+              <TabsTrigger value="due-today" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+                <CalendarClock className="h-3.5 w-3.5 shrink-0" />
                 Due Today ({dueToday.length})
               </TabsTrigger>
-              <TabsTrigger value="pending" className="gap-1.5">
-                <AlertTriangle className="h-3.5 w-3.5" />
+              <TabsTrigger value="pending" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 Pending ({pending.length})
               </TabsTrigger>
             </TabsList>

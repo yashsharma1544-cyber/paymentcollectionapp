@@ -135,47 +135,47 @@ const CustomerDetail = () => {
         ) : (
           <>
             {/* KPIs */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10">
-                <CardContent className="p-4 text-center">
-                  <IndianRupee className="h-5 w-5 text-destructive mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
-                  <p className="text-xl font-black text-destructive">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <IndianRupee className="h-4 w-4 sm:h-5 sm:w-5 text-destructive mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
+                  <p className="text-sm sm:text-xl font-black text-destructive">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm bg-success/10">
-                <CardContent className="p-4 text-center">
-                  <CheckCircle className="h-5 w-5 text-success mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Paid</p>
-                  <p className="text-xl font-black text-success">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Paid</p>
+                  <p className="text-sm sm:text-xl font-black text-success">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm bg-primary/10">
-                <CardContent className="p-4 text-center">
-                  <TrendingUp className="h-5 w-5 text-primary mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Collection %</p>
-                  <p className="text-xl font-black text-primary">{kpis.collectionRate}%</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Collection %</p>
+                  <p className="text-sm sm:text-xl font-black text-primary">{kpis.collectionRate}%</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-4 text-center">
-                  <FileText className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Billed</p>
-                  <p className="text-xl font-black">₹{kpis.totalBill.toLocaleString("en-IN")}</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Billed</p>
+                  <p className="text-sm sm:text-xl font-black">₹{kpis.totalBill.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm">
-                <CardContent className="p-4 text-center">
-                  <FileText className="h-5 w-5 text-muted-foreground mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Invoices</p>
-                  <p className="text-xl font-black">{invoices.length}</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Invoices</p>
+                  <p className="text-sm sm:text-xl font-black">{invoices.length}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm bg-warning/10">
-                <CardContent className="p-4 text-center">
-                  <AlertTriangle className="h-5 w-5 text-warning mx-auto mb-1" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overdue</p>
-                  <p className="text-xl font-black text-warning">{kpis.overdue}</p>
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-warning mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">Overdue</p>
+                  <p className="text-sm sm:text-xl font-black text-warning">{kpis.overdue}</p>
                 </CardContent>
               </Card>
             </div>
@@ -188,32 +188,32 @@ const CustomerDetail = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
-                        <TableHead className="text-xs font-semibold">Bill No</TableHead>
-                        <TableHead className="text-xs font-semibold">Date</TableHead>
-                        <TableHead className="text-xs font-semibold text-right">Bill Amt</TableHead>
-                        <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
-                        <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
-                        <TableHead className="text-xs font-semibold">Due</TableHead>
-                        <TableHead className="text-xs font-semibold text-center">Overdue</TableHead>
-                        <TableHead className="text-xs font-semibold">Status</TableHead>
-                        <TableHead className="text-xs font-semibold text-center">Action</TableHead>
+                        <TableHead className="text-xs font-semibold whitespace-nowrap">Bill No</TableHead>
+                        <TableHead className="text-xs font-semibold whitespace-nowrap">Date</TableHead>
+                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Bill Amt</TableHead>
+                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Paid</TableHead>
+                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Outstanding</TableHead>
+                        <TableHead className="text-xs font-semibold whitespace-nowrap">Due</TableHead>
+                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Overdue</TableHead>
+                        <TableHead className="text-xs font-semibold whitespace-nowrap">Status</TableHead>
+                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Action</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {invoices.map((inv) => (
                         <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
-                          <TableCell className="font-mono text-xs">{inv.billNo}</TableCell>
-                          <TableCell className="text-xs">{inv.billDate}</TableCell>
-                          <TableCell className="text-right text-xs font-medium">
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{inv.billNo}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{inv.billDate}</TableCell>
+                          <TableCell className="text-right text-xs font-medium whitespace-nowrap">
                             ₹{inv.billAmount.toLocaleString("en-IN")}
                           </TableCell>
-                          <TableCell className="text-right text-xs text-success font-medium">
+                          <TableCell className="text-right text-xs text-success font-medium whitespace-nowrap">
                             ₹{inv.paidAmount.toLocaleString("en-IN")}
                           </TableCell>
-                          <TableCell className="text-right text-xs text-destructive font-semibold">
+                          <TableCell className="text-right text-xs text-destructive font-semibold whitespace-nowrap">
                             ₹{inv.outstandingAmount.toLocaleString("en-IN")}
                           </TableCell>
-                          <TableCell className="text-xs">{inv.dueDate}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{inv.dueDate}</TableCell>
                           <TableCell className="text-center">
                             {inv.outstandingAmount > 0 ? (
                               <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
