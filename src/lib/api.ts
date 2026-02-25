@@ -53,6 +53,37 @@ export async function recordPayment(
   }
 }
 
+export interface PaymentAllocation {
+  billNo: string;
+  customerName: string;
+  paidAmount: number;
+}
+
+export async function recordBatchPayments(
+  allocations: PaymentAllocation[]
+): Promise<void> {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const response = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/${FUNCTION_NAME}?action=record-batch`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${anonKey}`,
+        apikey: anonKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ allocations }),
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Failed to record batch payments: ${errText}`);
+  }
+}
+
 export interface RecordedPayment {
   billNo: string;
   customerName: string;

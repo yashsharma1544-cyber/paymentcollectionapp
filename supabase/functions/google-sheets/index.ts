@@ -117,7 +117,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else if (action === "record") {
-      // Write to Record Payments tab
       const body = await req.json();
       const { billNo, customerName, paidAmount } = body;
 
@@ -127,6 +126,39 @@ serve(async (req) => {
 
       const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
       const values = [[billNo, customerName, paidAmount, timestamp]];
+
+      const range = encodeURIComponent("Record Payments!A:D");
+      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
+
+      const response = await fetch(sheetsUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ values }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
+      }
+
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } else if (action === "record-batch") {
+      const body = await req.json();
+      const { allocations } = body;
+
+      if (!allocations || !Array.isArray(allocations) || allocations.length === 0) {
+        throw new Error("Missing or empty allocations array");
+      }
+
+      const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+      const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }) => [
+        a.billNo, a.customerName, a.paidAmount, timestamp,
+      ]);
 
       const range = encodeURIComponent("Record Payments!A:D");
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
