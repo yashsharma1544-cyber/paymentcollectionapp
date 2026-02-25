@@ -6,12 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PaymentDialog } from "@/components/PaymentDialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import type { Invoice } from "@/lib/invoice";
-import { CreditCard, Search, ChevronRight, ChevronDown, User, MapPin } from "lucide-react";
+import { CreditCard, Search, ChevronRight, ChevronDown, User } from "lucide-react";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -47,38 +44,24 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
 
 export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) {
   const [search, setSearch] = useState("");
-  const [selectedBeat, setSelectedBeat] = useState<string>("all");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
 
-  const beats = useMemo(() => {
-    const set = new Set(invoices.map((i) => i.beat));
-    return Array.from(set).sort();
-  }, [invoices]);
-
   const filtered = useMemo(() => {
-    let result = invoices;
-    if (selectedBeat !== "all") {
-      result = result.filter((inv) => inv.beat === selectedBeat);
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (inv) =>
-          inv.customerName.toLowerCase().includes(q) ||
-          inv.billNo.toLowerCase().includes(q) ||
-          inv.mobileNo.includes(search)
-      );
-    }
-    return result;
-  }, [invoices, selectedBeat, search]);
+    if (!search) return invoices;
+    const q = search.toLowerCase();
+    return invoices.filter(
+      (inv) =>
+        inv.customerName.toLowerCase().includes(q) ||
+        inv.billNo.toLowerCase().includes(q) ||
+        inv.mobileNo.includes(search)
+    );
+  }, [invoices, search]);
 
   const customerGroups = useMemo(() => groupByCustomer(filtered), [filtered]);
 
-  const beatOutstanding = useMemo(() => {
-    return filtered.reduce((s, i) => s + i.outstandingAmount, 0);
-  }, [filtered]);
+  const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
 
   const toggleCustomer = (name: string) => {
     setExpandedCustomers((prev) => {
@@ -90,21 +73,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
 
   return (
     <>
-      {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <Select value={selectedBeat} onValueChange={setSelectedBeat}>
-          <SelectTrigger className="w-[180px] gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <SelectValue placeholder="All Beats" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Beats</SelectItem>
-            {beats.map((b) => (
-              <SelectItem key={b} value={b}>{b}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <div className="relative flex-1 min-w-[180px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -114,18 +83,16 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
             className="pl-9"
           />
         </div>
-
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
           </p>
           <p className="text-sm font-bold text-destructive font-['Space_Grotesk']">
-            Outstanding: ₹{beatOutstanding.toLocaleString("en-IN")}
+            Outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
           </p>
         </div>
       </div>
 
-      {/* Customer List */}
       {customerGroups.length === 0 ? (
         <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
           No invoices found
@@ -136,7 +103,6 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
             const isExpanded = expandedCustomers.has(cg.customerName);
             return (
               <Card key={cg.customerName} className="border shadow-sm overflow-hidden">
-                {/* Customer row */}
                 <button
                   onClick={() => toggleCustomer(cg.customerName)}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
@@ -165,7 +131,6 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                   </div>
                 </button>
 
-                {/* Expanded invoice table */}
                 {isExpanded && (
                   <div className="border-t overflow-x-auto bg-muted/10">
                     <Table>

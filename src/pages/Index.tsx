@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
-import { StatsCards } from "@/components/StatsCards";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { RefreshCw, Receipt, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 const Index = () => {
   const {
@@ -20,9 +20,14 @@ const Index = () => {
     queryFn: fetchInvoices,
   });
 
+  const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
+
+  const filteredInvoices = selectedBeat
+    ? invoices.filter((inv) => inv.beat === selectedBeat)
+    : invoices;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -59,7 +64,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {error ? (
           <div className="text-center py-20">
@@ -69,18 +73,22 @@ const Index = () => {
           </div>
         ) : isLoading ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-24 rounded-xl" />
               ))}
             </div>
-            <Skeleton className="h-96 rounded-xl" />
           </div>
         ) : (
           <>
-            <StatsCards invoices={invoices} />
-            <BeatChart invoices={invoices} />
-            <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} />
+            <BeatChart
+              invoices={invoices}
+              selectedBeat={selectedBeat}
+              onSelectBeat={setSelectedBeat}
+            />
+            {selectedBeat && (
+              <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} />
+            )}
           </>
         )}
       </main>
