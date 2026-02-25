@@ -12,22 +12,34 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle, CalendarClock, CreditCard,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle,
+  CalendarClock, CreditCard, ArrowUpDown, ChevronDown, ChevronRight, User, MapPin,
 } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
 
 function parseDateDMY(dateStr: string): Date | null {
   if (!dateStr) return null;
-  // Try DD-MM-YYYY or DD/MM/YYYY
   const parts = dateStr.split(/[-\/]/);
   if (parts.length === 3) {
     const [d, m, y] = parts;
     const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
     if (!isNaN(date.getTime())) return date;
   }
-  // Fallback
   const fallback = new Date(dateStr);
   return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function getOverdueDays(dateStr: string): number {
+  const d = parseDateDMY(dateStr);
+  if (!d) return 0;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(0, diff);
 }
 
 function isToday(dateStr: string): boolean {
@@ -46,18 +58,41 @@ function isTodayOrBefore(dateStr: string): boolean {
   return d <= now;
 }
 
-function KPICards({ invoices, label }: { invoices: Invoice[]; label: string }) {
+type SortKey = "customer" | "outstanding" | "dueDate" | "overdue";
+
+function sortInvoices(invoices: Invoice[], sortBy: SortKey): Invoice[] {
+  return [...invoices].sort((a, b) => {
+    switch (sortBy) {
+      case "customer":
+        return a.customerName.localeCompare(b.customerName);
+      case "outstanding":
+        return b.outstandingAmount - a.outstandingAmount;
+      case "dueDate": {
+        const da = parseDateDMY(a.dueDate)?.getTime() || 0;
+        const db = parseDateDMY(b.dueDate)?.getTime() || 0;
+        return da - db;
+      }
+      case "overdue":
+        return getOverdueDays(b.dueDate) - getOverdueDays(a.dueDate);
+      default:
+        return 0;
+    }
+  });
+}
+
+function KPICards({ invoices }: { invoices: Invoice[] }) {
   const kpis = useMemo(() => {
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(invoices.map((i) => i.customerName)).size;
+    const beats = new Set(invoices.map((i) => i.beat)).size;
     const collectionRate = totalBill > 0 ? ((totalPaid / totalBill) * 100).toFixed(1) : "0";
-    return { totalOutstanding, totalPaid, customers, collectionRate, invoiceCount: invoices.length };
+    return { totalOutstanding, totalPaid, customers, collectionRate, invoiceCount: invoices.length, beats };
   }, [invoices]);
 
   return (
-    <div className="grid grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
       <Card className="border-0 shadow-sm bg-destructive/10">
         <CardContent className="p-3 text-center">
           <IndianRupee className="h-4 w-4 text-destructive mx-auto mb-0.5" />
@@ -93,13 +128,64 @@ function KPICards({ invoices, label }: { invoices: Invoice[]; label: string }) {
           <p className="text-lg font-black leading-tight">{kpis.invoiceCount}</p>
         </CardContent>
       </Card>
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-3 text-center">
+          <MapPin className="h-4 w-4 text-muted-foreground mx-auto mb-0.5" />
+          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Beats</p>
+          <p className="text-lg font-black leading-tight">{kpis.beats}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function InvoiceList({ invoices, onPaymentSuccess }: { invoices: Invoice[]; onPaymentSuccess: () => void }) {
+interface BeatGroup {
+  beat: string;
+  invoices: Invoice[];
+  totalOutstanding: number;
+  customers: number;
+}
+
+function groupByBeat(invoices: Invoice[]): BeatGroup[] {
+  const map = new Map<string, Invoice[]>();
+  for (const inv of invoices) {
+    if (!map.has(inv.beat)) map.set(inv.beat, []);
+    map.get(inv.beat)!.push(inv);
+  }
+  return Array.from(map.entries())
+    .map(([beat, invs]) => ({
+      beat,
+      invoices: invs,
+      totalOutstanding: invs.reduce((s, i) => s + i.outstandingAmount, 0),
+      customers: new Set(invs.map((i) => i.customerName)).size,
+    }))
+    .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+}
+
+function InvoiceList({
+  invoices,
+  onPaymentSuccess,
+  showOverdue = false,
+}: {
+  invoices: Invoice[];
+  onPaymentSuccess: () => void;
+  showOverdue?: boolean;
+}) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<SortKey>("outstanding");
+  const [expandedBeats, setExpandedBeats] = useState<Set<string>>(new Set());
+
+  const sorted = useMemo(() => sortInvoices(invoices, sortBy), [invoices, sortBy]);
+  const beatGroups = useMemo(() => groupByBeat(sorted), [sorted]);
+
+  const toggleBeat = (beat: string) => {
+    setExpandedBeats((prev) => {
+      const next = new Set(prev);
+      next.has(beat) ? next.delete(beat) : next.add(beat);
+      return next;
+    });
+  };
 
   if (invoices.length === 0) {
     return (
@@ -111,55 +197,116 @@ function InvoiceList({ invoices, onPaymentSuccess }: { invoices: Invoice[]; onPa
 
   return (
     <>
-      <div className="rounded-xl border bg-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/30">
-              <TableHead className="text-xs font-semibold">Customer</TableHead>
-              <TableHead className="text-xs font-semibold">Bill No</TableHead>
-              <TableHead className="text-xs font-semibold">Beat</TableHead>
-              <TableHead className="text-xs font-semibold text-right">Bill Amt</TableHead>
-              <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
-              <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
-              <TableHead className="text-xs font-semibold">Due Date</TableHead>
-              <TableHead className="text-xs font-semibold">Status</TableHead>
-              <TableHead className="text-xs font-semibold text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {invoices.map((inv) => (
-              <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
-                <TableCell className="text-xs">
-                  <Link
-                    to={`/customer/${encodeURIComponent(inv.customerName)}`}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {inv.customerName}
-                  </Link>
-                </TableCell>
-                <TableCell className="font-mono text-xs">{inv.billNo}</TableCell>
-                <TableCell className="text-xs">{inv.beat}</TableCell>
-                <TableCell className="text-right text-xs font-medium">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-right text-xs text-success font-medium">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-right text-xs text-destructive font-semibold">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
-                <TableCell className="text-xs">{inv.dueDate}</TableCell>
-                <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
-                <TableCell className="text-center">
-                  {inv.outstandingAmount > 0 && (
-                    <Button
-                      size="sm"
-                      onClick={() => { setSelectedInvoice(inv); setDialogOpen(true); }}
-                      className="gap-1.5 h-7 text-xs"
-                    >
-                      <CreditCard className="h-3 w-3" />
-                      Collect
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      <div className="flex items-center gap-2 mb-3">
+        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="outstanding">Outstanding (High→Low)</SelectItem>
+            <SelectItem value="customer">Customer Name</SelectItem>
+            <SelectItem value="dueDate">Due Date (Earliest)</SelectItem>
+            {showOverdue && <SelectItem value="overdue">Overdue Days</SelectItem>}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        {beatGroups.map((bg) => {
+          const isExpanded = expandedBeats.has(bg.beat);
+          const beatInvoices = sortInvoices(bg.invoices, sortBy);
+          return (
+            <Card key={bg.beat} className="border shadow-sm overflow-hidden">
+              <button
+                onClick={() => toggleBeat(bg.beat)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
+                <div className="p-1.5 rounded-lg bg-accent/50">
+                  <MapPin className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{bg.beat}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} invoice{bg.invoices.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-destructive">
+                    ₹{bg.totalOutstanding.toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </button>
+
+              {isExpanded && (
+                <div className="border-t overflow-x-auto bg-muted/10">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30">
+                        <TableHead className="text-xs font-semibold">Customer</TableHead>
+                        <TableHead className="text-xs font-semibold">Bill No</TableHead>
+                        <TableHead className="text-xs font-semibold text-right">Bill Amt</TableHead>
+                        <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
+                        <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
+                        <TableHead className="text-xs font-semibold">Due Date</TableHead>
+                        {showOverdue && <TableHead className="text-xs font-semibold text-center">Overdue</TableHead>}
+                        <TableHead className="text-xs font-semibold">Status</TableHead>
+                        <TableHead className="text-xs font-semibold text-center">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {beatInvoices.map((inv) => {
+                        const overdueDays = getOverdueDays(inv.dueDate);
+                        return (
+                          <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
+                            <TableCell className="text-xs">
+                              <Link
+                                to={`/customer/${encodeURIComponent(inv.customerName)}`}
+                                className="text-primary hover:underline font-medium"
+                              >
+                                {inv.customerName}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs">{inv.billNo}</TableCell>
+                            <TableCell className="text-right text-xs font-medium">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
+                            <TableCell className="text-right text-xs text-success font-medium">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
+                            <TableCell className="text-right text-xs text-destructive font-semibold">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
+                            <TableCell className="text-xs">{inv.dueDate}</TableCell>
+                            {showOverdue && (
+                              <TableCell className="text-center">
+                                <span className={`text-xs font-bold ${overdueDays > 0 ? "text-destructive" : "text-success"}`}>
+                                  {overdueDays > 0 ? `${overdueDays}d` : "Today"}
+                                </span>
+                              </TableCell>
+                            )}
+                            <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
+                            <TableCell className="text-center">
+                              {inv.outstandingAmount > 0 && (
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => { e.stopPropagation(); setSelectedInvoice(inv); setDialogOpen(true); }}
+                                  className="gap-1.5 h-7 text-xs"
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  Collect
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </Card>
+          );
+        })}
       </div>
 
       <PaymentDialog
@@ -232,13 +379,13 @@ const DueToday = () => {
             </TabsList>
 
             <TabsContent value="due-today" className="space-y-4">
-              <KPICards invoices={dueToday} label="Due Today" />
+              <KPICards invoices={dueToday} />
               <InvoiceList invoices={dueToday} onPaymentSuccess={() => refetch()} />
             </TabsContent>
 
             <TabsContent value="pending" className="space-y-4">
-              <KPICards invoices={pending} label="Pending" />
-              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} />
+              <KPICards invoices={pending} />
+              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} showOverdue />
             </TabsContent>
           </Tabs>
         )}
