@@ -8,10 +8,19 @@ const corsHeaders = {
 
 const SPREADSHEET_ID = "1IH-MYfQi324eMeiPXD5otZz_9trPlVUDBJViTgVWEuI";
 
-async function getAccessToken(serviceAccountKey: any): Promise<string> {
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+function base64UrlEncode(input: Uint8Array | string): string {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function getAccessToken(serviceAccountKey: Record<string, string>): Promise<string> {
+  const header = base64UrlEncode(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const now = Math.floor(Date.now() / 1000);
-  const claimSet = btoa(
+  const claimSet = base64UrlEncode(
     JSON.stringify({
       iss: serviceAccountKey.client_email,
       scope: "https://www.googleapis.com/auth/spreadsheets",
@@ -23,11 +32,15 @@ async function getAccessToken(serviceAccountKey: any): Promise<string> {
 
   const signatureInput = `${header}.${claimSet}`;
 
-  // Import the private key
-  const pemContents = serviceAccountKey.private_key
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\n/g, "");
+  const normalizedPrivateKey = serviceAccountKey.private_key.replace(/\\n/g, "\n");
+  if (!normalizedPrivateKey.includes("BEGIN PRIVATE KEY")) {
+    throw new Error("Invalid GOOGLE_SERVICE_ACCOUNT_KEY: private_key format is invalid");
+  }
+
+  const pemContents = normalizedPrivateKey
+    .replace("-----BEGIN PRIVATE KEY-----", "")
+    .replace("-----END PRIVATE KEY-----", "")
+    .replace(/\s+/g, "");
 
   const binaryKey = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
 
@@ -45,13 +58,17 @@ async function getAccessToken(serviceAccountKey: any): Promise<string> {
     new TextEncoder().encode(signatureInput)
   );
 
-  const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signature)));
-  const jwt = `${signatureInput}.${base64Signature}`;
+  const jwt = `${signatureInput}.${base64UrlEncode(new Uint8Array(signature))}`;
+
+  const params = new URLSearchParams({
+    grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+    assertion: jwt,
+  });
 
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+    body: params.toString(),
   });
 
   const tokenData = await tokenResponse.json();
@@ -73,9 +90,14 @@ serve(async (req) => {
     }
 
     const serviceAccountKey = JSON.parse(serviceAccountKeyStr);
-    const accessToken = await getAccessToken(serviceAccountKey);
     const url = new URL(req.url);
-    const action = url.searchParams.get("action");
+    const action = url.searchParams.get("action") ?? (req.method === "GET" ? "fetch" : null);
+
+    if (!action) {
+      throw new Error("Invalid action. Use ?action=fetch or ?action=record");
+    }
+
+    const accessToken = await getAccessToken(serviceAccountKey);
 
     if (action === "fetch") {
       // Fetch Outstanding tab

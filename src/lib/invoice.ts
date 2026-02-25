@@ -20,7 +20,7 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
     .map((row) => ({
       billNo: row[0] || "",
       customerName: row[1] || "",
-      mobileNo: row[2] || "",
+      mobileNo: row[3] || row[2] || "",
       billDate: row[4] || "",
       billAmount: parseFloat(row[5]?.replace(/[₹,]/g, "") || "0"),
       paidAmount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
@@ -28,7 +28,7 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
       dueDate: row[8] || "",
       daysOverdue: parseInt(row[9] || "0", 10),
       reminderLevel: row[10] || "",
-      paymentStatus: row[11] || "",
+      paymentStatus: row[11] || row[10] || "Pending",
     }))
     .filter((inv) => inv.billNo);
 }
