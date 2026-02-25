@@ -9,6 +9,7 @@ export interface Invoice {
   dueDate: string;
   daysOverdue: number;
   reminderLevel: string;
+  beat: string;
   paymentStatus: string;
 }
 
@@ -28,7 +29,8 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
       dueDate: row[8] || "",
       daysOverdue: parseInt(row[9] || "0", 10),
       reminderLevel: row[10] || "",
-      paymentStatus: row[11] || row[10] || "Pending",
+      beat: row[11] || "Unassigned",
+      paymentStatus: row[12] || row[10] || "Pending",
     }))
     .filter((inv) => inv.billNo);
 }
