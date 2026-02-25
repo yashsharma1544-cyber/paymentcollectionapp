@@ -226,8 +226,8 @@ const DailyReport = () => {
                       <>
                         {customers.map((c, i) => (
                           <TableRow key={`${c.customerName}-${i}`} className="hover:bg-muted/30 transition-colors">
-                            <TableCell className="font-medium text-xs max-w-[120px] sm:max-w-none truncate">
-                              <Link to={`/customer/${encodeURIComponent(c.customerName)}`} className="hover:underline text-primary">
+                            <TableCell className="font-medium text-xs">
+                              <Link to={`/customer/${encodeURIComponent(c.customerName)}`} className="hover:underline text-primary break-words">
                                 {c.customerName}
                               </Link>
                             </TableCell>
