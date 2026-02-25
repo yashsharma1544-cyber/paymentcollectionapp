@@ -32,6 +32,10 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
       toast({ title: "Invalid amount", description: "Please enter a valid payment amount.", variant: "destructive" });
       return;
     }
+    if (paidAmount > invoice.outstandingAmount) {
+      toast({ title: "Amount exceeds outstanding", description: `Maximum payable amount is ₹${invoice.outstandingAmount.toLocaleString("en-IN")}`, variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
     try {
