@@ -9,18 +9,18 @@ interface BeatChartProps {
 }
 
 const BEAT_COLORS = [
-  { bg: "bg-[#2563eb]", text: "text-white" },
-  { bg: "bg-[#16a34a]", text: "text-white" },
-  { bg: "bg-[#ea580c]", text: "text-white" },
-  { bg: "bg-[#9333ea]", text: "text-white" },
-  { bg: "bg-[#dc2626]", text: "text-white" },
-  { bg: "bg-[#0891b2]", text: "text-white" },
-  { bg: "bg-[#ca8a04]", text: "text-white" },
-  { bg: "bg-[#be185d]", text: "text-white" },
-  { bg: "bg-[#4f46e5]", text: "text-white" },
-  { bg: "bg-[#059669]", text: "text-white" },
-  { bg: "bg-[#d97706]", text: "text-white" },
-  { bg: "bg-[#7c3aed]", text: "text-white" },
+  { bg: "bg-[#DBEAFE]", text: "text-[#1e40af]" },
+  { bg: "bg-[#DCFCE7]", text: "text-[#166534]" },
+  { bg: "bg-[#FFEDD5]", text: "text-[#9a3412]" },
+  { bg: "bg-[#F3E8FF]", text: "text-[#6b21a8]" },
+  { bg: "bg-[#FEE2E2]", text: "text-[#991b1b]" },
+  { bg: "bg-[#CFFAFE]", text: "text-[#155e75]" },
+  { bg: "bg-[#FEF9C3]", text: "text-[#854d0e]" },
+  { bg: "bg-[#FCE7F3]", text: "text-[#9d174d]" },
+  { bg: "bg-[#E0E7FF]", text: "text-[#3730a3]" },
+  { bg: "bg-[#D1FAE5]", text: "text-[#065f46]" },
+  { bg: "bg-[#FED7AA]", text: "text-[#92400e]" },
+  { bg: "bg-[#EDE9FE]", text: "text-[#5b21b6]" },
 ];
 
 export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartProps) {
