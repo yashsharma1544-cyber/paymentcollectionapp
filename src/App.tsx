@@ -10,6 +10,7 @@ import BeatDetail from "./pages/BeatDetail";
 import CustomerDetail from "./pages/CustomerDetail";
 import DueToday from "./pages/DueToday";
 import Install from "./pages/Install";
+import DailyReport from "./pages/DailyReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/beat/:beatName" element={<BeatDetail />} />
             <Route path="/customer/:customerName" element={<CustomerDetail />} />
             <Route path="/due-today" element={<DueToday />} />
+            <Route path="/daily-report" element={<DailyReport />} />
             <Route path="/install" element={<Install />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
