@@ -237,8 +237,8 @@ const DueToday = () => {
             <Link to="/">
               <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
             </Link>
-            <div className="p-2 rounded-lg bg-destructive/10">
-              <CalendarClock className="h-5 w-5 text-destructive" />
+            <div className="p-2 rounded-lg bg-primary/10">
+              <IndianRupee className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight">Due Today</h1>

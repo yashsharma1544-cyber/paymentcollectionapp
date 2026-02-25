@@ -72,6 +72,9 @@ const CustomerDetail = () => {
             <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+              <IndianRupee className="h-5 w-5 text-primary" />
+            </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
               {info && (
