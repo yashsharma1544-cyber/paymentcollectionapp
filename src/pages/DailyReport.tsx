@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchRecordedPayments } from "@/lib/api";
 import { fetchInvoices } from "@/lib/api";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,9 +10,29 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowLeft, RefreshCw, IndianRupee,
-  Users, MapPin, FileText,
+  Users, MapPin, FileText, Calendar as CalendarIcon,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+
+function parseDDMMYYYY(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split("/");
+  if (parts.length !== 3) return null;
+  const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function isSameDay(d1: Date, d2: Date) {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+}
 
 interface CustomerSummary {
   customerName: string;
@@ -22,6 +42,8 @@ interface CustomerSummary {
 }
 
 const DailyReport = () => {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments, isFetching: fetchingPayments } = useQuery({
     queryKey: ["recorded-payments"],
     queryFn: fetchRecordedPayments,
@@ -40,22 +62,38 @@ const DailyReport = () => {
     refetchInvoices();
   };
 
-  // Build a map of customerName → beat from invoices
+  // Build maps from invoices: billNo → beat, billNo → billDate
+  const { billBeatMap, billDateMap } = useMemo(() => {
+    const billBeatMap = new Map<string, string>();
+    const billDateMap = new Map<string, Date>();
+    for (const inv of invoices) {
+      billBeatMap.set(inv.billNo, inv.beat);
+      const d = parseDDMMYYYY(inv.billDate);
+      if (d) billDateMap.set(inv.billNo, d);
+    }
+    return { billBeatMap, billDateMap };
+  }, [invoices]);
+
+  // Also build customerName → beat
   const customerBeatMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const inv of invoices) {
-      if (!map.has(inv.customerName)) {
-        map.set(inv.customerName, inv.beat);
-      }
+      if (!map.has(inv.customerName)) map.set(inv.customerName, inv.beat);
     }
     return map;
   }, [invoices]);
 
-  // Group all payments by customer
+  // Filter payments by selected date (using invoice billDate) & group by customer
   const { customers, totalCollected, totalBills } = useMemo(() => {
+    const filtered = payments.filter((p) => {
+      if (p.paidAmount <= 0) return false;
+      const billDate = billDateMap.get(p.billNo);
+      if (!billDate) return false;
+      return isSameDay(billDate, selectedDate);
+    });
+
     const map = new Map<string, { totalCollected: number; bills: Set<string> }>();
-    for (const p of payments) {
-      if (p.paidAmount <= 0) continue;
+    for (const p of filtered) {
       if (!map.has(p.customerName)) {
         map.set(p.customerName, { totalCollected: 0, bills: new Set() });
       }
@@ -67,7 +105,7 @@ const DailyReport = () => {
     const customers: CustomerSummary[] = Array.from(map.entries())
       .map(([name, d]) => ({
         customerName: name,
-        beat: customerBeatMap.get(name) || "Unknown",
+        beat: customerBeatMap.get(name) || billBeatMap.get(name) || "Unknown",
         totalCollected: d.totalCollected,
         invoiceCount: d.bills.size,
       }))
@@ -77,7 +115,7 @@ const DailyReport = () => {
     const totalBills = customers.reduce((s, c) => s + c.invoiceCount, 0);
 
     return { customers, totalCollected, totalBills };
-  }, [payments, customerBeatMap]);
+  }, [payments, selectedDate, billDateMap, billBeatMap, customerBeatMap]);
 
   const uniqueBeats = useMemo(() => new Set(customers.map((c) => c.beat)).size, [customers]);
 
@@ -95,7 +133,7 @@ const DailyReport = () => {
               <IndianRupee className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg font-bold tracking-tight truncate">Collection Report</h1>
+              <h1 className="text-lg font-bold tracking-tight truncate">Daily Report</h1>
               <p className="text-[11px] text-muted-foreground hidden sm:block">Customers visited & amounts collected</p>
             </div>
           </div>
@@ -114,6 +152,29 @@ const DailyReport = () => {
           <Skeleton className="h-96 rounded-xl" />
         ) : (
           <>
+            {/* Date Picker */}
+            <div className="flex items-center gap-3">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {format(selectedDate, "dd MMM yyyy")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(d) => d && setSelectedDate(d)}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-muted-foreground">
+                {isSameDay(selectedDate, new Date()) ? "Today" : format(selectedDate, "EEEE")}
+              </span>
+            </div>
+
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <Card className="border-0 shadow-sm bg-success/10">
@@ -164,7 +225,7 @@ const DailyReport = () => {
                     {customers.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
-                          No collections recorded yet
+                          No collections for {format(selectedDate, "dd MMM yyyy")}
                         </TableCell>
                       </TableRow>
                     ) : (
