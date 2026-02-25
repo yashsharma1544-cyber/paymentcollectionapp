@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchFollowUps, fetchWhatsAppLog, fetchInvoices, type FollowUp, type WhatsAppLogEntry } from "@/lib/api";
+import { fetchFollowUps, fetchWhatsAppLog, fetchInvoices, fetchWAReplies, type FollowUp, type WhatsAppLogEntry, type WAReply } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +26,10 @@ const CRM = () => {
   const { data: invoices = [] } = useQuery({
     queryKey: ["invoices"],
     queryFn: fetchInvoices,
+  });
+  const { data: waReplies = [], isLoading: repliesLoading } = useQuery({
+    queryKey: ["wa-replies"],
+    queryFn: fetchWAReplies,
   });
 
   const [search, setSearch] = useState("");
@@ -171,6 +175,9 @@ const CRM = () => {
               <TabsTrigger value="whatsapp" className="flex-1 text-xs">
                 WhatsApp
               </TabsTrigger>
+              <TabsTrigger value="replies" className="flex-1 text-xs">
+                Replies
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="today" className="mt-3">
@@ -210,6 +217,43 @@ const CRM = () => {
                           <Clock className="h-3 w-3" />
                           {entry.timestamp}
                         </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="replies" className="mt-3">
+              {repliesLoading ? (
+                <Skeleton className="h-32 rounded-xl" />
+              ) : waReplies.length === 0 ? (
+                <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                  No incoming replies yet. Set up WATI webhook to receive messages.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {[...waReplies].reverse().slice(0, 50).map((reply, i) => (
+                    <Card key={i} className="border shadow-sm">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold">{reply.contactName || reply.phone}</p>
+                            <p className="text-xs text-muted-foreground">{reply.phone}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0">
+                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                              reply.direction === "incoming" 
+                                ? "bg-primary/10 text-primary" 
+                                : "bg-green-100 text-green-700"
+                            }`}>
+                              {reply.direction === "incoming" ? "↓ IN" : "↑ OUT"}
+                            </span>
+                            <Clock className="h-3 w-3" />
+                            {reply.timestamp}
+                          </div>
+                        </div>
+                        <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{reply.messageText}</p>
                       </CardContent>
                     </Card>
                   ))}

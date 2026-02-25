@@ -263,6 +263,22 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "log-wa-reply") {
+      // Columns: Phone, Contact Name, Message, Type, Direction, Timestamp, WA ID
+      const body = await req.json();
+      const { phone, contactName, messageText, messageType, direction, timestamp: ts, waId } = body;
+      const values = [[phone || "", contactName || "", messageText || "", messageType || "text", direction || "incoming", ts || timestamp, waId || ""]];
+      const data = await appendToSheet(accessToken, "WA Replies", values);
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "fetch-wa-replies") {
+      const data = await fetchSheet(accessToken, "WA Replies!A1:Z10000");
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }

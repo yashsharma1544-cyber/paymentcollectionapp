@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
 import { FollowUpList } from "@/components/FollowUpList";
+import { BulkWatiSend } from "@/components/BulkWatiSend";
 
 const Index = () => {
   const {
@@ -119,6 +120,7 @@ const Index = () => {
                 CRM
               </Button>
             </Link>
+            <BulkWatiSend invoices={invoices} />
             <Link to="/install" className="sm:flex-none">
               <Button variant="outline" size="icon" className="text-xs">
                 <Download className="h-3.5 w-3.5" />
