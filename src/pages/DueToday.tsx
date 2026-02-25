@@ -6,57 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { StatusBadge } from "@/components/StatusBadge";
-import { PaymentDialog } from "@/components/PaymentDialog";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import {
   ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle,
-  CalendarClock, CreditCard, ArrowUpDown, ChevronDown, ChevronRight, User, MapPin,
+  CalendarClock, MapPin,
 } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
-
-function parseDateDMY(dateStr: string): Date | null {
-  if (!dateStr) return null;
-  const parts = dateStr.split(/[-\/]/);
-  if (parts.length === 3) {
-    const [d, m, y] = parts;
-    const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-    if (!isNaN(date.getTime())) return date;
-  }
-  const fallback = new Date(dateStr);
-  return isNaN(fallback.getTime()) ? null : fallback;
-}
-
-function getOverdueDays(dateStr: string): number {
-  const d = parseDateDMY(dateStr);
-  if (!d) return 0;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(0, diff);
-}
-
-function isToday(dateStr: string): boolean {
-  const d = parseDateDMY(dateStr);
-  if (!d) return false;
-  const now = new Date();
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
-}
-
-function isTodayOrBefore(dateStr: string): boolean {
-  const d = parseDateDMY(dateStr);
-  if (!d) return false;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  return d <= now;
-}
+import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore } from "@/lib/date-utils";
 
 type SortKey = "customer" | "outstanding" | "dueDate" | "overdue";
 
@@ -68,8 +23,8 @@ function sortInvoices(invoices: Invoice[], sortBy: SortKey): Invoice[] {
       case "outstanding":
         return b.outstandingAmount - a.outstandingAmount;
       case "dueDate": {
-        const da = parseDateDMY(a.dueDate)?.getTime() || 0;
-        const db = parseDateDMY(b.dueDate)?.getTime() || 0;
+        const da = getOverdueDays(a.dueDate);
+        const db = getOverdueDays(b.dueDate);
         return da - db;
       }
       case "overdue":
@@ -178,11 +133,9 @@ const BEAT_COLORS = [
 function InvoiceList({
   invoices,
   onPaymentSuccess,
-  showOverdue = false,
 }: {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
-  showOverdue?: boolean;
 }) {
   const beatGroups = useMemo(() => groupByBeat(invoices), [invoices]);
 
@@ -287,7 +240,7 @@ const DueToday = () => {
 
             <TabsContent value="pending" className="space-y-4">
               <KPICards invoices={pending} />
-              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} showOverdue />
+              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} />
             </TabsContent>
           </Tabs>
         )}

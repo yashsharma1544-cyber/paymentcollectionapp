@@ -7,27 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-
-function parseDateDMY(dateStr: string): Date | null {
-  if (!dateStr) return null;
-  const parts = dateStr.split(/[-\/]/);
-  if (parts.length === 3) {
-    const [d, m, y] = parts;
-    const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
-    if (!isNaN(date.getTime())) return date;
-  }
-  const fallback = new Date(dateStr);
-  return isNaN(fallback.getTime()) ? null : fallback;
-}
-
-function isTodayOrBefore(dateStr: string): boolean {
-  const d = parseDateDMY(dateStr);
-  if (!d) return false;
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  return d <= now;
-}
+import { isTodayOrBefore } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
