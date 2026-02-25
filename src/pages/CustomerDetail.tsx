@@ -12,11 +12,12 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
+import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 
 const CustomerDetail = () => {
   const { customerName } = useParams<{ customerName: string }>();
@@ -85,6 +86,19 @@ const CustomerDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const msg = buildReminderMessage(decoded, invoices);
+                if (msg && info?.mobileNo) openWhatsApp(info.mobileNo, msg);
+              }}
+              disabled={!info?.mobileNo || kpis.totalOutstanding === 0}
+              className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
+            </Button>
             <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-2">
               <Wallet className="h-4 w-4" />
               Lumpsum Payment
