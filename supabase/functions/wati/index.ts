@@ -48,15 +48,17 @@ serve(async (req) => {
   }
 
   try {
-    const WATI_API_TOKEN = Deno.env.get("WATI_API_TOKEN");
+    let WATI_API_TOKEN = Deno.env.get("WATI_API_TOKEN");
     if (!WATI_API_TOKEN) throw new Error("WATI_API_TOKEN is not configured");
+    // Strip "Bearer " prefix if user accidentally included it
+    WATI_API_TOKEN = WATI_API_TOKEN.replace(/^Bearer\s+/i, "");
 
     const WATI_API_ENDPOINT = Deno.env.get("WATI_API_ENDPOINT");
     if (!WATI_API_ENDPOINT) throw new Error("WATI_API_ENDPOINT is not configured");
 
     const baseUrl = WATI_API_ENDPOINT.replace(/\/+$/, "");
     console.log("WATI baseUrl:", baseUrl);
-    console.log("WATI token starts with:", WATI_API_TOKEN.substring(0, 8) + "...");
+    console.log("WATI token (after strip) starts with:", WATI_API_TOKEN.substring(0, 10) + "..., length:", WATI_API_TOKEN.length);
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
