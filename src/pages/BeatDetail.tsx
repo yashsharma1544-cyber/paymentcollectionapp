@@ -7,14 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-import { isTodayOrBefore } from "@/lib/date-utils";
+import { isTodayOrBefore, isToday } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
   const decodedBeat = decodeURIComponent(beatName || "");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const dueTodayFilter = searchParams.get("filter") === "due-today";
+  const filterType = searchParams.get("filter"); // "due-today" or "pending"
 
   const {
     data: allInvoices = [],
@@ -29,11 +29,13 @@ const BeatDetail = () => {
 
   const invoices = useMemo(() => {
     let filtered = allInvoices.filter((inv) => inv.beat === decodedBeat);
-    if (dueTodayFilter) {
+    if (filterType === "due-today") {
+      filtered = filtered.filter((inv) => isToday(inv.dueDate) && inv.outstandingAmount > 0);
+    } else if (filterType === "pending") {
       filtered = filtered.filter((inv) => isTodayOrBefore(inv.dueDate) && inv.outstandingAmount > 0);
     }
     return filtered;
-  }, [allInvoices, decodedBeat, dueTodayFilter]);
+  }, [allInvoices, decodedBeat, filterType]);
 
   const kpis = useMemo(() => {
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
@@ -56,7 +58,7 @@ const BeatDetail = () => {
             <div>
               <h1 className="text-xl font-bold tracking-tight">{decodedBeat}</h1>
               <p className="text-xs text-muted-foreground">
-                {dueTodayFilter ? "Due & Overdue Invoices" : "Beat Details"}
+                {filterType === "due-today" ? "Invoices Due Today" : filterType === "pending" ? "Due & Overdue Invoices" : "Beat Details"}
               </p>
             </div>
           </div>
@@ -86,7 +88,7 @@ const BeatDetail = () => {
         ) : invoices.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-muted-foreground">
-              {dueTodayFilter ? "No due or overdue invoices for this beat" : "No invoices found for this beat"}
+              {filterType ? "No matching invoices for this beat" : "No invoices found for this beat"}
             </p>
             <Button className="mt-4" onClick={() => navigate(-1)}>Go Back</Button>
           </div>
