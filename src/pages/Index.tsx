@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
@@ -21,6 +22,18 @@ const Index = () => {
   });
 
   const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  const searchResults = useMemo(() => {
+    if (!globalSearch) return null;
+    const q = globalSearch.toLowerCase();
+    return invoices.filter(
+      (inv) =>
+        inv.customerName.toLowerCase().includes(q) ||
+        inv.billNo.toLowerCase().includes(q) ||
+        inv.mobileNo.includes(globalSearch)
+    );
+  }, [invoices, globalSearch]);
 
   const filteredInvoices = selectedBeat
     ? invoices.filter((inv) => inv.beat === selectedBeat)
@@ -103,13 +116,35 @@ const Index = () => {
               </p>
             </div>
 
-            <BeatChart
-              invoices={invoices}
-              selectedBeat={selectedBeat}
-              onSelectBeat={setSelectedBeat}
-            />
-            {selectedBeat && (
-              <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} />
+            {/* Global Search */}
+            <div className="relative max-w-md mx-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search customer, bill no, or mobile..."
+                value={globalSearch}
+                onChange={(e) => { setGlobalSearch(e.target.value); if (e.target.value) setSelectedBeat(null); }}
+                className="pl-9 pr-9"
+              />
+              {globalSearch && (
+                <button onClick={() => setGlobalSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+
+            {searchResults ? (
+              <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
+            ) : (
+              <>
+                <BeatChart
+                  invoices={invoices}
+                  selectedBeat={selectedBeat}
+                  onSelectBeat={setSelectedBeat}
+                />
+                {selectedBeat && (
+                  <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} />
+                )}
+              </>
             )}
           </>
         )}
