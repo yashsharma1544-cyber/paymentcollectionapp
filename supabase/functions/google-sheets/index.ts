@@ -101,7 +101,7 @@ serve(async (req) => {
 
     if (action === "fetch") {
       // Fetch Outstanding tab
-      const range = encodeURIComponent("Outstanding!A1:Z1000");
+      const range = encodeURIComponent("Outstanding!A1:Z5000");
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
 
       const response = await fetch(sheetsUrl, {

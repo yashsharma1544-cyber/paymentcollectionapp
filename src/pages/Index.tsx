@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { StatsCards } from "@/components/StatsCards";
+import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { RefreshCw, Receipt, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ const Index = () => {
         ) : (
           <>
             <StatsCards invoices={invoices} />
+            <BeatChart invoices={invoices} />
             <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} />
           </>
         )}
