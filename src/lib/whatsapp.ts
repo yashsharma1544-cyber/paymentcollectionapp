@@ -34,12 +34,17 @@ export function buildReminderMessage(customerName: string, invoices: Invoice[]):
 export function openWhatsApp(phone: string, message: string): void {
   // Clean phone number - remove spaces, dashes, etc.
   let cleaned = phone.replace(/[\s\-()]/g, "");
-  // Add India country code if not present
-  if (!cleaned.startsWith("+")) {
-    if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
+  // Remove leading + if present
+  if (cleaned.startsWith("+")) {
+    cleaned = cleaned.slice(1);
+  }
+  // Remove leading 0
+  if (cleaned.startsWith("0")) {
+    cleaned = cleaned.slice(1);
+  }
+  // Add India country code if not already prefixed with 91
+  if (!cleaned.startsWith("91") || cleaned.length <= 10) {
     cleaned = "91" + cleaned;
-  } else {
-    cleaned = cleaned.slice(1); // remove +
   }
   const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
