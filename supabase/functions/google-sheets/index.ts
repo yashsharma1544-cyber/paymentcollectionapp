@@ -232,6 +232,37 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "edit-followup") {
+      // Find the row by matching customerName + createdAt, then update Remarks (D), Next Follow Up Date (E), Status (F)
+      const body = await req.json();
+      const { customerName, createdAt, remarks, nextFollowUpDate, status } = body;
+      if (!customerName || !createdAt) throw new Error("Missing customerName or createdAt");
+      
+      const data = await fetchSheet(accessToken, "Follow Ups!A:H");
+      const rows = data.values || [];
+      let targetRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === customerName && rows[i][6] === createdAt) {
+          targetRow = i + 1;
+          break;
+        }
+      }
+      if (targetRow === -1) throw new Error("Follow-up not found");
+      
+      // Update D, E, F columns in one PUT
+      const range = encodeURIComponent(`Follow Ups!D${targetRow}:F${targetRow}`);
+      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+      const response = await fetch(sheetsUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ values: [[remarks || "", nextFollowUpDate || "", status || "Pending"]] }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(result)}`);
+      return new Response(JSON.stringify({ success: true, data: result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }
