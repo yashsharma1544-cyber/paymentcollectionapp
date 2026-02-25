@@ -149,10 +149,10 @@ const RecordedPayments = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="font-semibold">Bill No</TableHead>
-                      <TableHead className="font-semibold">Customer</TableHead>
-                      <TableHead className="font-semibold text-right">Paid Amount</TableHead>
-                      <TableHead className="font-semibold">Date & Time</TableHead>
+                      <TableHead className="font-semibold text-xs whitespace-nowrap">Bill No</TableHead>
+                      <TableHead className="font-semibold text-xs whitespace-nowrap">Customer</TableHead>
+                      <TableHead className="font-semibold text-xs text-right whitespace-nowrap">Paid Amount</TableHead>
+                      <TableHead className="font-semibold text-xs whitespace-nowrap">Date & Time</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -165,12 +165,12 @@ const RecordedPayments = () => {
                     ) : (
                       filtered.map((p, i) => (
                         <TableRow key={`${p.billNo}-${i}`} className="hover:bg-muted/30 transition-colors">
-                          <TableCell className="font-mono text-xs">{p.billNo}</TableCell>
-                          <TableCell className="font-medium">{p.customerName}</TableCell>
-                          <TableCell className="text-right font-semibold text-success">
+                          <TableCell className="font-mono text-xs whitespace-nowrap">{p.billNo}</TableCell>
+                          <TableCell className="font-medium text-xs max-w-[120px] sm:max-w-none truncate">{p.customerName}</TableCell>
+                          <TableCell className="text-right font-semibold text-success text-xs whitespace-nowrap">
                             ₹{p.paidAmount.toLocaleString("en-IN")}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{p.timestamp}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.timestamp}</TableCell>
                         </TableRow>
                       ))
                     )}

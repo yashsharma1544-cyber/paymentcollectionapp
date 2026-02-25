@@ -97,25 +97,25 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
               <Link
                 key={cg.customerName}
                 to={`/customer/${encodeURIComponent(cg.customerName)}`}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
+                className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
               >
                 <div className="p-2 rounded-full bg-primary/10 shrink-0">
                   <User className="h-4 w-4 text-primary" />
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                  <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-primary transition-colors">
                     {cg.customerName}
                   </p>
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-0.5">
-                      <Phone className="h-3 w-3" />
+                      <Phone className="h-3 w-3 shrink-0" />
                       {cg.mobileNo}
                     </span>
-                    <span>·</span>
+                    <span className="hidden sm:inline">·</span>
                     <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
-                    <span>·</span>
-                    <span>{collectionPct}% collected</span>
+                    <span className="hidden sm:inline">·</span>
+                    <span className="hidden sm:inline">{collectionPct}% collected</span>
                   </div>
                 </div>
 
@@ -140,11 +140,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                   </button>
                 )}
 
-                <div className="text-right shrink-0 min-w-[90px]">
-                  <p className="text-sm font-bold text-destructive">
+                <div className="text-right shrink-0 min-w-[70px] sm:min-w-[90px]">
+                  <p className="text-xs sm:text-sm font-bold text-destructive">
                     ₹{cg.totalOutstanding.toLocaleString("en-IN")}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground">
                     of ₹{cg.totalBill.toLocaleString("en-IN")}
                   </p>
                 </div>
