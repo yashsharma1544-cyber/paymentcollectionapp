@@ -49,7 +49,7 @@ function KPICards({ invoices }: { invoices: Invoice[] }) {
   }, [invoices]);
 
   return (
-    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
       <Card className="border-0 shadow-sm bg-destructive/10">
         <CardContent className="p-3 text-center">
           <IndianRupee className="h-4 w-4 text-destructive mx-auto mb-0.5" />
@@ -238,17 +238,17 @@ const DueToday = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <Link to="/">
               <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
             </Link>
             <div className="p-2 rounded-lg bg-destructive/10">
-              <CalendarClock className="h-6 w-6 text-destructive" />
+              <CalendarClock className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Due Today</h1>
-              <p className="text-xs text-muted-foreground">Invoices due today &amp; overdue pending</p>
+              <h1 className="text-lg font-bold tracking-tight">Due Today</h1>
+              <p className="text-[11px] text-muted-foreground hidden sm:block">Invoices due today &amp; overdue pending</p>
             </div>
           </div>
         </div>

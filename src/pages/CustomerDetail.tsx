@@ -66,15 +66,15 @@ const CustomerDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="container mx-auto px-4 py-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">{decoded}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
               {info && (
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   {info.mobileNo && (
                     <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{info.mobileNo}</span>
                   )}
@@ -84,8 +84,11 @@ const CustomerDetail = () => {
                 </div>
               )}
             </div>
+            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pl-10">
             <Button
               size="sm"
               variant="outline"
@@ -94,16 +97,16 @@ const CustomerDetail = () => {
                 if (msg && info?.mobileNo) openWhatsApp(info.mobileNo, msg);
               }}
               disabled={!info?.mobileNo || kpis.totalOutstanding === 0}
-              className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none"
             >
-              <MessageCircle className="h-4 w-4" />
+              <MessageCircle className="h-3.5 w-3.5" />
               WhatsApp
             </Button>
-            <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-2">
-              <Wallet className="h-4 w-4" />
-              Lumpsum Payment
+            <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
+              <Wallet className="h-3.5 w-3.5" />
+              Lumpsum
             </Button>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5 text-xs hidden sm:inline-flex">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -119,7 +122,7 @@ const CustomerDetail = () => {
           </div>
         ) : isLoading ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3">
               {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
             </div>
             <Skeleton className="h-64 rounded-xl" />
