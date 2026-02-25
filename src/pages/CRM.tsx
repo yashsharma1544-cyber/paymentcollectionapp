@@ -6,13 +6,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
+import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { parseDateDMY } from "@/lib/date-utils";
-import { ArrowLeft } from "lucide-react";
 
 const CRM = () => {
   const { data: followUps = [], isLoading, refetch, isFetching } = useQuery({
@@ -29,6 +29,7 @@ const CRM = () => {
   });
 
   const [search, setSearch] = useState("");
+  const [showNewFollowUp, setShowNewFollowUp] = useState(false);
 
   // Last WhatsApp per customer
   const lastWhatsApp = useMemo(() => {
@@ -100,10 +101,16 @@ const CRM = () => {
                 <p className="text-xs text-muted-foreground">Manage customer follow-ups</p>
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowNewFollowUp(true)} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New</span>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5">
+                <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -211,6 +218,14 @@ const CRM = () => {
             </TabsContent>
           </Tabs>
         )}
+
+        <FollowUpDialog
+          customerName=""
+          open={showNewFollowUp}
+          onClose={() => setShowNewFollowUp(false)}
+          onSuccess={() => refetch()}
+          allowCustomerNameEdit
+        />
       </main>
     </div>
   );

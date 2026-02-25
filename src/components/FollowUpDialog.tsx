@@ -15,15 +15,22 @@ interface FollowUpDialogProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultType?: string;
+  allowCustomerNameEdit?: boolean;
 }
 
-export function FollowUpDialog({ customerName, open, onClose, onSuccess, defaultType = "Manual" }: FollowUpDialogProps) {
+export function FollowUpDialog({ customerName, open, onClose, onSuccess, defaultType = "Manual", allowCustomerNameEdit = false }: FollowUpDialogProps) {
+  const [editableCustomerName, setEditableCustomerName] = useState(customerName);
   const [remarks, setRemarks] = useState("");
   const [nextDate, setNextDate] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async () => {
+    const finalName = allowCustomerNameEdit ? editableCustomerName.trim() : customerName;
+    if (allowCustomerNameEdit && !finalName) {
+      toast({ title: "Customer name required", description: "Please enter a customer name.", variant: "destructive" });
+      return;
+    }
     if (!remarks.trim()) {
       toast({ title: "Remarks required", description: "Please enter follow-up remarks.", variant: "destructive" });
       return;
@@ -36,12 +43,13 @@ export function FollowUpDialog({ customerName, open, onClose, onSuccess, default
     setLoading(true);
     try {
       await addFollowUp({
-        customerName,
+        customerName: finalName,
         remarks: remarks.trim(),
         nextFollowUpDate: nextDate,
         type: defaultType,
       });
-      toast({ title: "Follow-up Added", description: `Follow-up scheduled for ${customerName}` });
+      toast({ title: "Follow-up Added", description: `Follow-up scheduled for ${finalName}` });
+      setEditableCustomerName("");
       setRemarks("");
       setNextDate("");
       onSuccess();
@@ -57,9 +65,19 @@ export function FollowUpDialog({ customerName, open, onClose, onSuccess, default
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Follow-up — {customerName}</DialogTitle>
+          <DialogTitle>{allowCustomerNameEdit ? "Add New Follow-up" : `Add Follow-up — ${customerName}`}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {allowCustomerNameEdit && (
+            <div className="space-y-2">
+              <Label>Customer Name</Label>
+              <Input
+                placeholder="Enter customer name..."
+                value={editableCustomerName}
+                onChange={(e) => setEditableCustomerName(e.target.value)}
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Remarks</Label>
             <Textarea
