@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PaymentDialog } from "@/components/PaymentDialog";
+import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Invoice } from "@/lib/invoice";
@@ -46,6 +47,7 @@ const CustomerDetail = () => {
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [lumpsumOpen, setLumpsumOpen] = useState(false);
 
   const kpis = useMemo(() => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
@@ -81,10 +83,16 @@ const CustomerDetail = () => {
               )}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-2">
+              <Wallet className="h-4 w-4" />
+              Lumpsum Payment
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -260,6 +268,13 @@ const CustomerDetail = () => {
         invoice={selectedInvoice}
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+        onSuccess={() => refetch()}
+      />
+      <LumpsumPaymentDialog
+        invoices={invoices}
+        customerName={decoded}
+        open={lumpsumOpen}
+        onClose={() => setLumpsumOpen(false)}
         onSuccess={() => refetch()}
       />
     </div>
