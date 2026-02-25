@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, CalendarClock, History, ClipboardList } from "lucide-react";
+import { Home, CalendarClock, History, ClipboardList, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Home", icon: Home },
   { to: "/due-today", label: "Due Today", icon: CalendarClock },
+  { to: "/crm", label: "CRM", icon: Users },
   { to: "/payments", label: "Payments", icon: History },
   { to: "/daily-report", label: "Report", icon: ClipboardList },
 ];
