@@ -7,8 +7,8 @@ import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
-import { fetchWhatsAppLog, type WhatsAppLogEntry } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock } from "lucide-react";
+import { fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock } from "lucide-react";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -56,6 +56,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
     queryFn: fetchWhatsAppLog,
   });
 
+  const { data: allFollowUps = [] } = useQuery({
+    queryKey: ["followups"],
+    queryFn: fetchFollowUps,
+  });
+
   const lastWhatsAppMap = useMemo(() => {
     const map = new Map<string, WhatsAppLogEntry>();
     for (const entry of whatsAppLog) {
@@ -63,6 +68,18 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
     }
     return map;
   }, [whatsAppLog]);
+
+  // Latest pending follow-up per customer
+  const latestFollowUpMap = useMemo(() => {
+    const map = new Map<string, FollowUp>();
+    for (const f of allFollowUps) {
+      if (f.status === "Pending") {
+        // Keep the last one (latest entry)
+        map.set(f.customerName, f);
+      }
+    }
+    return map;
+  }, [allFollowUps]);
 
   const filtered = useMemo(() => {
     if (!search) return invoices;
@@ -109,6 +126,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
           {customerGroups.map((cg) => {
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             const lastWA = lastWhatsAppMap.get(cg.customerName);
+            const followUp = latestFollowUpMap.get(cg.customerName);
             return (
               <Link
                 key={cg.customerName}
@@ -179,6 +197,19 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
 
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
                 </div>
+
+                {/* Follow-up info */}
+                {followUp && (
+                  <div className="flex items-center gap-1.5 px-3 pb-2 sm:px-4 text-[10px]">
+                    <CalendarClock className="h-3 w-3 text-primary shrink-0" />
+                    <span className="text-primary font-medium">
+                      Follow-up: {followUp.nextFollowUpDate || followUp.followUpDate}
+                    </span>
+                    {followUp.remarks && (
+                      <span className="text-muted-foreground truncate">— {followUp.remarks}</span>
+                    )}
+                  </div>
+                )}
               </Link>
             );
           })}
