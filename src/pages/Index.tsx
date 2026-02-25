@@ -53,7 +53,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="p-2 rounded-lg bg-primary/10">
-                <Receipt className="h-5 w-5 text-primary" />
+                <IndianRupee className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h1 className="text-lg font-bold tracking-tight leading-tight">Payment Collector</h1>
