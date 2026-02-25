@@ -1,5 +1,6 @@
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays } from "@/lib/date-utils";
+import { sendWatiSessionMessage } from "@/lib/wati";
 
 export function buildReminderMessage(customerName: string, invoices: Invoice[]): string {
   const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
@@ -48,4 +49,13 @@ export function openWhatsApp(phone: string, message: string): void {
   }
   const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
+}
+
+/** Send via WATI API instead of opening wa.me link */
+export async function sendViaWati(
+  phone: string,
+  message: string
+): Promise<{ success: boolean; error?: string }> {
+  const result = await sendWatiSessionMessage(phone, message);
+  return { success: result.success, error: result.error };
 }

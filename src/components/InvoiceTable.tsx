@@ -6,9 +6,10 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
-import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
-import { fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock } from "lucide-react";
+import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
+import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -50,6 +51,8 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
   const [search, setSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sendingWati, setSendingWati] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: whatsAppLog = [] } = useQuery({
     queryKey: ["whatsapp-log"],
@@ -182,16 +185,37 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
 
                   {cg.totalOutstanding > 0 && cg.mobileNo && (
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         const msg = buildReminderMessage(cg.customerName, cg.invoices);
-                        openWhatsApp(cg.mobileNo, msg);
+                        setSendingWati(cg.customerName);
+                        try {
+                          const result = await sendViaWati(cg.mobileNo, msg);
+                          if (result.success) {
+                            await logWhatsApp(cg.customerName, cg.mobileNo);
+                            toast({ title: "✅ WhatsApp sent via WATI", description: cg.customerName });
+                          } else {
+                            // Fallback to wa.me link
+                            openWhatsApp(cg.mobileNo, msg);
+                            toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
+                          }
+                        } catch {
+                          openWhatsApp(cg.mobileNo, msg);
+                          toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
+                        } finally {
+                          setSendingWati(null);
+                        }
                       }}
-                      className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0"
-                      title="Send WhatsApp reminder"
+                      disabled={sendingWati === cg.customerName}
+                      className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50"
+                      title="Send WhatsApp via WATI"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      {sendingWati === cg.customerName ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}
                     </button>
                   )}
 
