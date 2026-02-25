@@ -56,6 +56,9 @@ const BeatDetail = () => {
             <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <IndianRupee className="h-5 w-5 text-primary" />
+            </div>
             <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight truncate">{decodedBeat}</h1>
               <p className="text-[11px] text-muted-foreground">

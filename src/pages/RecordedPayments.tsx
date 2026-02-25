@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon } from "lucide-react";
+import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon, IndianRupee } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -68,6 +68,9 @@ const RecordedPayments = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+              <IndianRupee className="h-5 w-5 text-primary" />
+            </div>
             <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight truncate">Recorded Payments</h1>
               <p className="text-[11px] text-muted-foreground hidden sm:block">View all collected payments</p>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, Share, MoreVertical, Plus, Check } from "lucide-react";
+import { ArrowLeft, Download, Share, MoreVertical, Plus, Check, IndianRupee } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -46,6 +46,9 @@ const Install = () => {
           <Link to="/">
             <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
           </Link>
+          <div className="p-2 rounded-lg bg-primary/10">
+            <IndianRupee className="h-5 w-5 text-primary" />
+          </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">Install App</h1>
             <p className="text-[11px] text-muted-foreground">Add to your home screen</p>
