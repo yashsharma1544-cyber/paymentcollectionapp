@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -79,6 +79,12 @@ const Index = () => {
               <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
                 <History className="h-3.5 w-3.5" />
                 Payments Log
+              </Button>
+            </Link>
+            <Link to="/daily-report" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <ClipboardList className="h-3.5 w-3.5" />
+                Daily Report
               </Button>
             </Link>
             <Link to="/install" className="sm:flex-none">
