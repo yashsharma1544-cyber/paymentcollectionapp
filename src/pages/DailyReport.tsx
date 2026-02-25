@@ -18,12 +18,18 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-function parseDDMMYYYY(dateStr: string): Date | null {
-  if (!dateStr) return null;
-  const parts = dateStr.split("/");
-  if (parts.length !== 3) return null;
-  const d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-  return isNaN(d.getTime()) ? null : d;
+function parseTimestamp(ts: string): Date | null {
+  if (!ts) return null;
+  // Handle Indian locale format like "25/2/2026, 10:30:00 pm" or ISO strings
+  const d = new Date(ts);
+  if (!isNaN(d.getTime())) return d;
+  // Try DD/MM/YYYY or D/M/YYYY format
+  const match = ts.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (match) {
+    const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
 }
 
 function isSameDay(d1: Date, d2: Date) {
@@ -62,19 +68,7 @@ const DailyReport = () => {
     refetchInvoices();
   };
 
-  // Build maps from invoices: billNo → beat, billNo → billDate
-  const { billBeatMap, billDateMap } = useMemo(() => {
-    const billBeatMap = new Map<string, string>();
-    const billDateMap = new Map<string, Date>();
-    for (const inv of invoices) {
-      billBeatMap.set(inv.billNo, inv.beat);
-      const d = parseDDMMYYYY(inv.billDate);
-      if (d) billDateMap.set(inv.billNo, d);
-    }
-    return { billBeatMap, billDateMap };
-  }, [invoices]);
-
-  // Also build customerName → beat
+  // Build customerName → beat from invoices
   const customerBeatMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const inv of invoices) {
@@ -83,13 +77,13 @@ const DailyReport = () => {
     return map;
   }, [invoices]);
 
-  // Filter payments by selected date (using invoice billDate) & group by customer
+  // Filter payments by selected date using timestamp (column D)
   const { customers, totalCollected, totalBills } = useMemo(() => {
     const filtered = payments.filter((p) => {
       if (p.paidAmount <= 0) return false;
-      const billDate = billDateMap.get(p.billNo);
-      if (!billDate) return false;
-      return isSameDay(billDate, selectedDate);
+      const ts = parseTimestamp(p.timestamp);
+      if (!ts) return false;
+      return isSameDay(ts, selectedDate);
     });
 
     const map = new Map<string, { totalCollected: number; bills: Set<string> }>();
@@ -105,7 +99,7 @@ const DailyReport = () => {
     const customers: CustomerSummary[] = Array.from(map.entries())
       .map(([name, d]) => ({
         customerName: name,
-        beat: customerBeatMap.get(name) || billBeatMap.get(name) || "Unknown",
+        beat: customerBeatMap.get(name) || "Unknown",
         totalCollected: d.totalCollected,
         invoiceCount: d.bills.size,
       }))
@@ -115,7 +109,7 @@ const DailyReport = () => {
     const totalBills = customers.reduce((s, c) => s + c.invoiceCount, 0);
 
     return { customers, totalCollected, totalBills };
-  }, [payments, selectedDate, billDateMap, billBeatMap, customerBeatMap]);
+  }, [payments, selectedDate, customerBeatMap]);
 
   const uniqueBeats = useMemo(() => new Set(customers.map((c) => c.beat)).size, [customers]);
 
