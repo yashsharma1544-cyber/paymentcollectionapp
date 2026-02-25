@@ -59,7 +59,7 @@ const CustomerDetail = () => {
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
     const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
-    const collectionRate = totalBill > 0 ? ((totalPaid / totalBill) * 100).toFixed(1) : "0";
+    const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
     return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments };
   }, [invoices, payments]);
