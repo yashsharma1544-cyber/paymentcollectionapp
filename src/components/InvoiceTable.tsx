@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PaymentDialog } from "@/components/PaymentDialog";
@@ -6,7 +7,8 @@ import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle } from "lucide-react";
+import { fetchWhatsAppLog, type WhatsAppLogEntry } from "@/lib/api";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock } from "lucide-react";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -48,6 +50,19 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
   const [search, setSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data: whatsAppLog = [] } = useQuery({
+    queryKey: ["whatsapp-log"],
+    queryFn: fetchWhatsAppLog,
+  });
+
+  const lastWhatsAppMap = useMemo(() => {
+    const map = new Map<string, WhatsAppLogEntry>();
+    for (const entry of whatsAppLog) {
+      map.set(entry.customerName, entry);
+    }
+    return map;
+  }, [whatsAppLog]);
 
   const filtered = useMemo(() => {
     if (!search) return invoices;
@@ -93,6 +108,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
         <div className="space-y-2">
           {customerGroups.map((cg) => {
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
+            const lastWA = lastWhatsAppMap.get(cg.customerName);
             return (
               <Link
                 key={cg.customerName}
@@ -131,6 +147,17 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                     {cg.maxOverdueDays > 0 && (
                       <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
                         {formatOverdue(cg.maxOverdueDays)} overdue
+                      </span>
+                    )}
+                    {lastWA ? (
+                      <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+                        <MessageCircle className="h-3 w-3" />
+                        {lastWA.timestamp}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                        <MessageCircle className="h-3 w-3" />
+                        No WA
                       </span>
                     )}
                   </div>
