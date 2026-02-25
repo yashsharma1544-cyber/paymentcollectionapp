@@ -85,8 +85,8 @@ export function WhatsAppChatView({ phone, customerName }: WhatsAppChatViewProps)
                     {formatMessageTime(msg.time)}
                   </span>
                   {msg.owner && msg.statusString && (
-                    <span className="text-[10px] text-muted-foreground">
-                      {msg.statusString === "SENT" ? "✓" : msg.statusString === "DELIVERED" ? "✓✓" : msg.statusString === "READ" ? "✓✓" : msg.statusString}
+                    <span className={`text-[10px] ${msg.statusString === "FAILED" ? "text-red-500" : "text-muted-foreground"}`}>
+                      {msg.statusString === "SENT" ? "✓" : msg.statusString === "DELIVERED" ? "✓✓" : msg.statusString === "READ" ? "✓✓" : msg.statusString === "FAILED" ? "✗ Failed" : msg.statusString}
                     </span>
                   )}
                 </div>

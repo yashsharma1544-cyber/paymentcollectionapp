@@ -60,6 +60,7 @@ export interface WatiMessage {
   time: string;
   owner: boolean;
   statusString: string;
+  failedDetail?: string;
 }
 
 export async function getWatiMessages(phone: string): Promise<WatiMessage[]> {
@@ -67,5 +68,17 @@ export async function getWatiMessages(phone: string): Promise<WatiMessage[]> {
   const response = await fetch(`${baseUrl}?action=get-messages&phone=${encodeURIComponent(phone)}`, { headers });
   if (!response.ok) throw new Error("Failed to fetch messages");
   const data = await response.json();
-  return data.messages?.items || [];
+  const items = data.messages?.items || [];
+  // Filter and normalize: keep only actual messages and broadcast messages, skip ticket events
+  return items
+    .filter((item: any) => item.eventType === "message" || item.eventType === "broadcastMessage")
+    .map((item: any) => ({
+      id: item.id,
+      text: item.text || item.finalText || "",
+      type: item.type || item.eventType || "text",
+      time: item.created || "",
+      owner: item.owner ?? (item.eventType === "broadcastMessage"),
+      statusString: item.statusString || "",
+      failedDetail: item.failedDetail || "",
+    }));
 }
