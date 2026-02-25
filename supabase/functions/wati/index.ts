@@ -55,6 +55,8 @@ serve(async (req) => {
     if (!WATI_API_ENDPOINT) throw new Error("WATI_API_ENDPOINT is not configured");
 
     const baseUrl = WATI_API_ENDPOINT.replace(/\/+$/, "");
+    console.log("WATI baseUrl:", baseUrl);
+    console.log("WATI token starts with:", WATI_API_TOKEN.substring(0, 8) + "...");
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
