@@ -50,7 +50,7 @@ function KPICards({ invoices }: { invoices: Invoice[] }) {
   }, [invoices]);
 
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-3">
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
       <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
         <CardContent className="p-2 sm:p-3 text-center">
           <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive mx-auto mb-0.5" />
@@ -84,13 +84,6 @@ function KPICards({ invoices }: { invoices: Invoice[] }) {
           <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning mx-auto mb-0.5" />
           <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
           <p className="text-xs sm:text-lg font-black text-warning leading-tight truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
-        </CardContent>
-      </Card>
-      <Card className="border-0 shadow-sm overflow-hidden">
-        <CardContent className="p-2 sm:p-3 text-center">
-          <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-          <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Remaining</p>
-          <p className="text-xs sm:text-lg font-black leading-tight truncate">₹{kpis.remainingOutstanding.toLocaleString("en-IN")}</p>
         </CardContent>
       </Card>
     </div>
