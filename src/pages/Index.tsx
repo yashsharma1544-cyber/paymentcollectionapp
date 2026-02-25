@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
@@ -21,7 +22,6 @@ const Index = () => {
     queryFn: fetchInvoices,
   });
 
-  const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
   const [globalSearch, setGlobalSearch] = useState("");
 
   const searchResults = useMemo(() => {
@@ -35,14 +35,15 @@ const Index = () => {
     );
   }, [invoices, globalSearch]);
 
-  const filteredInvoices = selectedBeat
-    ? invoices.filter((inv) => inv.beat === selectedBeat)
-    : invoices;
-
-  const grandTotal = useMemo(
-    () => invoices.reduce((s, i) => s + i.outstandingAmount, 0),
-    [invoices]
-  );
+  const kpis = useMemo(() => {
+    const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
+    const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
+    const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
+    const customers = new Set(invoices.map((i) => i.customerName)).size;
+    const beats = new Set(invoices.map((i) => i.beat)).size;
+    const collectionRate = totalBill > 0 ? ((totalPaid / totalBill) * 100).toFixed(1) : "0";
+    return { totalOutstanding, totalPaid, customers, beats, collectionRate, invoiceCount: invoices.length };
+  }, [invoices]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,12 +54,8 @@ const Index = () => {
               <Receipt className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">
-                Payment Collector
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Manage invoices & collect payments
-              </p>
+              <h1 className="text-xl font-bold tracking-tight">Payment Collector</h1>
+              <p className="text-xs text-muted-foreground">Manage invoices & collect payments</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -68,13 +65,7 @@ const Index = () => {
                 Payments Log
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
@@ -100,20 +91,50 @@ const Index = () => {
           </div>
         ) : (
           <>
-            {/* Grand Total Bar */}
-            <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-5 text-center">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
-                Total Outstanding
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <IndianRupee className="h-7 w-7 text-destructive" />
-                <span className="text-3xl font-black text-destructive tracking-tight">
-                  {grandTotal.toLocaleString("en-IN")}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Across {invoices.length} invoices
-              </p>
+            {/* KPI Summary */}
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+              <Card className="border-0 shadow-sm bg-destructive/10 col-span-1">
+                <CardContent className="p-3 text-center">
+                  <IndianRupee className="h-4 w-4 text-destructive mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
+                  <p className="text-lg font-black text-destructive leading-tight">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm bg-success/10">
+                <CardContent className="p-3 text-center">
+                  <TrendingUp className="h-4 w-4 text-success mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
+                  <p className="text-lg font-black text-success leading-tight">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm bg-primary/10">
+                <CardContent className="p-3 text-center">
+                  <TrendingUp className="h-4 w-4 text-primary mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Collection %</p>
+                  <p className="text-lg font-black text-primary leading-tight">{kpis.collectionRate}%</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-3 text-center">
+                  <Users className="h-4 w-4 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Customers</p>
+                  <p className="text-lg font-black leading-tight">{kpis.customers}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-3 text-center">
+                  <FileText className="h-4 w-4 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Invoices</p>
+                  <p className="text-lg font-black leading-tight">{kpis.invoiceCount}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-3 text-center">
+                  <FileText className="h-4 w-4 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Beats</p>
+                  <p className="text-lg font-black leading-tight">{kpis.beats}</p>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Global Search */}
@@ -122,7 +143,7 @@ const Index = () => {
               <Input
                 placeholder="Search customer, bill no, or mobile..."
                 value={globalSearch}
-                onChange={(e) => { setGlobalSearch(e.target.value); if (e.target.value) setSelectedBeat(null); }}
+                onChange={(e) => setGlobalSearch(e.target.value)}
                 className="pl-9 pr-9"
               />
               {globalSearch && (
@@ -135,16 +156,7 @@ const Index = () => {
             {searchResults ? (
               <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
             ) : (
-              <>
-                <BeatChart
-                  invoices={invoices}
-                  selectedBeat={selectedBeat}
-                  onSelectBeat={setSelectedBeat}
-                />
-                {selectedBeat && (
-                  <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} />
-                )}
-              </>
+              <BeatChart invoices={invoices} />
             )}
           </>
         )}
