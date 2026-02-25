@@ -90,66 +90,68 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
           No invoices found
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {customerGroups.map((cg) => {
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             return (
               <Link
                 key={cg.customerName}
                 to={`/customer/${encodeURIComponent(cg.customerName)}`}
-                className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
+                className="block rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
               >
-                <div className="p-1.5 sm:p-2 rounded-full bg-primary/10 shrink-0">
-                  <User className="h-4 w-4 text-primary" />
+                {/* Top row: name + outstanding */}
+                <div className="flex items-start justify-between gap-2 px-3 pt-2.5 sm:px-4 sm:pt-3">
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                    <div className="p-1.5 rounded-full bg-primary/10 shrink-0 mt-0.5">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+                    </div>
+                    <p className="text-sm font-semibold group-hover:text-primary transition-colors leading-snug break-words">
+                      {cg.customerName}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-destructive">
+                      ₹{cg.totalOutstanding.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      of ₹{cg.totalBill.toLocaleString("en-IN")}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors break-words leading-snug">
-                    {cg.customerName}
-                  </p>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap">
+                {/* Bottom row: meta info */}
+                <div className="flex items-center gap-2 px-3 pb-2.5 pt-1.5 sm:px-4 sm:pb-3">
+                  <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap flex-1">
                     <span className="flex items-center gap-0.5">
                       <Phone className="h-3 w-3 shrink-0" />
                       {cg.mobileNo}
                     </span>
-                    <span>·</span>
                     <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
-                    <span className="hidden sm:inline">·</span>
-                    <span className="hidden sm:inline">{collectionPct}% collected</span>
+                    <span>{collectionPct}% collected</span>
+                    {cg.maxOverdueDays > 0 && (
+                      <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+                        {formatOverdue(cg.maxOverdueDays)} overdue
+                      </span>
+                    )}
                   </div>
+
+                  {cg.totalOutstanding > 0 && cg.mobileNo && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const msg = buildReminderMessage(cg.customerName, cg.invoices);
+                        openWhatsApp(cg.mobileNo, msg);
+                      }}
+                      className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0"
+                      title="Send WhatsApp reminder"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
                 </div>
-
-                {cg.maxOverdueDays > 0 && (
-                  <span className="text-[11px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full shrink-0">
-                    {formatOverdue(cg.maxOverdueDays)} overdue
-                  </span>
-                )}
-
-                {cg.totalOutstanding > 0 && cg.mobileNo && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const msg = buildReminderMessage(cg.customerName, cg.invoices);
-                      openWhatsApp(cg.mobileNo, msg);
-                    }}
-                    className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0"
-                    title="Send WhatsApp reminder"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </button>
-                )}
-
-                <div className="text-right shrink-0 min-w-[70px] sm:min-w-[90px]">
-                  <p className="text-xs sm:text-sm font-bold text-destructive">
-                    ₹{cg.totalOutstanding.toLocaleString("en-IN")}
-                  </p>
-                  <p className="text-[10px] sm:text-[11px] text-muted-foreground">
-                    of ₹{cg.totalBill.toLocaleString("en-IN")}
-                  </p>
-                </div>
-
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
               </Link>
             );
           })}
