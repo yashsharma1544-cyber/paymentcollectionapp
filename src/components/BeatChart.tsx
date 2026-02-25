@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
 
@@ -10,16 +9,18 @@ interface BeatChartProps {
 }
 
 const BEAT_COLORS = [
-  { bg: "bg-[hsl(217,72%,48%)]/12", border: "border-[hsl(217,72%,48%)]/40", icon: "text-[hsl(217,72%,48%)]", activeBg: "bg-[hsl(217,72%,48%)]/20" },
-  { bg: "bg-[hsl(152,55%,42%)]/12", border: "border-[hsl(152,55%,42%)]/40", icon: "text-[hsl(152,55%,42%)]", activeBg: "bg-[hsl(152,55%,42%)]/20" },
-  { bg: "bg-[hsl(38,92%,50%)]/12", border: "border-[hsl(38,92%,50%)]/40", icon: "text-[hsl(38,92%,50%)]", activeBg: "bg-[hsl(38,92%,50%)]/20" },
-  { bg: "bg-[hsl(340,70%,52%)]/12", border: "border-[hsl(340,70%,52%)]/40", icon: "text-[hsl(340,70%,52%)]", activeBg: "bg-[hsl(340,70%,52%)]/20" },
-  { bg: "bg-[hsl(280,60%,50%)]/12", border: "border-[hsl(280,60%,50%)]/40", icon: "text-[hsl(280,60%,50%)]", activeBg: "bg-[hsl(280,60%,50%)]/20" },
-  { bg: "bg-[hsl(190,70%,42%)]/12", border: "border-[hsl(190,70%,42%)]/40", icon: "text-[hsl(190,70%,42%)]", activeBg: "bg-[hsl(190,70%,42%)]/20" },
-  { bg: "bg-[hsl(25,80%,50%)]/12", border: "border-[hsl(25,80%,50%)]/40", icon: "text-[hsl(25,80%,50%)]", activeBg: "bg-[hsl(25,80%,50%)]/20" },
-  { bg: "bg-[hsl(0,72%,55%)]/12", border: "border-[hsl(0,72%,55%)]/40", icon: "text-[hsl(0,72%,55%)]", activeBg: "bg-[hsl(0,72%,55%)]/20" },
-  { bg: "bg-[hsl(160,50%,38%)]/12", border: "border-[hsl(160,50%,38%)]/40", icon: "text-[hsl(160,50%,38%)]", activeBg: "bg-[hsl(160,50%,38%)]/20" },
-  { bg: "bg-[hsl(260,45%,55%)]/12", border: "border-[hsl(260,45%,55%)]/40", icon: "text-[hsl(260,45%,55%)]", activeBg: "bg-[hsl(260,45%,55%)]/20" },
+  { bg: "bg-[#2563eb]", text: "text-white" },
+  { bg: "bg-[#16a34a]", text: "text-white" },
+  { bg: "bg-[#ea580c]", text: "text-white" },
+  { bg: "bg-[#9333ea]", text: "text-white" },
+  { bg: "bg-[#dc2626]", text: "text-white" },
+  { bg: "bg-[#0891b2]", text: "text-white" },
+  { bg: "bg-[#ca8a04]", text: "text-white" },
+  { bg: "bg-[#be185d]", text: "text-white" },
+  { bg: "bg-[#4f46e5]", text: "text-white" },
+  { bg: "bg-[#059669]", text: "text-white" },
+  { bg: "bg-[#d97706]", text: "text-white" },
+  { bg: "bg-[#7c3aed]", text: "text-white" },
 ];
 
 export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartProps) {
@@ -45,26 +46,22 @@ export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartPro
         const color = BEAT_COLORS[i % BEAT_COLORS.length];
         const isActive = selectedBeat === b.beat;
         return (
-          <Card
+          <button
             key={b.beat}
             onClick={() => onSelectBeat(isActive ? null : b.beat)}
-            className={`border shadow-sm cursor-pointer transition-all hover:scale-[1.02] ${color.border} ${isActive ? `${color.activeBg} ring-2 ring-offset-1 ring-current ${color.icon}` : ""}`}
+            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] ${color.bg} ${color.text} ${isActive ? "ring-3 ring-offset-2 ring-foreground/40 shadow-lg" : "shadow-sm"}`}
           >
-            <CardContent className={`p-3 ${color.bg} rounded-[inherit]`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-md ${color.bg}`}>
-                  <MapPin className={`h-3.5 w-3.5 ${color.icon}`} />
-                </div>
-                <p className="text-xs font-semibold truncate">{b.beat}</p>
-              </div>
-              <p className="text-base font-bold font-['Space_Grotesk'] text-destructive">
-                ₹{b.outstanding.toLocaleString("en-IN")}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {b.customers} customer{b.customers !== 1 ? "s" : ""} · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
-              </p>
-            </CardContent>
-          </Card>
+            <div className="flex items-center justify-center gap-1.5 mb-2">
+              <MapPin className="h-4 w-4 opacity-80" />
+              <p className="text-sm font-bold truncate">{b.beat}</p>
+            </div>
+            <p className="text-2xl font-black tracking-tight">
+              ₹{b.outstanding.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[11px] opacity-75 mt-1">
+              {b.customers} customer{b.customers !== 1 ? "s" : ""} · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
+            </p>
+          </button>
         );
       })}
     </div>

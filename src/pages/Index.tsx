@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const Index = () => {
   const {
@@ -26,6 +26,11 @@ const Index = () => {
     ? invoices.filter((inv) => inv.beat === selectedBeat)
     : invoices;
 
+  const grandTotal = useMemo(
+    () => invoices.reduce((s, i) => s + i.outstandingAmount, 0),
+    [invoices]
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -35,7 +40,7 @@ const Index = () => {
               <Receipt className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold font-['Space_Grotesk'] tracking-tight">
+              <h1 className="text-xl font-bold tracking-tight">
                 Payment Collector
               </h1>
               <p className="text-xs text-muted-foreground">
@@ -73,6 +78,7 @@ const Index = () => {
           </div>
         ) : isLoading ? (
           <div className="space-y-6">
+            <Skeleton className="h-20 rounded-xl" />
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-24 rounded-xl" />
@@ -81,6 +87,22 @@ const Index = () => {
           </div>
         ) : (
           <>
+            {/* Grand Total Bar */}
+            <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-5 text-center">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">
+                Total Outstanding
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <IndianRupee className="h-7 w-7 text-destructive" />
+                <span className="text-3xl font-black text-destructive tracking-tight">
+                  {grandTotal.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Across {invoices.length} invoices
+              </p>
+            </div>
+
             <BeatChart
               invoices={invoices}
               selectedBeat={selectedBeat}
