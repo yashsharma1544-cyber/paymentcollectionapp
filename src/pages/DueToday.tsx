@@ -201,7 +201,7 @@ function InvoiceList({
         return (
           <Link
             key={bg.beat}
-            to={`/beat/${encodeURIComponent(bg.beat)}`}
+            to={`/beat/${encodeURIComponent(bg.beat)}?filter=due-today`}
             className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
           >
             <div className="flex items-center justify-center gap-1.5 mb-2">

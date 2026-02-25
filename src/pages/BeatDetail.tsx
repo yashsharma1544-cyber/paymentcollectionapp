@@ -1,16 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 
+function parseDateDMY(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split(/[-\/]/);
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    if (!isNaN(date.getTime())) return date;
+  }
+  const fallback = new Date(dateStr);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+function isTodayOrBefore(dateStr: string): boolean {
+  const d = parseDateDMY(dateStr);
+  if (!d) return false;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return d <= now;
+}
+
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
   const decodedBeat = decodeURIComponent(beatName || "");
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dueTodayFilter = searchParams.get("filter") === "due-today";
 
   const {
     data: allInvoices = [],
@@ -23,10 +47,13 @@ const BeatDetail = () => {
     queryFn: fetchInvoices,
   });
 
-  const invoices = useMemo(
-    () => allInvoices.filter((inv) => inv.beat === decodedBeat),
-    [allInvoices, decodedBeat]
-  );
+  const invoices = useMemo(() => {
+    let filtered = allInvoices.filter((inv) => inv.beat === decodedBeat);
+    if (dueTodayFilter) {
+      filtered = filtered.filter((inv) => isTodayOrBefore(inv.dueDate) && inv.outstandingAmount > 0);
+    }
+    return filtered;
+  }, [allInvoices, decodedBeat, dueTodayFilter]);
 
   const kpis = useMemo(() => {
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
@@ -43,14 +70,14 @@ const BeatDetail = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <div>
               <h1 className="text-xl font-bold tracking-tight">{decodedBeat}</h1>
-              <p className="text-xs text-muted-foreground">Beat Details</p>
+              <p className="text-xs text-muted-foreground">
+                {dueTodayFilter ? "Due & Overdue Invoices" : "Beat Details"}
+              </p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
@@ -78,12 +105,13 @@ const BeatDetail = () => {
           </div>
         ) : invoices.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-muted-foreground">No invoices found for this beat</p>
-            <Link to="/"><Button className="mt-4">Back to Dashboard</Button></Link>
+            <p className="text-muted-foreground">
+              {dueTodayFilter ? "No due or overdue invoices for this beat" : "No invoices found for this beat"}
+            </p>
+            <Button className="mt-4" onClick={() => navigate(-1)}>Go Back</Button>
           </div>
         ) : (
           <>
-            {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10">
                 <CardContent className="p-4 text-center">
