@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { parseDateDMY } from "@/lib/date-utils";
+import { ArrowLeft } from "lucide-react";
 
 const CRM = () => {
   const { data: followUps = [], isLoading, refetch, isFetching } = useQuery({
@@ -86,6 +87,11 @@ const CRM = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
+              <Link to="/">
+                <Button variant="ghost" size="icon" className="shrink-0">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </Link>
               <div className="p-2 rounded-lg bg-primary/10">
                 <CalendarClock className="h-5 w-5 text-primary" />
               </div>
