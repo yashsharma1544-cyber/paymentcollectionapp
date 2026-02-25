@@ -5,7 +5,8 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
-import { CreditCard, Search, User, ChevronRight, Phone } from "lucide-react";
+import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle } from "lucide-react";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -122,6 +123,21 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                   <span className="text-[11px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full shrink-0">
                     {formatOverdue(cg.maxOverdueDays)} overdue
                   </span>
+                )}
+
+                {cg.totalOutstanding > 0 && cg.mobileNo && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const msg = buildReminderMessage(cg.customerName, cg.invoices);
+                      openWhatsApp(cg.mobileNo, msg);
+                    }}
+                    className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0"
+                    title="Send WhatsApp reminder"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </button>
                 )}
 
                 <div className="text-right shrink-0 min-w-[90px]">
