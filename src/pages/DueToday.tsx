@@ -184,13 +184,7 @@ function InvoiceList({
   onPaymentSuccess: () => void;
   showOverdue?: boolean;
 }) {
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<SortKey>("outstanding");
-  const [selectedBeat, setSelectedBeat] = useState<string | null>(null);
-
-  const sorted = useMemo(() => sortInvoices(invoices, sortBy), [invoices, sortBy]);
-  const beatGroups = useMemo(() => groupByBeat(sorted), [sorted]);
+  const beatGroups = useMemo(() => groupByBeat(invoices), [invoices]);
 
   if (invoices.length === 0) {
     return (
@@ -200,127 +194,30 @@ function InvoiceList({
     );
   }
 
-  const activeBeat = selectedBeat ? beatGroups.find((b) => b.beat === selectedBeat) : null;
-  const activeBeatInvoices = activeBeat ? sortInvoices(activeBeat.invoices, sortBy) : [];
-
   return (
-    <>
-      {/* Beat boxes grid — same style as dashboard */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {beatGroups.map((bg, i) => {
-          const color = BEAT_COLORS[i % BEAT_COLORS.length];
-          const isActive = selectedBeat === bg.beat;
-          return (
-            <button
-              key={bg.beat}
-              onClick={() => setSelectedBeat(isActive ? null : bg.beat)}
-              className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full ${isActive ? "ring-2 ring-offset-2 ring-primary" : ""}`}
-            >
-              <div className="flex items-center justify-center gap-1.5 mb-2">
-                <MapPin className="h-4 w-4 opacity-80" />
-                <p className="text-sm font-bold truncate">{bg.beat}</p>
-              </div>
-              <p className="text-2xl font-black tracking-tight">
-                ₹{bg.totalOutstanding.toLocaleString("en-IN")}
-              </p>
-              <p className="text-[11px] opacity-75 mt-1">
-                {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Expanded invoice table for selected beat */}
-      {activeBeat && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">{activeBeat.beat} — Invoices</p>
-            <div className="flex items-center gap-2">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="outstanding">Outstanding (High→Low)</SelectItem>
-                  <SelectItem value="customer">Customer Name</SelectItem>
-                  <SelectItem value="dueDate">Due Date (Earliest)</SelectItem>
-                  {showOverdue && <SelectItem value="overdue">Overdue Days</SelectItem>}
-                </SelectContent>
-              </Select>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      {beatGroups.map((bg, i) => {
+        const color = BEAT_COLORS[i % BEAT_COLORS.length];
+        return (
+          <Link
+            key={bg.beat}
+            to={`/beat/${encodeURIComponent(bg.beat)}`}
+            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
+          >
+            <div className="flex items-center justify-center gap-1.5 mb-2">
+              <MapPin className="h-4 w-4 opacity-80" />
+              <p className="text-sm font-bold truncate">{bg.beat}</p>
             </div>
-          </div>
-
-          <div className="rounded-xl border bg-card overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead className="text-xs font-semibold">Customer</TableHead>
-                  <TableHead className="text-xs font-semibold">Bill No</TableHead>
-                  <TableHead className="text-xs font-semibold text-right">Bill Amt</TableHead>
-                  <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
-                  <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
-                  <TableHead className="text-xs font-semibold">Due Date</TableHead>
-                  {showOverdue && <TableHead className="text-xs font-semibold text-center">Overdue</TableHead>}
-                  <TableHead className="text-xs font-semibold">Status</TableHead>
-                  <TableHead className="text-xs font-semibold text-center">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {activeBeatInvoices.map((inv) => {
-                  const overdueDays = getOverdueDays(inv.dueDate);
-                  return (
-                    <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
-                      <TableCell className="text-xs">
-                        <Link
-                          to={`/customer/${encodeURIComponent(inv.customerName)}`}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          {inv.customerName}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{inv.billNo}</TableCell>
-                      <TableCell className="text-right text-xs font-medium">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
-                      <TableCell className="text-right text-xs text-success font-medium">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
-                      <TableCell className="text-right text-xs text-destructive font-semibold">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
-                      <TableCell className="text-xs">{inv.dueDate}</TableCell>
-                      {showOverdue && (
-                        <TableCell className="text-center">
-                          <span className={`text-xs font-bold ${overdueDays > 0 ? "text-destructive" : "text-success"}`}>
-                            {overdueDays > 0 ? `${overdueDays}d` : "Today"}
-                          </span>
-                        </TableCell>
-                      )}
-                      <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
-                      <TableCell className="text-center">
-                        {inv.outstandingAmount > 0 && (
-                          <Button
-                            size="sm"
-                            onClick={() => { setSelectedInvoice(inv); setDialogOpen(true); }}
-                            className="gap-1.5 h-7 text-xs"
-                          >
-                            <CreditCard className="h-3 w-3" />
-                            Collect
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      )}
-
-      <PaymentDialog
-        invoice={selectedInvoice}
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSuccess={onPaymentSuccess}
-      />
-    </>
+            <p className="text-2xl font-black tracking-tight">
+              ₹{bg.totalOutstanding.toLocaleString("en-IN")}
+            </p>
+            <p className="text-[11px] opacity-75 mt-1">
+              {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
+            </p>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
