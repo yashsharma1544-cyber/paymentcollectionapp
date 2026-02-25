@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Invoice } from "@/lib/invoice";
+import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 
 const CustomerDetail = () => {
   const { customerName } = useParams<{ customerName: string }>();
@@ -176,6 +177,7 @@ const CustomerDetail = () => {
                         <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
                         <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
                         <TableHead className="text-xs font-semibold">Due</TableHead>
+                        <TableHead className="text-xs font-semibold text-center">Overdue</TableHead>
                         <TableHead className="text-xs font-semibold">Status</TableHead>
                         <TableHead className="text-xs font-semibold text-center">Action</TableHead>
                       </TableRow>
@@ -195,6 +197,15 @@ const CustomerDetail = () => {
                             ₹{inv.outstandingAmount.toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell className="text-xs">{inv.dueDate}</TableCell>
+                          <TableCell className="text-center">
+                            {inv.outstandingAmount > 0 ? (
+                              <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
+                                {formatOverdue(getOverdueDays(inv.dueDate))}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
                           <TableCell className="text-center">
                             {inv.outstandingAmount > 0 && (
