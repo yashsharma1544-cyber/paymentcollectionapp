@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,9 +40,10 @@ const Index = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(invoices.map((i) => i.customerName)).size;
-    const beats = new Set(invoices.map((i) => i.beat)).size;
+    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? ((totalPaid / totalBill) * 100).toFixed(1) : "0";
-    return { totalOutstanding, totalPaid, customers, beats, collectionRate, invoiceCount: invoices.length };
+    return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };
   }, [invoices]);
 
   return (
@@ -137,18 +138,18 @@ const Index = () => {
                   <p className="text-xs sm:text-lg font-black leading-tight">{kpis.customers}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm overflow-hidden">
+              <Card className="border-0 shadow-sm bg-warning/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
-                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Invoices</p>
-                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.invoiceCount}</p>
+                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
+                  <p className="text-xs sm:text-lg font-black text-warning leading-tight truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
-                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Beats</p>
-                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.beats}</p>
+                  <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Remaining</p>
+                  <p className="text-xs sm:text-lg font-black leading-tight truncate">₹{kpis.remainingOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
             </div>

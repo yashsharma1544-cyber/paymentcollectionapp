@@ -55,10 +55,11 @@ const CustomerDetail = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const overdue = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).length;
+    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? ((totalPaid / totalBill) * 100).toFixed(1) : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
-    return { totalBill, totalPaid, totalOutstanding, overdue, collectionRate, totalRecordedPayments };
+    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, remainingOutstanding, collectionRate, totalRecordedPayments };
   }, [invoices, payments]);
 
   const info = invoices[0];
@@ -164,18 +165,18 @@ const CustomerDetail = () => {
                   <p className="text-xs sm:text-xl font-black truncate">₹{kpis.totalBill.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <FileText className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Invoices</p>
-                  <p className="text-xs sm:text-xl font-black">{invoices.length}</p>
-                </CardContent>
-              </Card>
               <Card className="border-0 shadow-sm bg-warning/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-4 text-center">
                   <AlertTriangle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-warning mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Overdue</p>
-                  <p className="text-xs sm:text-xl font-black text-warning">{kpis.overdue}</p>
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
+                  <p className="text-xs sm:text-xl font-black text-warning truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm overflow-hidden">
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <IndianRupee className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-muted-foreground mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Remaining</p>
+                  <p className="text-xs sm:text-xl font-black truncate">₹{kpis.remainingOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
             </div>
