@@ -133,9 +133,11 @@ const BEAT_COLORS = [
 function InvoiceList({
   invoices,
   onPaymentSuccess,
+  filterParam = "due-today",
 }: {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
+  filterParam?: string;
 }) {
   const beatGroups = useMemo(() => groupByBeat(invoices), [invoices]);
 
@@ -154,7 +156,7 @@ function InvoiceList({
         return (
           <Link
             key={bg.beat}
-            to={`/beat/${encodeURIComponent(bg.beat)}?filter=due-today`}
+            to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
             className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
           >
             <div className="flex items-center justify-center gap-1.5 mb-2">
@@ -240,7 +242,7 @@ const DueToday = () => {
 
             <TabsContent value="pending" className="space-y-4">
               <KPICards invoices={pending} />
-              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} />
+              <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} filterParam="pending" />
             </TabsContent>
           </Tabs>
         )}
