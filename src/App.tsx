@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import RecordedPayments from "./pages/RecordedPayments";
 import BeatDetail from "./pages/BeatDetail";
 import CustomerDetail from "./pages/CustomerDetail";
+import DueToday from "./pages/DueToday";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/payments" element={<RecordedPayments />} />
           <Route path="/beat/:beatName" element={<BeatDetail />} />
           <Route path="/customer/:customerName" element={<CustomerDetail />} />
+          <Route path="/due-today" element={<DueToday />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

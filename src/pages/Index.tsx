@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +59,12 @@ const Index = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link to="/due-today">
+              <Button variant="outline" size="sm" className="gap-2">
+                <CalendarClock className="h-4 w-4" />
+                Due Today
+              </Button>
+            </Link>
             <Link to="/payments">
               <Button variant="outline" size="sm" className="gap-2">
                 <History className="h-4 w-4" />
