@@ -113,6 +113,12 @@ const Index = () => {
                 Daily Report
               </Button>
             </Link>
+            <Link to="/crm" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <CalendarClock className="h-3.5 w-3.5" />
+                CRM
+              </Button>
+            </Link>
             <Link to="/install" className="sm:flex-none">
               <Button variant="outline" size="icon" className="text-xs">
                 <Download className="h-3.5 w-3.5" />
