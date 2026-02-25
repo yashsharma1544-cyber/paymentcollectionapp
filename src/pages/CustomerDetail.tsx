@@ -104,13 +104,18 @@ const CustomerDetail = () => {
           </div>
 
           {/* Last WhatsApp indicator */}
-          {lastWA && (
+          {lastWA ? (
             <div className="ml-10 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-1.5">
               <MessageCircle className="h-4 w-4 text-green-600 shrink-0" />
               <div className="flex flex-col">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-green-700">Last WhatsApp Sent</span>
                 <span className="text-xs font-medium text-green-600">{lastWA.timestamp}</span>
               </div>
+            </div>
+          ) : (
+            <div className="ml-10 flex items-center gap-2 rounded-lg bg-muted/50 border border-border px-3 py-1.5">
+              <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground">No WhatsApp sent yet</span>
             </div>
           )}
 
