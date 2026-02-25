@@ -68,7 +68,7 @@ serve(async (req) => {
       if (!phone || !message) throw new Error("Missing phone or message");
 
       const whatsappNumber = cleanPhone(phone);
-      const response = await watiPost(baseUrl, `/api/v1/sendSessionMessage/${whatsappNumber}`, WATI_API_TOKEN, { messageText: message });
+      const response = await watiPost(baseUrl, `/api/v1/sendSessionMessage/${whatsappNumber}?messageText=${encodeURIComponent(message)}`, WATI_API_TOKEN, { messageText: message });
       const { data, text } = await safeJsonParse(response);
 
       if (!response.ok) {
