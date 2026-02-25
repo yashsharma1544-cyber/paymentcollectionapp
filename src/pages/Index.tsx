@@ -109,46 +109,46 @@ const Index = () => {
           <>
             {/* KPI Summary */}
             <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5 sm:gap-3">
-              <Card className="border-0 shadow-sm bg-destructive/10">
+              <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
-                  <p className="text-sm sm:text-lg font-black text-destructive leading-tight">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Outstanding</p>
+                  <p className="text-xs sm:text-lg font-black text-destructive leading-tight truncate">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm bg-success/10">
+              <Card className="border-0 shadow-sm bg-success/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
-                  <p className="text-sm sm:text-lg font-black text-success leading-tight">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collected</p>
+                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm bg-primary/10">
+              <Card className="border-0 shadow-sm bg-primary/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Collection %</p>
-                  <p className="text-sm sm:text-lg font-black text-primary leading-tight">{kpis.collectionRate}%</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collection %</p>
+                  <p className="text-xs sm:text-lg font-black text-primary leading-tight">{kpis.collectionRate}%</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Customers</p>
-                  <p className="text-sm sm:text-lg font-black leading-tight">{kpis.customers}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Customers</p>
+                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.customers}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Invoices</p>
-                  <p className="text-sm sm:text-lg font-black leading-tight">{kpis.invoiceCount}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Invoices</p>
+                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.invoiceCount}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Beats</p>
-                  <p className="text-sm sm:text-lg font-black leading-tight">{kpis.beats}</p>
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Beats</p>
+                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.beats}</p>
                 </CardContent>
               </Card>
             </div>
