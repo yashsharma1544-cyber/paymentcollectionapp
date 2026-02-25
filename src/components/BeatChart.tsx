@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import { MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 
 interface BeatChartProps {
   invoices: Invoice[];
-  selectedBeat: string | null;
-  onSelectBeat: (beat: string | null) => void;
 }
 
 const BEAT_COLORS = [
@@ -23,7 +22,7 @@ const BEAT_COLORS = [
   { bg: "bg-[#EDE9FE]", text: "text-[#5b21b6]" },
 ];
 
-export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartProps) {
+export function BeatChart({ invoices }: BeatChartProps) {
   const beats = useMemo(() => {
     const map = new Map<string, { outstanding: number; customers: Set<string>; count: number }>();
     for (const inv of invoices) {
@@ -44,12 +43,11 @@ export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartPro
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
       {beats.map((b, i) => {
         const color = BEAT_COLORS[i % BEAT_COLORS.length];
-        const isActive = selectedBeat === b.beat;
         return (
-          <button
+          <Link
             key={b.beat}
-            onClick={() => onSelectBeat(isActive ? null : b.beat)}
-            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] ${color.bg} ${color.text} ${isActive ? "ring-3 ring-offset-2 ring-foreground/40 shadow-lg" : "shadow-sm"}`}
+            to={`/beat/${encodeURIComponent(b.beat)}`}
+            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block`}
           >
             <div className="flex items-center justify-center gap-1.5 mb-2">
               <MapPin className="h-4 w-4 opacity-80" />
@@ -61,7 +59,7 @@ export function BeatChart({ invoices, selectedBeat, onSelectBeat }: BeatChartPro
             <p className="text-[11px] opacity-75 mt-1">
               {b.customers} customer{b.customers !== 1 ? "s" : ""} · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
             </p>
-          </button>
+          </Link>
         );
       })}
     </div>
