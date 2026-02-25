@@ -8,10 +8,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle,
-  CalendarClock, MapPin,
+  CalendarClock, MapPin, MessageCircle,
 } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore } from "@/lib/date-utils";
+import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
+import { toast } from "sonner";
 
 type SortKey = "customer" | "outstanding" | "dueDate" | "overdue";
 
@@ -141,6 +143,34 @@ function InvoiceList({
 }) {
   const beatGroups = useMemo(() => groupByBeat(invoices), [invoices]);
 
+  const customerGroups = useMemo(() => {
+    const map = new Map<string, { name: string; phone: string; invoices: Invoice[] }>();
+    for (const inv of invoices) {
+      if (!map.has(inv.customerName)) {
+        map.set(inv.customerName, { name: inv.customerName, phone: inv.mobileNo, invoices: [] });
+      }
+      map.get(inv.customerName)!.invoices.push(inv);
+    }
+    return Array.from(map.values()).filter((c) => c.phone);
+  }, [invoices]);
+
+  const handleBulkWhatsApp = () => {
+    if (customerGroups.length === 0) {
+      toast.info("No customers with phone numbers to send reminders to");
+      return;
+    }
+    let opened = 0;
+    const delay = 800; // stagger to avoid browser blocking
+    customerGroups.forEach((cg, i) => {
+      const msg = buildReminderMessage(cg.name, cg.invoices);
+      if (msg) {
+        setTimeout(() => openWhatsApp(cg.phone, msg), i * delay);
+        opened++;
+      }
+    });
+    toast.success(`Opening WhatsApp for ${opened} customer${opened !== 1 ? "s" : ""}...`);
+  };
+
   if (invoices.length === 0) {
     return (
       <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
@@ -150,28 +180,41 @@ function InvoiceList({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-      {beatGroups.map((bg, i) => {
-        const color = BEAT_COLORS[i % BEAT_COLORS.length];
-        return (
-          <Link
-            key={bg.beat}
-            to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
-            className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
-          >
-            <div className="flex items-center justify-center gap-1.5 mb-2">
-              <MapPin className="h-4 w-4 opacity-80" />
-              <p className="text-sm font-bold truncate">{bg.beat}</p>
-            </div>
-            <p className="text-2xl font-black tracking-tight">
-              ₹{bg.totalOutstanding.toLocaleString("en-IN")}
-            </p>
-            <p className="text-[11px] opacity-75 mt-1">
-              {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
-            </p>
-          </Link>
-        );
-      })}
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleBulkWhatsApp}
+          className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+        >
+          <MessageCircle className="h-4 w-4" />
+          WhatsApp All ({customerGroups.length})
+        </Button>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        {beatGroups.map((bg, i) => {
+          const color = BEAT_COLORS[i % BEAT_COLORS.length];
+          return (
+            <Link
+              key={bg.beat}
+              to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
+              className={`rounded-xl p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
+            >
+              <div className="flex items-center justify-center gap-1.5 mb-2">
+                <MapPin className="h-4 w-4 opacity-80" />
+                <p className="text-sm font-bold truncate">{bg.beat}</p>
+              </div>
+              <p className="text-2xl font-black tracking-tight">
+                ₹{bg.totalOutstanding.toLocaleString("en-IN")}
+              </p>
+              <p className="text-[11px] opacity-75 mt-1">
+                {bg.customers} customer{bg.customers !== 1 ? "s" : ""} · {bg.invoices.length} bill{bg.invoices.length !== 1 ? "s" : ""}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }
