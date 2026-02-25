@@ -50,19 +50,22 @@ const BeatDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">{decodedBeat}</h1>
-              <p className="text-xs text-muted-foreground">
-                {filterType === "due-today" ? "Invoices Due Today" : filterType === "pending" ? "Due & Overdue Invoices" : "Beat Details"}
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight truncate">{decodedBeat}</h1>
+              <p className="text-[11px] text-muted-foreground">
+                {filterType === "due-today" ? "Due Today" : filterType === "pending" ? "Due & Overdue" : "Beat Details"}
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
+          <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -94,7 +97,7 @@ const BeatDetail = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10">
                 <CardContent className="p-4 text-center">
                   <IndianRupee className="h-5 w-5 text-destructive mx-auto mb-1" />

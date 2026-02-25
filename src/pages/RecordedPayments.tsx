@@ -61,23 +61,22 @@ const RecordedPayments = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
             <Link to="/">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <div>
-              <h1 className="text-xl font-bold font-['Space_Grotesk'] tracking-tight">
-                Recorded Payments
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                View all collected payments
-              </p>
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold tracking-tight truncate">Recorded Payments</h1>
+              <p className="text-[11px] text-muted-foreground hidden sm:block">View all collected payments</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
+          <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
           </Button>
@@ -95,9 +94,9 @@ const RecordedPayments = () => {
           <Skeleton className="h-96 rounded-xl" />
         ) : (
           <>
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px] max-w-sm">
+             {/* Filters */}
+            <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="relative flex-1 min-w-[180px] max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search by Bill No or Customer..."
@@ -107,39 +106,41 @@ const RecordedPayments = () => {
                 />
               </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("gap-2 text-sm", !fromDate && "text-muted-foreground")}>
-                    <CalendarIcon className="h-4 w-4" />
-                    {fromDate ? format(fromDate, "dd MMM yyyy") : "From date"}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !fromDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {fromDate ? format(fromDate, "dd MMM yyyy") : "From"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={fromDate} onSelect={setFromDate} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !toDate && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {toDate ? format(toDate, "dd MMM yyyy") : "To"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={toDate} onSelect={setToDate} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+
+                {(fromDate || toDate) && (
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setFromDate(undefined); setToDate(undefined); }}>
+                    Clear
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={fromDate} onSelect={setFromDate} className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
+                )}
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("gap-2 text-sm", !toDate && "text-muted-foreground")}>
-                    <CalendarIcon className="h-4 w-4" />
-                    {toDate ? format(toDate, "dd MMM yyyy") : "To date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={toDate} onSelect={setToDate} className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-
-              {(fromDate || toDate) && (
-                <Button variant="ghost" size="sm" onClick={() => { setFromDate(undefined); setToDate(undefined); }}>
-                  Clear dates
-                </Button>
-              )}
-
-              <span className="text-sm text-muted-foreground ml-auto">
-                {filtered.length} record{filtered.length !== 1 ? "s" : ""} · Total: ₹{totalCollected.toLocaleString("en-IN")}
-              </span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {filtered.length} record{filtered.length !== 1 ? "s" : ""} · ₹{totalCollected.toLocaleString("en-IN")}
+                </span>
+              </div>
             </div>
 
             {/* Table */}

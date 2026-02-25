@@ -48,33 +48,38 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Receipt className="h-6 w-6 text-primary" />
+        <div className="container mx-auto px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Receipt className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight leading-tight">Payment Collector</h1>
+                <p className="text-[11px] text-muted-foreground hidden sm:block">Manage invoices & collect payments</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight">Payment Collector</h1>
-              <p className="text-xs text-muted-foreground">Manage invoices & collect payments</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/due-today">
-              <Button variant="outline" size="sm" className="gap-2">
-                <CalendarClock className="h-4 w-4" />
-                Due Today
-              </Button>
-            </Link>
-            <Link to="/payments">
-              <Button variant="outline" size="sm" className="gap-2">
-                <History className="h-4 w-4" />
-                Payments Log
-              </Button>
-            </Link>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2">
+            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link to="/due-today" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <CalendarClock className="h-3.5 w-3.5" />
+                Due Today
+              </Button>
+            </Link>
+            <Link to="/payments" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <History className="h-3.5 w-3.5" />
+                Payments Log
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -98,7 +103,7 @@ const Index = () => {
         ) : (
           <>
             {/* KPI Summary */}
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 col-span-1">
                 <CardContent className="p-3 text-center">
                   <IndianRupee className="h-4 w-4 text-destructive mx-auto mb-0.5" />
