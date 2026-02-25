@@ -16,6 +16,32 @@ function cleanPhone(phone: string): string {
   return cleaned;
 }
 
+async function safeJsonParse(response: Response): Promise<{ data: unknown; text: string }> {
+  const text = await response.text();
+  try {
+    return { data: JSON.parse(text), text };
+  } catch {
+    return { data: null, text };
+  }
+}
+
+async function watiPost(baseUrl: string, path: string, token: string, body: unknown): Promise<Response> {
+  return fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+async function watiGet(baseUrl: string, path: string, token: string): Promise<Response> {
+  return fetch(`${baseUrl}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -28,9 +54,7 @@ serve(async (req) => {
     const WATI_API_ENDPOINT = Deno.env.get("WATI_API_ENDPOINT");
     if (!WATI_API_ENDPOINT) throw new Error("WATI_API_ENDPOINT is not configured");
 
-    // Remove trailing slash
     const baseUrl = WATI_API_ENDPOINT.replace(/\/+$/, "");
-
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
@@ -40,25 +64,14 @@ serve(async (req) => {
       if (!phone || !message) throw new Error("Missing phone or message");
 
       const whatsappNumber = cleanPhone(phone);
+      const response = await watiPost(baseUrl, `/api/v1/sendSessionMessage/${whatsappNumber}`, WATI_API_TOKEN, { messageText: message });
+      const { data, text } = await safeJsonParse(response);
 
-      const response = await fetch(
-        `${baseUrl}/api/v1/sendSessionMessage/${whatsappNumber}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${WATI_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messageText: message }),
-        }
-      );
-
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`WATI API error [${response.status}]: ${JSON.stringify(data)}`);
+        throw new Error(`WATI API error [${response.status}]: ${text}`);
       }
 
-      return new Response(JSON.stringify({ success: true, data }), {
+      return new Response(JSON.stringify({ success: true, data: data || { status: response.status, raw: text } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
@@ -68,58 +81,36 @@ serve(async (req) => {
       if (!phone || !templateName) throw new Error("Missing phone or templateName");
 
       const whatsappNumber = cleanPhone(phone);
-
-      const response = await fetch(
-        `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${whatsappNumber}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${WATI_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            template_name: templateName,
-            broadcast_name: broadcastName || "payment_reminder",
-            parameters: parameters || [],
-          }),
-        }
+      const response = await watiPost(
+        baseUrl,
+        `/api/v1/sendTemplateMessage?whatsappNumber=${whatsappNumber}`,
+        WATI_API_TOKEN,
+        { template_name: templateName, broadcast_name: broadcastName || "payment_reminder", parameters: parameters || [] }
       );
+      const { data, text } = await safeJsonParse(response);
 
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`WATI API error [${response.status}]: ${JSON.stringify(data)}`);
+        throw new Error(`WATI API error [${response.status}]: ${text}`);
       }
 
-      return new Response(JSON.stringify({ success: true, data }), {
+      return new Response(JSON.stringify({ success: true, data: data || { status: response.status, raw: text } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
     } else if (action === "send-text-message") {
-      // Uses the interactive session-free text message endpoint
       const body = await req.json();
       const { phone, message } = body;
       if (!phone || !message) throw new Error("Missing phone or message");
 
       const whatsappNumber = cleanPhone(phone);
+      const response = await watiPost(baseUrl, `/api/v2/sendSessionMessage/${whatsappNumber}`, WATI_API_TOKEN, { messageText: message });
+      const { data, text } = await safeJsonParse(response);
 
-      const response = await fetch(
-        `${baseUrl}/api/v2/sendSessionMessage/${whatsappNumber}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${WATI_API_TOKEN}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ messageText: message }),
-        }
-      );
-
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`WATI API error [${response.status}]: ${JSON.stringify(data)}`);
+        throw new Error(`WATI API error [${response.status}]: ${text}`);
       }
 
-      return new Response(JSON.stringify({ success: true, data }), {
+      return new Response(JSON.stringify({ success: true, data: data || { status: response.status, raw: text } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
@@ -128,22 +119,14 @@ serve(async (req) => {
       if (!phone) throw new Error("Missing phone parameter");
 
       const whatsappNumber = cleanPhone(phone);
+      const response = await watiGet(baseUrl, `/api/v1/getMessages/${whatsappNumber}`, WATI_API_TOKEN);
+      const { data, text } = await safeJsonParse(response);
 
-      const response = await fetch(
-        `${baseUrl}/api/v1/getMessages/${whatsappNumber}`,
-        {
-          headers: {
-            Authorization: `Bearer ${WATI_API_TOKEN}`,
-          },
-        }
-      );
-
-      const data = await response.json();
       if (!response.ok) {
-        throw new Error(`WATI API error [${response.status}]: ${JSON.stringify(data)}`);
+        throw new Error(`WATI API error [${response.status}]: ${text}`);
       }
 
-      return new Response(JSON.stringify(data), {
+      return new Response(JSON.stringify(data || { raw: text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
@@ -152,18 +135,14 @@ serve(async (req) => {
       if (!phone) throw new Error("Missing phone parameter");
 
       const whatsappNumber = cleanPhone(phone);
-
-      const response = await fetch(
-        `${baseUrl}/api/v1/getContacts?pageSize=1&pageNumber=1&whatsappNumber=${whatsappNumber}`,
-        {
-          headers: {
-            Authorization: `Bearer ${WATI_API_TOKEN}`,
-          },
-        }
+      const response = await watiGet(
+        baseUrl,
+        `/api/v1/getContacts?pageSize=1&pageNumber=1&whatsappNumber=${whatsappNumber}`,
+        WATI_API_TOKEN
       );
+      const { data, text } = await safeJsonParse(response);
 
-      const data = await response.json();
-      return new Response(JSON.stringify(data), {
+      return new Response(JSON.stringify(data || { raw: text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
