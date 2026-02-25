@@ -125,6 +125,22 @@ export async function updateFollowUpStatus(customerName: string, createdAt: stri
   if (!response.ok) throw new Error(`Failed to update follow-up status: ${await response.text()}`);
 }
 
+export async function editFollowUp(params: {
+  customerName: string;
+  createdAt: string;
+  remarks: string;
+  nextFollowUpDate: string;
+  status: string;
+}): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=edit-followup`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error(`Failed to edit follow-up: ${await response.text()}`);
+}
+
 // ---- WhatsApp Log API ----
 
 export interface WhatsAppLogEntry {
