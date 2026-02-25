@@ -99,12 +99,12 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                 to={`/customer/${encodeURIComponent(cg.customerName)}`}
                 className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
               >
-                <div className="p-2 rounded-full bg-primary/10 shrink-0">
+                <div className="p-1.5 sm:p-2 rounded-full bg-primary/10 shrink-0">
                   <User className="h-4 w-4 text-primary" />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="text-xs sm:text-sm font-semibold group-hover:text-primary transition-colors break-words leading-snug">
                     {cg.customerName}
                   </p>
                   <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap">
@@ -112,7 +112,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                       <Phone className="h-3 w-3 shrink-0" />
                       {cg.mobileNo}
                     </span>
-                    <span className="hidden sm:inline">·</span>
+                    <span>·</span>
                     <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
                     <span className="hidden sm:inline">·</span>
                     <span className="hidden sm:inline">{collectionPct}% collected</span>
