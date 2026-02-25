@@ -171,3 +171,32 @@ export async function fetchWhatsAppLog(): Promise<WhatsAppLogEntry[]> {
     timestamp: row[2] || "",
   })).filter((e: WhatsAppLogEntry) => e.customerName);
 }
+
+// ---- WA Replies API (incoming messages from webhook) ----
+
+export interface WAReply {
+  phone: string;
+  contactName: string;
+  messageText: string;
+  messageType: string;
+  direction: string;
+  timestamp: string;
+  waId: string;
+}
+
+export async function fetchWAReplies(): Promise<WAReply[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-wa-replies`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch WA replies: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((row: string[]) => ({
+    phone: row[0] || "",
+    contactName: row[1] || "",
+    messageText: row[2] || "",
+    messageType: row[3] || "text",
+    direction: row[4] || "incoming",
+    timestamp: row[5] || "",
+    waId: row[6] || "",
+  })).filter((r: WAReply) => r.phone || r.contactName);
+}

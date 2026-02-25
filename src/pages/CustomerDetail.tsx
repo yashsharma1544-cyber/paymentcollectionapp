@@ -12,6 +12,7 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import { FollowUpList } from "@/components/FollowUpList";
+import { WhatsAppChatView } from "@/components/WhatsAppChatView";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
   CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock,
@@ -259,9 +260,14 @@ const CustomerDetail = () => {
               {followUpsLoading ? (
                 <Skeleton className="h-32 rounded-xl" />
               ) : (
-                <FollowUpList followUps={[...followUps].reverse()} />
+              <FollowUpList followUps={[...followUps].reverse()} />
               )}
             </div>
+
+            {/* WhatsApp Chat */}
+            {info?.mobileNo && (
+              <WhatsAppChatView phone={info.mobileNo} customerName={decoded} />
+            )}
 
             {/* Payment History */}
             <div>
