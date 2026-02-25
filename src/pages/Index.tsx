@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { StatsCards } from "@/components/StatsCards";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt } from "lucide-react";
+import { RefreshCw, Receipt, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
@@ -36,16 +37,24 @@ const Index = () => {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/payments">
+              <Button variant="outline" size="sm" className="gap-2">
+                <History className="h-4 w-4" />
+                Payments Log
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </header>
 

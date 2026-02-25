@@ -148,8 +148,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    } else if (action === "fetch-payments") {
+      const range = encodeURIComponent("Record Payments!A1:Z10000");
+      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}`;
+
+      const response = await fetch(sheetsUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Sheets API error: ${JSON.stringify(data)}`);
+      }
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     } else {
-      throw new Error("Invalid action. Use ?action=fetch or ?action=record");
+      throw new Error("Invalid action. Use ?action=fetch, ?action=record, or ?action=fetch-payments");
     }
   } catch (error: unknown) {
     console.error("Error:", error);
