@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PaymentDialog } from "@/components/PaymentDialog";
 import { Card } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { CreditCard, Search, ChevronRight, ChevronDown, User } from "lucide-react";
 
@@ -116,7 +117,13 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                     <User className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{cg.customerName}</p>
+                    <Link
+                      to={`/customer/${encodeURIComponent(cg.customerName)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-medium text-sm truncate block text-primary hover:underline"
+                    >
+                      {cg.customerName}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""} · {cg.mobileNo}
                     </p>
