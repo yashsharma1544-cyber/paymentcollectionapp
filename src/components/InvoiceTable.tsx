@@ -1,16 +1,11 @@
 import { useState, useMemo } from "react";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StatusBadge } from "@/components/StatusBadge";
 import { PaymentDialog } from "@/components/PaymentDialog";
-import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
-import { CreditCard, Search, ChevronRight, ChevronDown, User } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone } from "lucide-react";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -22,7 +17,9 @@ interface CustomerGroup {
   mobileNo: string;
   totalOutstanding: number;
   totalBill: number;
+  totalPaid: number;
   invoiceCount: number;
+  maxOverdueDays: number;
   invoices: Invoice[];
 }
 
@@ -38,7 +35,9 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
       mobileNo: invs[0].mobileNo,
       totalOutstanding: invs.reduce((s, i) => s + i.outstandingAmount, 0),
       totalBill: invs.reduce((s, i) => s + i.billAmount, 0),
+      totalPaid: invs.reduce((s, i) => s + i.paidAmount, 0),
       invoiceCount: invs.length,
+      maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.dueDate)), 0),
       invoices: invs,
     }))
     .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
@@ -48,7 +47,6 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
   const [search, setSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     if (!search) return invoices;
@@ -62,16 +60,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
   }, [invoices, search]);
 
   const customerGroups = useMemo(() => groupByCustomer(filtered), [filtered]);
-
   const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
-
-  const toggleCustomer = (name: string) => {
-    setExpandedCustomers((prev) => {
-      const next = new Set(prev);
-      next.has(name) ? next.delete(name) : next.add(name);
-      return next;
-    });
-  };
 
   return (
     <>
@@ -89,7 +78,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
           <p className="text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
           </p>
-          <p className="text-sm font-bold text-destructive font-['Space_Grotesk']">
+          <p className="text-sm font-bold text-destructive">
             Outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
           </p>
         </div>
@@ -100,110 +89,52 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
           No invoices found
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {customerGroups.map((cg) => {
-            const isExpanded = expandedCustomers.has(cg.customerName);
+            const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             return (
-              <Card key={cg.customerName} className="border shadow-sm overflow-hidden">
-                <button
-                  onClick={() => toggleCustomer(cg.customerName)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-left"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                  )}
-                  <div className="p-1.5 rounded-lg bg-primary/10">
-                    <User className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <Link
-                      to={`/customer/${encodeURIComponent(cg.customerName)}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="font-medium text-sm truncate block text-primary hover:underline"
-                    >
-                      {cg.customerName}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                      {cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""} · {cg.mobileNo}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-destructive">
-                      ₹{cg.totalOutstanding.toLocaleString("en-IN")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      of ₹{cg.totalBill.toLocaleString("en-IN")}
-                    </p>
-                  </div>
-                </button>
+              <Link
+                key={cg.customerName}
+                to={`/customer/${encodeURIComponent(cg.customerName)}`}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
+              >
+                <div className="p-2 rounded-full bg-primary/10 shrink-0">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
 
-                {isExpanded && (
-                  <div className="border-t overflow-x-auto bg-muted/10">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30">
-                          <TableHead className="text-xs font-semibold">Bill No</TableHead>
-                          <TableHead className="text-xs font-semibold">Date</TableHead>
-                          <TableHead className="text-xs font-semibold text-right">Bill Amt</TableHead>
-                          <TableHead className="text-xs font-semibold text-right">Paid</TableHead>
-                          <TableHead className="text-xs font-semibold text-right">Outstanding</TableHead>
-                          <TableHead className="text-xs font-semibold">Due</TableHead>
-                          <TableHead className="text-xs font-semibold text-center">Overdue</TableHead>
-                          <TableHead className="text-xs font-semibold">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {cg.invoices.map((inv) => (
-                          <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
-                            <TableCell className="font-mono text-xs">{inv.billNo}</TableCell>
-                            <TableCell className="text-xs">{inv.billDate}</TableCell>
-                            <TableCell className="text-right text-xs font-medium">
-                              ₹{inv.billAmount.toLocaleString("en-IN")}
-                            </TableCell>
-                            <TableCell className="text-right text-xs text-success font-medium">
-                              ₹{inv.paidAmount.toLocaleString("en-IN")}
-                            </TableCell>
-                            <TableCell className="text-right text-xs text-destructive font-semibold">
-                              ₹{inv.outstandingAmount.toLocaleString("en-IN")}
-                            </TableCell>
-                            <TableCell className="text-xs">{inv.dueDate}</TableCell>
-                            <TableCell className="text-center">
-                              {inv.outstandingAmount > 0 ? (
-                                <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
-                                  {formatOverdue(getOverdueDays(inv.dueDate))}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <StatusBadge status={inv.paymentStatus} />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {inv.outstandingAmount > 0 && (
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedInvoice(inv);
-                                    setDialogOpen(true);
-                                  }}
-                                  className="gap-1.5 h-7 text-xs"
-                                >
-                                  <CreditCard className="h-3 w-3" />
-                                  Collect
-                                </Button>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+                    {cg.customerName}
+                  </p>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-0.5">
+                      <Phone className="h-3 w-3" />
+                      {cg.mobileNo}
+                    </span>
+                    <span>·</span>
+                    <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
+                    <span>·</span>
+                    <span>{collectionPct}% collected</span>
                   </div>
+                </div>
+
+                {cg.maxOverdueDays > 0 && (
+                  <span className="text-[11px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full shrink-0">
+                    {formatOverdue(cg.maxOverdueDays)} overdue
+                  </span>
                 )}
-              </Card>
+
+                <div className="text-right shrink-0 min-w-[90px]">
+                  <p className="text-sm font-bold text-destructive">
+                    ₹{cg.totalOutstanding.toLocaleString("en-IN")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    of ₹{cg.totalBill.toLocaleString("en-IN")}
+                  </p>
+                </div>
+
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+              </Link>
             );
           })}
         </div>
