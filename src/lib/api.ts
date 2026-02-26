@@ -109,8 +109,10 @@ export async function fetchFollowUps(): Promise<FollowUp[]> {
   const response = await fetch(`${baseUrl}?action=fetch-followups`, { headers });
   if (!response.ok) throw new Error(`Failed to fetch follow-ups: ${await response.text()}`);
   const data = await response.json();
-  if (!data.values || data.values.length < 2) return [];
-  return data.values.slice(1).map((row: string[]) => ({
+  if (!data.values || data.values.length < 1) return [];
+  // Check if first row is a header row
+  const startIdx = (data.values[0]?.[0] === "Customer Name" || data.values[0]?.[0] === "customerName") ? 1 : 0;
+  return data.values.slice(startIdx).map((row: string[]) => ({
     customerName: row[0] || "",
     followUpDate: row[1] || "",
     followUpTime: row[2] || "",
