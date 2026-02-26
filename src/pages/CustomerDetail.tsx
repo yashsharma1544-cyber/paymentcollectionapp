@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, type RecordedPayment, type FollowUp } from "@/lib/api";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,8 +15,10 @@ import { FollowUpList } from "@/components/FollowUpList";
 import { WhatsAppChatView } from "@/components/WhatsAppChatView";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2,
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
@@ -56,6 +58,25 @@ const CustomerDetail = () => {
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
   const [sendingWati, setSendingWati] = useState(false);
+  const [editPaymentRec, setEditPaymentRec] = useState<RecordedPayment | null>(null);
+  const [editPaymentOpen, setEditPaymentOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<RecordedPayment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePayment = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
+      toast({ title: "✅ Payment deleted successfully" });
+      setDeleteTarget(null);
+      refetch();
+    } catch (e) {
+      toast({ title: "Failed to delete", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const toggleBillExpand = (billNo: string) => {
     setExpandedBills(prev => {
@@ -359,9 +380,10 @@ const CustomerDetail = () => {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
-                          <TableHead className="text-xs font-semibold">Bill No</TableHead>
+                         <TableHead className="text-xs font-semibold">Bill No</TableHead>
                           <TableHead className="text-xs font-semibold text-right">Amount Paid</TableHead>
                           <TableHead className="text-xs font-semibold">Date & Time</TableHead>
+                          <TableHead className="text-xs font-semibold text-center">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -370,6 +392,16 @@ const CustomerDetail = () => {
                             <TableCell className="font-mono text-xs">{p.billNo}</TableCell>
                             <TableCell className="text-right text-xs text-success font-semibold">₹{p.paidAmount.toLocaleString("en-IN")}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{p.timestamp}</TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-0.5">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditPaymentRec(p); setEditPaymentOpen(true); }}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}>
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -385,6 +417,23 @@ const CustomerDetail = () => {
       <PaymentDialog invoice={selectedInvoice} open={dialogOpen} onClose={() => setDialogOpen(false)} onSuccess={() => refetch()} />
       <LumpsumPaymentDialog invoices={invoices} customerName={decoded} open={lumpsumOpen} onClose={() => setLumpsumOpen(false)} onSuccess={() => refetch()} />
       <FollowUpDialog customerName={decoded} open={followUpOpen} onClose={() => setFollowUpOpen(false)} onSuccess={() => refetchFollowUps()} />
+      <EditPaymentDialog payment={editPaymentRec} open={editPaymentOpen} onOpenChange={setEditPaymentOpen} onSuccess={() => refetch()} />
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the payment of ₹{deleteTarget?.paidAmount.toLocaleString("en-IN")} for bill {deleteTarget?.billNo}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeletePayment} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
