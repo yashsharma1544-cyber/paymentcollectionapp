@@ -143,7 +143,7 @@ const BeatDetail = () => {
               </Card>
             </div>
 
-            <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} />
+            <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle={`Beat: ${decodedBeat}`} />
           </>
         )}
       </main>
