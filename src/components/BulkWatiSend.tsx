@@ -88,8 +88,7 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
       );
 
       try {
-        const msg = buildReminderMessage(entry.customer.customerName, entry.customer.invoices);
-        const result = await sendViaWati(entry.customer.mobileNo, msg);
+        const result = await sendViaWati(entry.customer.mobileNo, entry.customer.customerName, entry.customer.invoices);
 
         if (result.success) {
           await logWhatsApp(entry.customer.customerName, entry.customer.mobileNo);

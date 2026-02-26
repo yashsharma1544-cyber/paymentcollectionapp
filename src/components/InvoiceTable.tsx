@@ -191,7 +191,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                         const msg = buildReminderMessage(cg.customerName, cg.invoices);
                         setSendingWati(cg.customerName);
                         try {
-                          const result = await sendViaWati(cg.mobileNo, msg);
+                          const result = await sendViaWati(cg.mobileNo, cg.customerName, cg.invoices);
                           if (result.success) {
                             await logWhatsApp(cg.customerName, cg.mobileNo);
                             toast({ title: "✅ WhatsApp sent via WATI", description: cg.customerName });
