@@ -20,7 +20,7 @@ import {
 import { useMemo, useState } from "react";
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
-import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
+import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
 
 const CustomerDetail = () => {
@@ -55,6 +55,7 @@ const CustomerDetail = () => {
   const [lumpsumOpen, setLumpsumOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+  const [sendingWati, setSendingWati] = useState(false);
 
   const toggleBillExpand = (billNo: string) => {
     setExpandedBills(prev => {
@@ -87,14 +88,23 @@ const CustomerDetail = () => {
   const info = invoices[0];
 
   const handleWhatsApp = async () => {
+    if (!info?.mobileNo || kpis.totalOutstanding === 0) return;
     const msg = buildReminderMessage(decoded, invoices);
-    if (msg && info?.mobileNo) {
-      openWhatsApp(info.mobileNo, msg);
-      try {
+    setSendingWati(true);
+    try {
+      const result = await sendViaWati(info.mobileNo, decoded, invoices);
+      if (result.success) {
         await logWhatsApp(decoded, info.mobileNo);
-      } catch (e) {
-        // silent fail for logging
+        toast({ title: "✅ WhatsApp sent via WATI", description: decoded });
+      } else {
+        openWhatsApp(info.mobileNo, msg);
+        toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
       }
+    } catch {
+      openWhatsApp(info.mobileNo, msg);
+      toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
+    } finally {
+      setSendingWati(false);
     }
   };
 
@@ -141,10 +151,11 @@ const CustomerDetail = () => {
 
           <div className="flex items-center gap-2 pl-10 flex-wrap">
             <Button size="sm" variant="outline" onClick={handleWhatsApp}
-              disabled={!info?.mobileNo || kpis.totalOutstanding === 0}
+              disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
               className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none"
             >
-              <MessageCircle className="h-3.5 w-3.5" />WhatsApp
+              {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
+              {sendingWati ? "Sending..." : "WhatsApp"}
             </Button>
             <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
               <Wallet className="h-3.5 w-3.5" />Lumpsum
@@ -217,6 +228,22 @@ const CustomerDetail = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Follow-ups Section */}
+            {(followUps.length > 0 || followUpsLoading) && (
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  Follow-ups
+                  <span className="text-xs font-normal normal-case">— {followUps.length} record{followUps.length !== 1 ? "s" : ""}</span>
+                </h2>
+                {followUpsLoading ? (
+                  <Skeleton className="h-32 rounded-xl" />
+                ) : (
+                  <FollowUpList followUps={[...followUps].reverse()} />
+                )}
+              </div>
+            )}
 
             {/* Invoices Table */}
             <div>
@@ -304,20 +331,6 @@ const CustomerDetail = () => {
                   </Table>
                 </div>
               </div>
-            </div>
-
-            {/* Follow-ups Section */}
-            <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                <CalendarClock className="h-4 w-4" />
-                Follow-ups
-                <span className="text-xs font-normal normal-case">— {followUps.length} record{followUps.length !== 1 ? "s" : ""}</span>
-              </h2>
-              {followUpsLoading ? (
-                <Skeleton className="h-32 rounded-xl" />
-              ) : (
-              <FollowUpList followUps={[...followUps].reverse()} />
-              )}
             </div>
 
             {/* WhatsApp Chat */}
