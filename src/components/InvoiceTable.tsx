@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
+import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
@@ -42,9 +43,15 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
       totalPaid: invs.reduce((s, i) => s + i.paidAmount, 0),
       invoiceCount: invs.length,
       maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.dueDate)), 0),
-      invoices: invs,
+      invoices: sortInvoicesUnpaidFirst(invs),
     }))
-    .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+    .sort((a, b) => {
+      // Unpaid customers first, paid customers last
+      const aPaid = a.totalOutstanding === 0 ? 1 : 0;
+      const bPaid = b.totalOutstanding === 0 ? 1 : 0;
+      if (aPaid !== bPaid) return aPaid - bPaid;
+      return b.totalOutstanding - a.totalOutstanding;
+    });
 }
 
 export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) {

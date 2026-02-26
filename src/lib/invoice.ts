@@ -13,6 +13,19 @@ export interface Invoice {
   paymentStatus: string;
 }
 
+/** Sort invoices: unpaid first (ascending by billNo, then billDate), paid last */
+export function sortInvoicesUnpaidFirst(invoices: Invoice[]): Invoice[] {
+  return [...invoices].sort((a, b) => {
+    const aPaid = a.outstandingAmount === 0 ? 1 : 0;
+    const bPaid = b.outstandingAmount === 0 ? 1 : 0;
+    if (aPaid !== bPaid) return aPaid - bPaid;
+    // Both same paid status — sort by billNo asc, then billDate asc
+    const billCmp = a.billNo.localeCompare(b.billNo, undefined, { numeric: true });
+    if (billCmp !== 0) return billCmp;
+    return a.billDate.localeCompare(b.billDate);
+  });
+}
+
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
   if (!data.values || data.values.length < 2) return [];
 

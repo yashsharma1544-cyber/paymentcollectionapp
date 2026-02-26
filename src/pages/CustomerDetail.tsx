@@ -18,7 +18,7 @@ import {
   CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import type { Invoice } from "@/lib/invoice";
+import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +42,7 @@ const CustomerDetail = () => {
     queryKey: ["whatsapp-log"], queryFn: fetchWhatsAppLog,
   });
 
-  const invoices = useMemo(() => allInvoices.filter((inv) => inv.customerName === decoded), [allInvoices, decoded]);
+  const invoices = useMemo(() => sortInvoicesUnpaidFirst(allInvoices.filter((inv) => inv.customerName === decoded)), [allInvoices, decoded]);
   const payments = useMemo(() => allPayments.filter((p) => p.customerName === decoded), [allPayments, decoded]);
   const followUps = useMemo(() => allFollowUps.filter((f) => f.customerName === decoded), [allFollowUps, decoded]);
   const lastWA = useMemo(() => {

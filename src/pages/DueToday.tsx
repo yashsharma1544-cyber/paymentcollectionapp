@@ -10,7 +10,7 @@ import {
   ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle,
   CalendarClock, MapPin, MessageCircle,
 } from "lucide-react";
-import type { Invoice } from "@/lib/invoice";
+import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 import { toast } from "sonner";
@@ -135,7 +135,7 @@ function InvoiceList({
   onPaymentSuccess: () => void;
   filterParam?: string;
 }) {
-  const beatGroups = useMemo(() => groupByBeat(invoices), [invoices]);
+  const beatGroups = useMemo(() => groupByBeat(sortInvoicesUnpaidFirst(invoices)), [invoices]);
 
   const customerGroups = useMemo(() => {
     const map = new Map<string, { name: string; phone: string; invoices: Invoice[] }>();
