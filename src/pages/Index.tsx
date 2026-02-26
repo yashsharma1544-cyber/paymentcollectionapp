@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchFollowUps, type FollowUp } from "@/lib/api";
+import { fetchInvoices } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList } from "lucide-react";
@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
-import { FollowUpList } from "@/components/FollowUpList";
+
 import { BulkWatiSend } from "@/components/BulkWatiSend";
 
 const Index = () => {
@@ -24,30 +24,7 @@ const Index = () => {
     queryFn: fetchInvoices,
   });
 
-  const { data: allFollowUps = [] } = useQuery({
-    queryKey: ["followups"],
-    queryFn: fetchFollowUps,
-  });
 
-  const todayFollowUps = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return allFollowUps.filter((f) => {
-      if (f.status !== "Pending") return false;
-      const dateStr = f.nextFollowUpDate;
-      if (!dateStr) return false;
-      let d: Date | null = null;
-      if (dateStr.includes("-") && dateStr.length === 10) {
-        d = new Date(dateStr + "T00:00:00");
-      } else {
-        const parts = dateStr.split("/");
-        if (parts.length === 3) d = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-      }
-      if (!d || isNaN(d.getTime())) return false;
-      d.setHours(0, 0, 0, 0);
-      return d <= now;
-    });
-  }, [allFollowUps]);
 
   const [globalSearch, setGlobalSearch] = useState("");
 
@@ -187,21 +164,6 @@ const Index = () => {
               </Card>
             </div>
 
-            {/* Follow-ups Due Today */}
-            {todayFollowUps.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <CalendarClock className="h-4 w-4 text-primary" />
-                    Follow-ups Due ({todayFollowUps.length})
-                  </h2>
-                  <Link to="/crm">
-                    <Button variant="ghost" size="sm" className="text-xs h-7">View All</Button>
-                  </Link>
-                </div>
-                <FollowUpList followUps={todayFollowUps} showCustomerName />
-              </div>
-            )}
 
             {/* Global Search */}
             <div className="relative max-w-md mx-auto">
