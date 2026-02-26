@@ -22,12 +22,12 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return parseSheetData(await response.json());
 }
 
-export async function recordPayment(billNo: string, customerName: string, paidAmount: number): Promise<void> {
+export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ billNo, customerName, paidAmount }),
+    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate }),
   });
   if (!response.ok) throw new Error(`Failed to record payment: ${await response.text()}`);
 }
@@ -36,14 +36,15 @@ export interface PaymentAllocation {
   billNo: string;
   customerName: string;
   paidAmount: number;
+  paymentDate?: string;
 }
 
-export async function recordBatchPayments(allocations: PaymentAllocation[]): Promise<void> {
+export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record-batch`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ allocations }),
+    body: JSON.stringify({ allocations, paymentDate }),
   });
   if (!response.ok) throw new Error(`Failed to record batch payments: ${await response.text()}`);
 }
