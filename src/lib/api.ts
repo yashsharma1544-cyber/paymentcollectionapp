@@ -22,12 +22,12 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return parseSheetData(await response.json());
 }
 
-export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number): Promise<void> {
+export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount }),
+    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes }),
   });
   if (!response.ok) throw new Error(`Failed to record payment: ${await response.text()}`);
 }
@@ -39,12 +39,12 @@ export interface PaymentAllocation {
   paymentDate?: string;
 }
 
-export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number): Promise<void> {
+export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number, notes?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record-batch`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount }),
+    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount, notes }),
   });
   if (!response.ok) throw new Error(`Failed to record batch payments: ${await response.text()}`);
 }
@@ -57,6 +57,7 @@ export interface RecordedPayment {
   paymentDate: string;
   paymentMode: string;
   discount: number;
+  notes: string;
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -73,6 +74,7 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
     paymentDate: row[4] || "",
     paymentMode: row[5] || "",
     discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
+    notes: row[7] || "",
   })).filter((p: RecordedPayment) => p.billNo);
 }
 

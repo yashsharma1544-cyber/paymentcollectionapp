@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Invoice } from "@/lib/invoice";
 import { recordPayment } from "@/lib/api";
@@ -28,6 +29,7 @@ interface PaymentDialogProps {
 export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDialogProps) {
   const [amount, setAmount] = useState("");
   const [discount, setDiscount] = useState("");
+  const [notes, setNotes] = useState("");
   const [paymentMode, setPaymentMode] = useState<"Cash" | "Online">("Cash");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
@@ -54,10 +56,11 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
 
     setLoading(true);
     try {
-      await recordPayment(invoice.billNo, invoice.customerName, parsedAmount, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount);
+      await recordPayment(invoice.billNo, invoice.customerName, parsedAmount, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined);
       toast({ title: "Payment Recorded", description: `₹${parsedAmount.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} for ${invoice.customerName}` });
       setAmount("");
       setDiscount("");
+      setNotes("");
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -170,6 +173,17 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
               </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (optional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Add any notes about this payment..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[60px] resize-none"
+            />
+          </div>
 
           <div className="space-y-2">
             <Label>Payment Date</Label>

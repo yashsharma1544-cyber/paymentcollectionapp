@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { Invoice } from "@/lib/invoice";
 import { recordBatchPayments, type PaymentAllocation } from "@/lib/api";
@@ -35,6 +36,7 @@ export function LumpsumPaymentDialog({
   const [allocations, setAllocations] = useState<Record<string, string>>({});
   const [paymentMode, setPaymentMode] = useState<"Cash" | "Online">("Cash");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -115,13 +117,14 @@ export function LumpsumPaymentDialog({
 
     setLoading(true);
     try {
-      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount);
+      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined);
       toast({
         title: "Lumpsum Payment Recorded",
         description: `₹${parsedLumpsum.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} across ${paymentAllocations.length} invoice(s)`,
       });
       setLumpsumAmount("");
       setDiscount("");
+      setNotes("");
       setAllocations({});
       onSuccess();
       onClose();
@@ -135,6 +138,7 @@ export function LumpsumPaymentDialog({
   const handleClose = () => {
     setLumpsumAmount("");
     setDiscount("");
+    setNotes("");
     setAllocations({});
     onClose();
   };
@@ -231,6 +235,17 @@ export function LumpsumPaymentDialog({
               Auto Allocate
             </Button>
           )}
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <Label>Notes (optional)</Label>
+            <Textarea
+              placeholder="Add any notes about this payment..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="min-h-[60px] resize-none"
+            />
+          </div>
 
           {/* Payment Date */}
           <div className="space-y-2">
