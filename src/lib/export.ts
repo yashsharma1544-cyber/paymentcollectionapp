@@ -59,7 +59,7 @@ export function exportToPDF(invoices: Invoice[], title: string) {
   const totalOutstanding = groups.reduce((s, g) => s + g.totalOutstanding, 0);
   const totalInvoices = groups.reduce((s, g) => s + g.invoices.length, 0);
 
-  const doc = new jsPDF({ orientation: "portrait" });
+  const doc = new jsPDF({ orientation: "landscape" });
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Title - centered
@@ -98,14 +98,14 @@ export function exportToPDF(invoices: Invoice[], title: string) {
     autoTable(doc, {
       startY,
       head: [[
-        { content: `${group.customerName}`, colSpan: 3, styles: { halign: "left" } },
-        { content: `Mobile: ${group.mobileNo}`, colSpan: 1, styles: { halign: "center" } },
-        { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, colSpan: 2, styles: { halign: "right" } },
+        { content: group.customerName, colSpan: 2, styles: { halign: "left", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
+        { content: `Mobile: ${group.mobileNo}`, colSpan: 2, styles: { halign: "center", fontSize: 10 } },
+        { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, colSpan: 2, styles: { halign: "right", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
       ]],
       body: [],
       theme: "plain",
-      styles: { fontSize: 10, cellPadding: 3, textColor: [0, 0, 0], fontStyle: "bold" },
-      headStyles: { fillColor: [230, 235, 245], lineWidth: 0.3, lineColor: [180, 180, 180] },
+      styles: { fontSize: 11, cellPadding: 4, textColor: [0, 0, 0], fontStyle: "bold", overflow: "visible" as any },
+      headStyles: { fillColor: [230, 235, 245], lineWidth: 0.3, lineColor: [180, 180, 180], minCellHeight: 10 },
       margin: { left: 14, right: 14 },
     });
 
