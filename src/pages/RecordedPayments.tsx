@@ -16,8 +16,34 @@ import { Link } from "react-router-dom";
 
 function parseDate(timestamp: string): Date | null {
   if (!timestamp) return null;
-  const d = new Date(timestamp);
-  return isNaN(d.getTime()) ? null : d;
+
+  const direct = new Date(timestamp);
+  if (!isNaN(direct.getTime())) return direct;
+
+  const normalized = timestamp.trim();
+  const match = normalized.match(
+    /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})(?:[\s,]+(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?\s*(AM|PM|am|pm)?)?$/,
+  );
+
+  if (!match) return null;
+
+  const [, dayRaw, monthRaw, yearRaw, hourRaw = "0", minuteRaw = "0", secondRaw = "0", meridiemRaw] = match;
+  const day = Number(dayRaw);
+  const month = Number(monthRaw) - 1;
+  const year = yearRaw.length === 2 ? 2000 + Number(yearRaw) : Number(yearRaw);
+
+  let hour = Number(hourRaw);
+  const minute = Number(minuteRaw);
+  const second = Number(secondRaw);
+
+  if (meridiemRaw) {
+    const meridiem = meridiemRaw.toLowerCase();
+    if (meridiem === "pm" && hour < 12) hour += 12;
+    if (meridiem === "am" && hour === 12) hour = 0;
+  }
+
+  const parsed = new Date(year, month, day, hour, minute, second);
+  return isNaN(parsed.getTime()) ? null : parsed;
 }
 
 const RecordedPayments = () => {
