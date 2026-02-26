@@ -85,19 +85,30 @@ serve(async (req) => {
       if (!phone || !templateName) throw new Error("Missing phone or templateName");
 
       const whatsappNumber = cleanPhone(phone);
+      const requestBody = { template_name: templateName, broadcast_name: broadcastName || "payment_reminder", parameters: parameters || [] };
+      console.log("WATI template request:", JSON.stringify({ whatsappNumber, url: `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${whatsappNumber}`, body: requestBody }));
+      
       const response = await watiPost(
         baseUrl,
         `/api/v1/sendTemplateMessage?whatsappNumber=${whatsappNumber}`,
         WATI_API_TOKEN,
-        { template_name: templateName, broadcast_name: broadcastName || "payment_reminder", parameters: parameters || [] }
+        requestBody
       );
       const { data, text } = await safeJsonParse(response);
+      console.log("WATI template response:", response.status, text);
 
       if (!response.ok) {
         throw new Error(`WATI API error [${response.status}]: ${text}`);
       }
 
       return new Response(JSON.stringify({ success: true, data: data || { status: response.status, raw: text } }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "list-templates") {
+      const response = await watiGet(baseUrl, `/api/v1/getMessageTemplates`, WATI_API_TOKEN);
+      const { data, text } = await safeJsonParse(response);
+      return new Response(JSON.stringify(data || { raw: text }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
