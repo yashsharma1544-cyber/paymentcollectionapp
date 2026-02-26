@@ -54,6 +54,7 @@ export interface RecordedPayment {
   customerName: string;
   paidAmount: number;
   timestamp: string;
+  paymentDate: string;
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -67,6 +68,7 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
     customerName: row[1] || "",
     paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
     timestamp: row[3] || "",
+    paymentDate: row[4] || "",
   })).filter((p: RecordedPayment) => p.billNo);
 }
 
