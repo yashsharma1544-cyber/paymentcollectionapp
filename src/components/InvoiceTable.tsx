@@ -143,15 +143,15 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                     <div className="p-1.5 rounded-full bg-primary/10 shrink-0 mt-0.5">
                       <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
-                    <p className="text-sm font-semibold group-hover:text-primary transition-colors leading-snug break-words">
+                    <p className="text-base font-semibold group-hover:text-primary transition-colors leading-snug break-words">
                       {cg.customerName}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-destructive">
+                    <p className="text-base font-extrabold text-destructive">
                       ₹{cg.totalOutstanding.toLocaleString("en-IN")}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       of ₹{cg.totalBill.toLocaleString("en-IN")}
                     </p>
                   </div>
@@ -159,7 +159,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
 
                 {/* Bottom row: meta info */}
                 <div className="flex items-center gap-2 px-3 pb-2.5 pt-1.5 sm:px-4 sm:pb-3">
-                  <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap flex-1">
+                  <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-muted-foreground flex-wrap flex-1">
                     <span className="flex items-center gap-0.5">
                       <Phone className="h-3 w-3 shrink-0" />
                       {cg.mobileNo}
