@@ -275,10 +275,17 @@ serve(async (req) => {
       });
 
     } else if (action === "fetch-wa-replies") {
-      const data = await fetchSheet(accessToken, "WA Replies!A1:Z10000");
-      return new Response(JSON.stringify(data), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      try {
+        const data = await fetchSheet(accessToken, "WA Replies!A1:Z10000");
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        // Sheet may not exist yet — return empty
+        return new Response(JSON.stringify({ values: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
     } else {
       throw new Error("Invalid action");
