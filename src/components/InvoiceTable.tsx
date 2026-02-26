@@ -126,140 +126,115 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
           No invoices found
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {customerGroups.map((cg) => {
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             const lastWA = lastWhatsAppMap.get(cg.customerName);
             const followUp = latestFollowUpMap.get(cg.customerName);
-            const isPaid = cg.totalOutstanding === 0;
             return (
               <Link
                 key={cg.customerName}
                 to={`/customer/${encodeURIComponent(cg.customerName)}`}
-                className="block rounded-xl border bg-card hover:shadow-md hover:border-primary/30 transition-all duration-200 group overflow-hidden"
+                className="block rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
               >
-                {/* Colored top accent bar */}
-                <div className={`h-1 w-full ${isPaid ? 'bg-success' : cg.maxOverdueDays > 0 ? 'bg-destructive' : 'bg-primary'}`} />
-
-                <div className="p-3 sm:p-4 space-y-2.5">
-                  {/* Header: Name + Arrow */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className={`p-2 rounded-lg shrink-0 ${isPaid ? 'bg-success/10' : 'bg-primary/10'}`}>
-                        <User className={`h-4 w-4 ${isPaid ? 'text-success' : 'text-primary'}`} />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold group-hover:text-primary transition-colors leading-snug break-words">
-                          {cg.customerName}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Phone className="h-2.5 w-2.5" />
-                          {cg.mobileNo}
-                        </p>
-                      </div>
+                {/* Top row: name + outstanding */}
+                <div className="flex items-start justify-between gap-2 px-3 pt-2.5 sm:px-4 sm:pt-3">
+                  <div className="flex items-start gap-2 min-w-0 flex-1">
+                    <div className="p-1.5 rounded-full bg-primary/10 shrink-0 mt-0.5">
+                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-1" />
+                    <p className="text-sm font-semibold group-hover:text-primary transition-colors leading-snug break-words">
+                      {cg.customerName}
+                    </p>
                   </div>
-
-                  {/* Outstanding amount */}
-                  <div className="flex items-end justify-between gap-2">
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Outstanding</p>
-                      <p className={`text-lg font-black leading-tight ${isPaid ? 'text-success' : 'text-destructive'}`}>
-                        {isPaid ? '✓ Paid' : `₹${cg.totalOutstanding.toLocaleString("en-IN")}`}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground">of ₹{cg.totalBill.toLocaleString("en-IN")}</p>
-                    </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-destructive">
+                      ₹{cg.totalOutstanding.toLocaleString("en-IN")}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      of ₹{cg.totalBill.toLocaleString("en-IN")}
+                    </p>
                   </div>
+                </div>
 
-                  {/* Progress bar */}
-                  <div className="space-y-1">
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${isPaid ? 'bg-success' : 'bg-primary'}`}
-                        style={{ width: `${collectionPct}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground text-right">{collectionPct}% collected</p>
-                  </div>
-
-                  {/* Tags row */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                      {cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}
+                {/* Bottom row: meta info */}
+                <div className="flex items-center gap-2 px-3 pb-2.5 pt-1.5 sm:px-4 sm:pb-3">
+                  <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-muted-foreground flex-wrap flex-1">
+                    <span className="flex items-center gap-0.5">
+                      <Phone className="h-3 w-3 shrink-0" />
+                      {cg.mobileNo}
                     </span>
+                    <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
+                    <span>{collectionPct}% collected</span>
                     {cg.maxOverdueDays > 0 && (
-                      <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
                         {formatOverdue(cg.maxOverdueDays)} overdue
                       </span>
                     )}
                     {lastWA ? (
-                      <span className="flex items-center gap-0.5 text-[10px] text-green-600 bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded-full">
-                        <MessageCircle className="h-2.5 w-2.5" />
+                      <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+                        <MessageCircle className="h-3 w-3" />
                         {lastWA.timestamp}
                       </span>
                     ) : (
-                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60 bg-muted px-2 py-0.5 rounded-full">
-                        <MessageCircle className="h-2.5 w-2.5" />
+                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                        <MessageCircle className="h-3 w-3" />
                         No WA
                       </span>
                     )}
                   </div>
 
-                  {/* Follow-up & WhatsApp action */}
-                  <div className="flex items-center justify-between pt-1.5 border-t border-border/50">
-                    {followUp ? (
-                      <div className="flex items-center gap-1.5 text-[10px] min-w-0 flex-1">
-                        <CalendarClock className="h-3 w-3 text-primary shrink-0" />
-                        <span className="text-primary font-medium truncate">
-                          {followUp.nextFollowUpDate || followUp.followUpDate}
-                        </span>
-                        {followUp.remarks && (
-                          <span className="text-muted-foreground truncate">— {followUp.remarks}</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-[10px] text-muted-foreground/40">No follow-up</span>
-                    )}
-
-                    {cg.totalOutstanding > 0 && cg.mobileNo && (
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const msg = buildReminderMessage(cg.customerName, cg.invoices);
-                          setSendingWati(cg.customerName);
-                          try {
-                            const result = await sendViaWati(cg.mobileNo, cg.customerName, cg.invoices);
-                            if (result.success) {
-                              await logWhatsApp(cg.customerName, cg.mobileNo);
-                              toast({ title: "✅ WhatsApp sent via WATI", description: cg.customerName });
-                            } else {
-                              openWhatsApp(cg.mobileNo, msg);
-                              toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
-                            }
-                          } catch {
+                  {cg.totalOutstanding > 0 && cg.mobileNo && (
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const msg = buildReminderMessage(cg.customerName, cg.invoices);
+                        setSendingWati(cg.customerName);
+                        try {
+                          const result = await sendViaWati(cg.mobileNo, cg.customerName, cg.invoices);
+                          if (result.success) {
+                            await logWhatsApp(cg.customerName, cg.mobileNo);
+                            toast({ title: "✅ WhatsApp sent via WATI", description: cg.customerName });
+                          } else {
+                            // Fallback to wa.me link
                             openWhatsApp(cg.mobileNo, msg);
-                            toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
-                          } finally {
-                            setSendingWati(null);
+                            toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
                           }
-                        }}
-                        disabled={sendingWati === cg.customerName}
-                        className="p-1.5 rounded-full text-green-600 hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors shrink-0 disabled:opacity-50"
-                        title="Send WhatsApp via WATI"
-                      >
-                        {sendingWati === cg.customerName ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <MessageCircle className="h-4 w-4" />
-                        )}
-                      </button>
+                        } catch {
+                          openWhatsApp(cg.mobileNo, msg);
+                          toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
+                        } finally {
+                          setSendingWati(null);
+                        }
+                      }}
+                      disabled={sendingWati === cg.customerName}
+                      className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50"
+                      title="Send WhatsApp via WATI"
+                    >
+                      {sendingWati === cg.customerName ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+                </div>
+
+                {/* Follow-up info */}
+                {followUp && (
+                  <div className="flex items-center gap-1.5 px-3 pb-2 sm:px-4 text-[10px]">
+                    <CalendarClock className="h-3 w-3 text-primary shrink-0" />
+                    <span className="text-primary font-medium">
+                      Follow-up: {followUp.nextFollowUpDate || followUp.followUpDate}
+                    </span>
+                    {followUp.remarks && (
+                      <span className="text-muted-foreground truncate">— {followUp.remarks}</span>
                     )}
                   </div>
-                </div>
+                )}
               </Link>
             );
           })}
