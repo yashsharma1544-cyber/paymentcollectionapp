@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { parseDateDMY } from "@/lib/date-utils";
+import { parseDateDMY, getOverdueDays } from "@/lib/date-utils";
 
 const CRM = () => {
   const { data: followUps = [], isLoading, refetch, isFetching } = useQuery({
@@ -83,7 +83,7 @@ const CRM = () => {
   }, [followUps, search]);
 
   const overdueCustomers = useMemo(() => {
-    return invoices.filter((i) => i.outstandingAmount > 0 && i.daysOverdue > 0);
+    return invoices.filter((i) => i.outstandingAmount > 0 && getOverdueDays(i.billDate) > 0);
   }, [invoices]);
 
   return (

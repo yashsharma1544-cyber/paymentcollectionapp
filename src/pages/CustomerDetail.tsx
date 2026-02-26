@@ -79,7 +79,7 @@ const CustomerDetail = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
     return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments };
@@ -294,8 +294,8 @@ const CustomerDetail = () => {
                               <TableCell className="text-xs whitespace-nowrap">{inv.dueDate}</TableCell>
                               <TableCell className="text-center">
                                 {inv.outstandingAmount > 0 ? (
-                                  <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
-                                    {formatOverdue(getOverdueDays(inv.dueDate))}
+                                  <span className={`text-xs font-bold ${getOverdueDays(inv.billDate) > 0 ? "text-destructive" : "text-success"}`}>
+                                    {formatOverdue(getOverdueDays(inv.billDate))}
                                   </span>
                                 ) : <span className="text-xs text-muted-foreground">—</span>}
                               </TableCell>
