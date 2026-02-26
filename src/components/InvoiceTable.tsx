@@ -138,7 +138,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                 className="block rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
               >
                 {/* Top row: name + outstanding */}
-                <div className="flex items-start justify-between gap-2 px-3 pt-2.5 sm:px-4 sm:pt-3">
+                <div className="flex items-start justify-between gap-1 px-3 pt-2.5 sm:px-4 sm:pt-3">
                   <div className="flex items-start gap-2 min-w-0 flex-1">
                     <div className="p-1.5 rounded-full bg-primary/10 shrink-0 mt-0.5">
                       <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
@@ -147,7 +147,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                       {cg.customerName}
                     </p>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 -ml-2">
                     <p className="text-base font-extrabold text-destructive">
                       ₹{cg.totalOutstanding.toLocaleString("en-IN")}
                     </p>
