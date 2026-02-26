@@ -22,12 +22,12 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return parseSheetData(await response.json());
 }
 
-export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string): Promise<void> {
+export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate }),
+    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount }),
   });
   if (!response.ok) throw new Error(`Failed to record payment: ${await response.text()}`);
 }
@@ -39,12 +39,12 @@ export interface PaymentAllocation {
   paymentDate?: string;
 }
 
-export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string): Promise<void> {
+export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record-batch`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ allocations, paymentDate }),
+    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount }),
   });
   if (!response.ok) throw new Error(`Failed to record batch payments: ${await response.text()}`);
 }
@@ -55,6 +55,8 @@ export interface RecordedPayment {
   paidAmount: number;
   timestamp: string;
   paymentDate: string;
+  paymentMode: string;
+  discount: number;
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -69,6 +71,8 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
     paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
     timestamp: row[3] || "",
     paymentDate: row[4] || "",
+    paymentMode: row[5] || "",
+    discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
   })).filter((p: RecordedPayment) => p.billNo);
 }
 

@@ -137,23 +137,24 @@ serve(async (req) => {
 
     } else if (action === "record") {
       const body = await req.json();
-      const { billNo, customerName, paidAmount, paymentDate } = body;
+      const { billNo, customerName, paidAmount, paymentDate, paymentMode, discount } = body;
       if (!billNo || !customerName || paidAmount === undefined) {
         throw new Error("Missing required fields: billNo, customerName, paidAmount");
       }
-      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || ""]]);
+      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0]]);
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
     } else if (action === "record-batch") {
       const body = await req.json();
-      const { allocations, paymentDate } = body;
+      const { allocations, paymentDate, paymentMode, discount } = body;
       if (!allocations || !Array.isArray(allocations) || allocations.length === 0) {
         throw new Error("Missing or empty allocations array");
       }
-      const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }) => [
-        a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "",
+      // Add discount only to the first row for batch payments
+      const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }, idx: number) => [
+        a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", idx === 0 ? (discount || 0) : 0,
       ]);
       const data = await appendToSheet(accessToken, "Record Payments", values);
       return new Response(JSON.stringify({ success: true, data }), {

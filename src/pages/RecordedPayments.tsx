@@ -155,6 +155,8 @@ const RecordedPayments = () => {
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Bill No</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Customer</TableHead>
                       <TableHead className="font-semibold text-xs text-right whitespace-nowrap">Paid Amount</TableHead>
+                      <TableHead className="font-semibold text-xs text-right whitespace-nowrap">Discount</TableHead>
+                      <TableHead className="font-semibold text-xs whitespace-nowrap">Mode</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Payment Date</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Recorded At</TableHead>
                     </TableRow>
@@ -162,7 +164,7 @@ const RecordedPayments = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           No recorded payments found
                         </TableCell>
                       </TableRow>
@@ -174,6 +176,10 @@ const RecordedPayments = () => {
                           <TableCell className="text-right font-semibold text-success text-xs whitespace-nowrap">
                             ₹{p.paidAmount.toLocaleString("en-IN")}
                           </TableCell>
+                          <TableCell className="text-right text-xs whitespace-nowrap">
+                            {p.discount > 0 ? `₹${p.discount.toLocaleString("en-IN")}` : "—"}
+                          </TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{p.paymentMode || "—"}</TableCell>
                           <TableCell className="text-xs whitespace-nowrap">{p.paymentDate || "—"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.timestamp}</TableCell>
                         </TableRow>
