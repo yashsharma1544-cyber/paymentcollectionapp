@@ -50,26 +50,34 @@ export async function sendViaWati(
   invoices: Invoice[]
 ): Promise<{ success: boolean; error?: string }> {
   const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
-  const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+  if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
 
-  const invoiceLines = outstanding
-    .map((inv) => {
-      const overdueDays = getOverdueDays(inv.dueDate);
-      return `बिल नं: ${inv.billNo} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-    })
-    .join("\n");
+  // Send one template message per outstanding invoice
+  let lastError: string | undefined;
+  let successCount = 0;
 
-  const parameters = [
-    { name: "customer_name", value: customerName },
-    { name: "invoice_details", value: invoiceLines },
-    { name: "total_outstanding", value: `₹${total.toLocaleString("en-IN")}` },
-  ];
+  for (const inv of outstanding) {
+    const parameters = [
+      { name: "bill_number", value: inv.billNo },
+      { name: "bill_date", value: inv.billDate },
+      { name: "customer_name", value: customerName },
+      { name: "invoice_amount", value: `₹${inv.outstandingAmount.toLocaleString("en-IN")}` },
+    ];
 
-  const result = await sendWatiTemplateMessage(
-    phone,
-    "payment_reminder_marathi",
-    parameters,
-    "payment_reminder"
-  );
-  return { success: result.success, error: result.error };
+    const result = await sendWatiTemplateMessage(
+      phone,
+      "payment_reminder_marathi",
+      parameters,
+      "payment_reminder"
+    );
+
+    if (result.success) {
+      successCount++;
+    } else {
+      lastError = result.error;
+    }
+  }
+
+  if (successCount > 0) return { success: true };
+  return { success: false, error: lastError || "Failed to send" };
 }
