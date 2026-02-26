@@ -68,7 +68,7 @@ const BeatDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <ExportMenu invoices={invoices} title={decodedBeat} />
+            <ExportMenu invoices={invoices} title={`Beat: ${decodedBeat}`} />
             <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>
