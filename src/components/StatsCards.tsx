@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { IndianRupee, AlertTriangle, CheckCircle, Users, MapPin } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
+import { getOverdueDays } from "@/lib/date-utils";
 import { useMemo } from "react";
 
 interface StatsCardsProps {
@@ -14,7 +15,7 @@ export function StatsCards({ invoices }: StatsCardsProps) {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const uniqueCustomers = new Set(invoices.map((i) => i.customerName)).size;
     const uniqueBeats = new Set(invoices.map((i) => i.beat)).size;
-    const overdueCount = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).length;
+    const overdueCount = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).length;
 
     return { totalOutstanding, totalPaid, totalBill, uniqueCustomers, uniqueBeats, overdueCount };
   }, [invoices]);

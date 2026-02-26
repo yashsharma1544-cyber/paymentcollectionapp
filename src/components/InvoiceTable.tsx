@@ -42,7 +42,7 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
       totalBill: invs.reduce((s, i) => s + i.billAmount, 0),
       totalPaid: invs.reduce((s, i) => s + i.paidAmount, 0),
       invoiceCount: invs.length,
-      maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.dueDate)), 0),
+      maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.billDate)), 0),
       invoices: sortInvoicesUnpaidFirst(invs),
     }))
     .sort((a, b) => {

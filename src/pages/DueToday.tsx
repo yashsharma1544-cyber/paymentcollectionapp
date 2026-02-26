@@ -25,12 +25,12 @@ function sortInvoices(invoices: Invoice[], sortBy: SortKey): Invoice[] {
       case "outstanding":
         return b.outstandingAmount - a.outstandingAmount;
       case "dueDate": {
-        const da = getOverdueDays(a.dueDate);
-        const db = getOverdueDays(b.dueDate);
+        const da = getOverdueDays(a.billDate);
+        const db = getOverdueDays(b.billDate);
         return da - db;
       }
       case "overdue":
-        return getOverdueDays(b.dueDate) - getOverdueDays(a.dueDate);
+        return getOverdueDays(b.billDate) - getOverdueDays(a.billDate);
       default:
         return 0;
     }
@@ -43,7 +43,7 @@ function KPICards({ invoices }: { invoices: Invoice[] }) {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(invoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };

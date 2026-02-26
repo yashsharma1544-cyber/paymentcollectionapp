@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-import { isTodayOrBefore, isToday } from "@/lib/date-utils";
+import { isTodayOrBefore, isToday, getOverdueDays } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
@@ -42,7 +42,7 @@ const BeatDetail = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(invoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     return { totalOutstanding, totalBill, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };

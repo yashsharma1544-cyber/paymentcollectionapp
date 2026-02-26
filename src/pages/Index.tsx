@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
+import { getOverdueDays } from "@/lib/date-utils";
 
 import { BulkWatiSend } from "@/components/BulkWatiSend";
 
@@ -44,7 +45,7 @@ const Index = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(invoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = invoices.filter((i) => i.daysOverdue > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };

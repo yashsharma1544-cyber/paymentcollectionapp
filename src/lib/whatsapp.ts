@@ -13,7 +13,7 @@ export function buildReminderMessage(customerName: string, invoices: Invoice[]):
   lines.push("");
 
   for (const inv of outstanding) {
-    const overdueDays = getOverdueDays(inv.dueDate);
+    const overdueDays = getOverdueDays(inv.billDate);
     lines.push(
       `• बिल नं: ${inv.billNo} | दिनांक: ${inv.billDate} | थकबाकी: ₹${inv.outstandingAmount.toLocaleString("en-IN")} | थकीत दिवस: ${overdueDays}`
     );
@@ -62,7 +62,7 @@ export async function sendViaWati(
         billNo: inv.billNo,
         billDate: inv.billDate,
         amount: inv.outstandingAmount.toLocaleString("en-IN"),
-        overdueDays: String(getOverdueDays(inv.dueDate)),
+        overdueDays: String(getOverdueDays(inv.billDate)),
       });
     } else {
       slots.push({ billNo: dash, billDate: dash, amount: dash, overdueDays: dash });
