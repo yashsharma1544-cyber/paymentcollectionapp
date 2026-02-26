@@ -339,10 +339,20 @@ const CustomerDetail = () => {
                                   {p.paymentDate || p.timestamp}
                                   {p.paymentMode && <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">{p.paymentMode}</span>}
                                 </TableCell>
-                                <TableCell className="text-[11px] text-muted-foreground" colSpan={2}>
+                                <TableCell className="text-[11px] text-muted-foreground">
                                   {p.discount > 0 && <span className="text-primary font-medium">Disc: ₹{p.discount.toLocaleString("en-IN")}</span>}
                                 </TableCell>
-                                <TableCell colSpan={2} className="text-[10px] text-muted-foreground">{p.timestamp}</TableCell>
+                                <TableCell className="text-[10px] text-muted-foreground">{p.timestamp}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center gap-0.5">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setEditPaymentRec(p); setEditPaymentOpen(true); }}>
+                                      <Pencil className="h-3 w-3" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); }}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </>
