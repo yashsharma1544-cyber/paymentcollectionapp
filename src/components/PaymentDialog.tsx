@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -27,27 +27,37 @@ interface PaymentDialogProps {
 
 export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDialogProps) {
   const [amount, setAmount] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "Online">("Cash");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  const parsedAmount = parseFloat(amount) || 0;
+  const parsedDiscount = parseFloat(discount) || 0;
+  const totalSettled = parsedAmount + parsedDiscount;
+
   const handleSubmit = async () => {
     if (!invoice) return;
-    const paidAmount = parseFloat(amount);
-    if (isNaN(paidAmount) || paidAmount <= 0) {
-      toast({ title: "Invalid amount", description: "Please enter a valid payment amount.", variant: "destructive" });
+    if (parsedAmount <= 0 && parsedDiscount <= 0) {
+      toast({ title: "Invalid amount", description: "Enter a valid payment amount or discount.", variant: "destructive" });
       return;
     }
-    if (paidAmount > invoice.outstandingAmount) {
-      toast({ title: "Amount exceeds outstanding", description: `Maximum payable amount is ₹${invoice.outstandingAmount.toLocaleString("en-IN")}`, variant: "destructive" });
+    if (parsedAmount < 0 || parsedDiscount < 0) {
+      toast({ title: "Invalid values", description: "Amount and discount cannot be negative.", variant: "destructive" });
+      return;
+    }
+    if (totalSettled > invoice.outstandingAmount) {
+      toast({ title: "Exceeds outstanding", description: `Amount + Discount (₹${totalSettled.toLocaleString("en-IN")}) exceeds outstanding ₹${invoice.outstandingAmount.toLocaleString("en-IN")}`, variant: "destructive" });
       return;
     }
 
     setLoading(true);
     try {
-      await recordPayment(invoice.billNo, invoice.customerName, paidAmount, format(paymentDate, "dd/MM/yyyy"));
-      toast({ title: "Payment Recorded", description: `₹${paidAmount.toLocaleString("en-IN")} recorded for ${invoice.customerName}` });
+      await recordPayment(invoice.billNo, invoice.customerName, parsedAmount, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount);
+      toast({ title: "Payment Recorded", description: `₹${parsedAmount.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} for ${invoice.customerName}` });
       setAmount("");
+      setDiscount("");
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -86,18 +96,81 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
               </p>
             </div>
           </div>
+
+          {/* Payment Mode */}
           <div className="space-y-2">
-            <Label htmlFor="amount">Payment Amount (₹)</Label>
+            <Label>Payment Mode</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={paymentMode === "Cash" ? "default" : "outline"}
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => setPaymentMode("Cash")}
+              >
+                <Banknote className="h-4 w-4" />
+                Cash
+              </Button>
+              <Button
+                type="button"
+                variant={paymentMode === "Online" ? "default" : "outline"}
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => setPaymentMode("Online")}
+              >
+                <Smartphone className="h-4 w-4" />
+                Online
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount Received (₹)</Label>
             <Input
               id="amount"
               type="number"
-              placeholder="Enter amount"
+              placeholder="Enter amount received"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               min={0}
               max={invoice.outstandingAmount}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="discount">Discount (₹)</Label>
+            <Input
+              id="discount"
+              type="number"
+              placeholder="Enter discount (if any)"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              min={0}
+            />
+          </div>
+
+          {/* Total settled summary */}
+          {(parsedAmount > 0 || parsedDiscount > 0) && (
+            <div className="rounded-lg p-3 text-sm bg-muted/50 space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount Received</span>
+                <span>₹{parsedAmount.toLocaleString("en-IN")}</span>
+              </div>
+              {parsedDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span>₹{parsedDiscount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-medium border-t pt-1 border-border">
+                <span>Total Settled</span>
+                <span className={totalSettled > invoice.outstandingAmount ? "text-destructive" : ""}>
+                  ₹{totalSettled.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Payment Date</Label>
             <Popover>

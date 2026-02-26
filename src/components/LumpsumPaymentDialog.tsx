@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -31,7 +31,9 @@ export function LumpsumPaymentDialog({
   onSuccess,
 }: LumpsumPaymentDialogProps) {
   const [lumpsumAmount, setLumpsumAmount] = useState("");
+  const [discount, setDiscount] = useState("");
   const [allocations, setAllocations] = useState<Record<string, string>>({});
+  const [paymentMode, setPaymentMode] = useState<"Cash" | "Online">("Cash");
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -47,21 +49,24 @@ export function LumpsumPaymentDialog({
   );
 
   const parsedLumpsum = parseFloat(lumpsumAmount) || 0;
+  const parsedDiscount = parseFloat(discount) || 0;
+  const totalSettled = parsedLumpsum + parsedDiscount;
 
   const totalAllocated = useMemo(() => {
     return Object.values(allocations).reduce((s, v) => s + (parseFloat(v) || 0), 0);
   }, [allocations]);
 
-  const remaining = parsedLumpsum - totalAllocated;
-  const isFullyAllocated = parsedLumpsum > 0 && Math.abs(remaining) < 0.01;
+  // Allocation should match total settled (amount + discount)
+  const remaining = totalSettled - totalAllocated;
+  const isFullyAllocated = totalSettled > 0 && Math.abs(remaining) < 0.01;
 
   const setAllocation = (billNo: string, value: string) => {
     setAllocations((prev) => ({ ...prev, [billNo]: value }));
   };
 
   const autoAllocate = () => {
-    if (parsedLumpsum <= 0) return;
-    let left = parsedLumpsum;
+    if (totalSettled <= 0) return;
+    let left = totalSettled;
     const newAllocations: Record<string, string> = {};
     for (const inv of outstandingInvoices) {
       if (left <= 0) break;
@@ -73,16 +78,16 @@ export function LumpsumPaymentDialog({
   };
 
   const handleSubmit = async () => {
-    if (parsedLumpsum <= 0) {
-      toast({ title: "Invalid amount", description: "Enter a valid lumpsum amount.", variant: "destructive" });
+    if (parsedLumpsum <= 0 && parsedDiscount <= 0) {
+      toast({ title: "Invalid amount", description: "Enter a valid amount or discount.", variant: "destructive" });
       return;
     }
-    if (parsedLumpsum > totalOutstanding) {
-      toast({ title: "Exceeds outstanding", description: `Max payable is ₹${totalOutstanding.toLocaleString("en-IN")}`, variant: "destructive" });
+    if (totalSettled > totalOutstanding) {
+      toast({ title: "Exceeds outstanding", description: `Amount + Discount (₹${totalSettled.toLocaleString("en-IN")}) exceeds total outstanding ₹${totalOutstanding.toLocaleString("en-IN")}`, variant: "destructive" });
       return;
     }
     if (!isFullyAllocated) {
-      toast({ title: "Allocation incomplete", description: "Allocate the full lumpsum amount to invoices before recording.", variant: "destructive" });
+      toast({ title: "Allocation incomplete", description: "Allocate the full amount (received + discount) to invoices before recording.", variant: "destructive" });
       return;
     }
 
@@ -110,12 +115,13 @@ export function LumpsumPaymentDialog({
 
     setLoading(true);
     try {
-      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"));
+      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount);
       toast({
         title: "Lumpsum Payment Recorded",
-        description: `₹${parsedLumpsum.toLocaleString("en-IN")} allocated across ${paymentAllocations.length} invoice(s)`,
+        description: `₹${parsedLumpsum.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} across ${paymentAllocations.length} invoice(s)`,
       });
       setLumpsumAmount("");
+      setDiscount("");
       setAllocations({});
       onSuccess();
       onClose();
@@ -128,6 +134,7 @@ export function LumpsumPaymentDialog({
 
   const handleClose = () => {
     setLumpsumAmount("");
+    setDiscount("");
     setAllocations({});
     onClose();
   };
@@ -140,26 +147,90 @@ export function LumpsumPaymentDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Lumpsum input */}
+          {/* Payment Mode */}
           <div className="space-y-2">
-            <Label>Total Lumpsum Amount (₹)</Label>
+            <Label>Payment Mode</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={paymentMode === "Cash" ? "default" : "outline"}
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => setPaymentMode("Cash")}
+              >
+                <Banknote className="h-4 w-4" />
+                Cash
+              </Button>
+              <Button
+                type="button"
+                variant={paymentMode === "Online" ? "default" : "outline"}
+                size="sm"
+                className="flex-1 gap-2"
+                onClick={() => setPaymentMode("Online")}
+              >
+                <Smartphone className="h-4 w-4" />
+                Online
+              </Button>
+            </div>
+          </div>
+
+          {/* Amount + Discount inputs */}
+          <div className="space-y-2">
+            <Label>Amount Received (₹)</Label>
             <div className="flex gap-2">
               <Input
                 type="number"
-                placeholder="Enter total amount"
+                placeholder="Enter amount received"
                 value={lumpsumAmount}
                 onChange={(e) => { setLumpsumAmount(e.target.value); setAllocations({}); }}
                 min={0}
                 max={totalOutstanding}
               />
-              <Button variant="outline" size="sm" onClick={autoAllocate} disabled={parsedLumpsum <= 0} className="shrink-0">
-                Auto Allocate
-              </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Total outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
-            </p>
           </div>
+
+          <div className="space-y-2">
+            <Label>Discount (₹)</Label>
+            <Input
+              type="number"
+              placeholder="Enter discount (if any)"
+              value={discount}
+              onChange={(e) => { setDiscount(e.target.value); setAllocations({}); }}
+              min={0}
+            />
+          </div>
+
+          {/* Total summary */}
+          {(parsedLumpsum > 0 || parsedDiscount > 0) && (
+            <div className="rounded-lg p-3 text-sm bg-muted/50 space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Amount Received</span>
+                <span>₹{parsedLumpsum.toLocaleString("en-IN")}</span>
+              </div>
+              {parsedDiscount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Discount</span>
+                  <span>₹{parsedDiscount.toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-medium border-t pt-1 border-border">
+                <span>Total to Allocate</span>
+                <span className={totalSettled > totalOutstanding ? "text-destructive" : ""}>
+                  ₹{totalSettled.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
+              </p>
+            </div>
+          )}
+
+          {/* Auto Allocate */}
+          {totalSettled > 0 && (
+            <Button variant="outline" size="sm" onClick={autoAllocate} className="w-full">
+              Auto Allocate
+            </Button>
+          )}
 
           {/* Payment Date */}
           <div className="space-y-2">
@@ -190,7 +261,7 @@ export function LumpsumPaymentDialog({
           </div>
 
           {/* Allocation status */}
-          {parsedLumpsum > 0 && (
+          {totalSettled > 0 && (
             <div className={`rounded-lg p-3 text-sm flex items-center gap-2 ${isFullyAllocated ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
               {isFullyAllocated ? (
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -205,7 +276,7 @@ export function LumpsumPaymentDialog({
           )}
 
           {/* Invoice allocation list */}
-          {parsedLumpsum > 0 && (
+          {totalSettled > 0 && (
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Allocate to Invoices</Label>
               <div className="space-y-2 max-h-[40vh] overflow-y-auto">
