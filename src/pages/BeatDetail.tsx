@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
 import { InvoiceTable } from "@/components/InvoiceTable";
+import { ExportMenu } from "@/components/ExportMenu";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,13 +67,16 @@ const BeatDetail = () => {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ExportMenu invoices={invoices} title={decodedBeat} />
+            <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </header>
 

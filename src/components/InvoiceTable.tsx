@@ -9,8 +9,9 @@ import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2 } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ExportMenu } from "@/components/ExportMenu";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
@@ -111,6 +112,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
             className="pl-9"
           />
         </div>
+        <ExportMenu invoices={filtered} title="All Customers" />
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
