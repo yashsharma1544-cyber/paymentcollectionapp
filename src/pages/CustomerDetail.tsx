@@ -243,7 +243,7 @@ const CustomerDetail = () => {
                         const billPayments = paymentsByBill.get(inv.billNo) || [];
                         const hasPayments = billPayments.length > 0;
                         const isExpanded = expandedBills.has(inv.billNo);
-                        const isClickable = isPaid && hasPayments;
+                        const isClickable = hasPayments;
 
                         return (
                           <>
