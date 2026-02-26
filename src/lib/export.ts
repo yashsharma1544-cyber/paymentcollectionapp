@@ -52,33 +52,98 @@ function buildRows(invoices: Invoice[], currencyPrefix = "Rs.") {
   return { rows, groups };
 }
 
-const HEADERS = ["Customer", "Mobile", "Bill No", "Bill Date", "Due Date", "Bill Amt", "Paid", "Outstanding", "Beat"];
+const GROUP_HEADERS = ["Bill No", "Bill Date", "Due Date", "Bill Amt", "Paid", "Outstanding"];
 
 export function exportToPDF(invoices: Invoice[], title: string) {
-  const { rows, groups } = buildRows(invoices, "Rs.");
+  const groups = groupInvoicesByCustomer(invoices);
   const totalOutstanding = groups.reduce((s, g) => s + g.totalOutstanding, 0);
+  const totalInvoices = groups.reduce((s, g) => s + g.invoices.length, 0);
 
-  const doc = new jsPDF({ orientation: "landscape" });
-  doc.setFontSize(16);
-  doc.text(title, 14, 18);
+  const doc = new jsPDF({ orientation: "portrait" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // Title - centered
+  doc.setFontSize(18);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${title} - Outstanding Report`, pageWidth / 2, 20, { align: "center" });
+
+  // Summary line
   doc.setFontSize(10);
-  doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 25);
-  doc.text(`Total Outstanding: Rs.${totalOutstanding.toLocaleString("en-IN")}`, 14, 31);
-  doc.text(`Customers: ${groups.length} | Invoices: ${rows.length}`, 14, 37);
+  doc.setTextColor(80, 80, 80);
+  doc.text(
+    `Generated: ${new Date().toLocaleDateString("en-IN")}  |  Customers: ${groups.length}  |  Invoices: ${totalInvoices}  |  Total Outstanding: Rs.${totalOutstanding.toLocaleString("en-IN")}`,
+    pageWidth / 2, 28,
+    { align: "center" }
+  );
 
-  autoTable(doc, {
-    head: [HEADERS],
-    body: rows,
-    startY: 42,
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [41, 98, 180], textColor: 255, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [245, 247, 250] },
-    columnStyles: {
-      5: { halign: "right" },
-      6: { halign: "right" },
-      7: { halign: "right" },
-    },
-  });
+  let startY = 36;
+
+  for (const group of groups) {
+    const rows = group.invoices.map((inv) => [
+      inv.billNo,
+      inv.billDate,
+      inv.dueDate,
+      `Rs.${inv.billAmount.toLocaleString("en-IN")}`,
+      `Rs.${inv.paidAmount.toLocaleString("en-IN")}`,
+      `Rs.${inv.outstandingAmount.toLocaleString("en-IN")}`,
+    ]);
+
+    // Check if we need a new page (header + at least 1 row ≈ 30px)
+    if (startY > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage();
+      startY = 20;
+    }
+
+    // Customer header row
+    autoTable(doc, {
+      startY,
+      head: [[
+        { content: `${group.customerName}`, colSpan: 3, styles: { halign: "left" } },
+        { content: `Mobile: ${group.mobileNo}`, colSpan: 1, styles: { halign: "center" } },
+        { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, colSpan: 2, styles: { halign: "right" } },
+      ]],
+      body: [],
+      theme: "plain",
+      styles: { fontSize: 10, cellPadding: 3, textColor: [0, 0, 0], fontStyle: "bold" },
+      headStyles: { fillColor: [230, 235, 245], lineWidth: 0.3, lineColor: [180, 180, 180] },
+      margin: { left: 14, right: 14 },
+    });
+
+    const afterHeader = (doc as any).lastAutoTable?.finalY || startY + 12;
+
+    // Invoice rows
+    autoTable(doc, {
+      startY: afterHeader,
+      head: [GROUP_HEADERS],
+      body: rows,
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 2.5,
+        textColor: [0, 0, 0],
+        lineColor: [200, 200, 200],
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: [41, 98, 180],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8,
+        halign: "center",
+      },
+      columnStyles: {
+        0: { halign: "center" },
+        1: { halign: "center" },
+        2: { halign: "center" },
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right", fontStyle: "bold" },
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    startY = ((doc as any).lastAutoTable?.finalY || afterHeader) + 8;
+  }
 
   const safeName = title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
   doc.save(`${safeName}_Outstanding.pdf`);
@@ -94,7 +159,7 @@ export function exportToExcel(invoices: Invoice[], title: string) {
     [`Generated: ${new Date().toLocaleDateString("en-IN")}`],
     [`Total Outstanding: ₹${totalOutstanding.toLocaleString("en-IN")}`, "", `Customers: ${groups.length}`, `Invoices: ${rows.length}`],
     [],
-    HEADERS,
+    ["Customer", "Mobile", "Bill No", "Bill Date", "Due Date", "Bill Amt", "Paid", "Outstanding", "Beat"],
     ...rows,
   ];
 
