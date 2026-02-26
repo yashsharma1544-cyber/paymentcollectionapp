@@ -325,6 +325,49 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "delete-payment") {
+      const body = await req.json();
+      const { billNo, originalTimestamp } = body;
+      if (!billNo || !originalTimestamp) throw new Error("Missing billNo or originalTimestamp");
+
+      const data = await fetchSheet(accessToken, "Record Payments!A:H");
+      const rows = data.values || [];
+      let targetRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === billNo && rows[i][3] === originalTimestamp) {
+          targetRow = i; // 0-indexed for batchUpdate
+          break;
+        }
+      }
+      if (targetRow === -1) throw new Error("Payment record not found");
+
+      // Get the sheetId for "Record Payments" tab
+      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets(properties)`;
+      const metaRes = await fetch(metaUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const metaData = await metaRes.json();
+      const sheet = metaData.sheets?.find((s: any) => s.properties.title === "Record Payments");
+      if (!sheet) throw new Error("Record Payments sheet not found");
+      const sheetId = sheet.properties.sheetId;
+
+      // Delete the row using batchUpdate
+      const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`;
+      const batchRes = await fetch(batchUrl, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: [{
+            deleteDimension: {
+              range: { sheetId, dimension: "ROWS", startIndex: targetRow, endIndex: targetRow + 1 },
+            },
+          }],
+        }),
+      });
+      const batchResult = await batchRes.json();
+      if (!batchRes.ok) throw new Error(`Sheets API error: ${JSON.stringify(batchResult)}`);
+      return new Response(JSON.stringify({ success: true, data: batchResult }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else if (action === "update-payment-headers") {
       // One-time: update header row of Record Payments to include all columns
       const range = encodeURIComponent("Record Payments!A1:H1");

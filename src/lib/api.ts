@@ -96,6 +96,16 @@ export async function editPayment(params: {
   if (!response.ok) throw new Error(`Failed to edit payment: ${await response.text()}`);
 }
 
+export async function deletePayment(billNo: string, originalTimestamp: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=delete-payment`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ billNo, originalTimestamp }),
+  });
+  if (!response.ok) throw new Error(`Failed to delete payment: ${await response.text()}`);
+}
+
 // ---- Follow-up API ----
 
 export interface FollowUp {

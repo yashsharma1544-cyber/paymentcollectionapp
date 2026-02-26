@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchRecordedPayments, type RecordedPayment } from "@/lib/api";
+import { fetchRecordedPayments, deletePayment, type RecordedPayment } from "@/lib/api";
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon, IndianRupee, Pencil } from "lucide-react";
+import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon, IndianRupee, Pencil, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -58,6 +60,24 @@ const RecordedPayments = () => {
   const [toDate, setToDate] = useState<Date | undefined>();
   const [editPayment, setEditPayment] = useState<RecordedPayment | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<RecordedPayment | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
+      toast({ title: "✅ Payment deleted successfully" });
+      setDeleteTarget(null);
+      refetch();
+    } catch (e) {
+      toast({ title: "Failed to delete", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     return [...payments].filter((p) => {
@@ -222,9 +242,14 @@ const RecordedPayments = () => {
                           <TableCell className="text-xs max-w-[150px] truncate" title={p.notes}>{p.notes || "—"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.timestamp}</TableCell>
                           <TableCell className="text-center">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditPayment(p); setEditOpen(true); }}>
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditPayment(p); setEditOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(p)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -241,6 +266,22 @@ const RecordedPayments = () => {
           onOpenChange={setEditOpen}
           onSuccess={() => refetch()}
         />
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the payment of ₹{deleteTarget?.paidAmount.toLocaleString("en-IN")} for bill {deleteTarget?.billNo}? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {deleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
