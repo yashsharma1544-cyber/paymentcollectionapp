@@ -31,7 +31,7 @@ const RecordedPayments = () => {
   const [toDate, setToDate] = useState<Date | undefined>();
 
   const filtered = useMemo(() => {
-    return payments.filter((p) => {
+    return [...payments].filter((p) => {
       const matchesSearch =
         !search ||
         p.billNo.toLowerCase().includes(search.toLowerCase()) ||
@@ -53,6 +53,13 @@ const RecordedPayments = () => {
       }
 
       return matchesSearch && matchesDate;
+    }).sort((a, b) => {
+      const dateA = parseDate(a.timestamp);
+      const dateB = parseDate(b.timestamp);
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateB.getTime() - dateA.getTime();
     });
   }, [payments, search, fromDate, toDate]);
 
