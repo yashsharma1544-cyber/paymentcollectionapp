@@ -1,10 +1,15 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { Invoice } from "@/lib/invoice";
 import { recordBatchPayments, type PaymentAllocation } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +32,7 @@ export function LumpsumPaymentDialog({
 }: LumpsumPaymentDialogProps) {
   const [lumpsumAmount, setLumpsumAmount] = useState("");
   const [allocations, setAllocations] = useState<Record<string, string>>({});
+  const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -104,7 +110,7 @@ export function LumpsumPaymentDialog({
 
     setLoading(true);
     try {
-      await recordBatchPayments(paymentAllocations);
+      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"));
       toast({
         title: "Lumpsum Payment Recorded",
         description: `₹${parsedLumpsum.toLocaleString("en-IN")} allocated across ${paymentAllocations.length} invoice(s)`,
@@ -153,6 +159,34 @@ export function LumpsumPaymentDialog({
             <p className="text-xs text-muted-foreground">
               Total outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
             </p>
+          </div>
+
+          {/* Payment Date */}
+          <div className="space-y-2">
+            <Label>Payment Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !paymentDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(paymentDate, "dd/MM/yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={paymentDate}
+                  onSelect={(d) => d && setPaymentDate(d)}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Allocation status */}
