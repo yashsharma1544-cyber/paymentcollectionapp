@@ -45,13 +45,7 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
       maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.billDate)), 0),
       invoices: sortInvoicesUnpaidFirst(invs),
     }))
-    .sort((a, b) => {
-      // Unpaid customers first, paid customers last
-      const aPaid = a.totalOutstanding === 0 ? 1 : 0;
-      const bPaid = b.totalOutstanding === 0 ? 1 : 0;
-      if (aPaid !== bPaid) return aPaid - bPaid;
-      return b.totalOutstanding - a.totalOutstanding;
-    });
+    .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
 export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) {
