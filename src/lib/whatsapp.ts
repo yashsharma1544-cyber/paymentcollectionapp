@@ -1,6 +1,6 @@
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays } from "@/lib/date-utils";
-import { sendWatiSessionMessage } from "@/lib/wati";
+import { sendWatiTemplateMessage } from "@/lib/wati";
 
 export function buildReminderMessage(customerName: string, invoices: Invoice[]): string {
   const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
@@ -49,8 +49,43 @@ export async function sendViaWati(
   customerName: string,
   invoices: Invoice[]
 ): Promise<{ success: boolean; error?: string }> {
-  const msg = buildReminderMessage(customerName, invoices);
-  if (!msg) return { success: false, error: "No outstanding invoices" };
-  const result = await sendWatiSessionMessage(phone, msg);
+  const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
+  if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
+
+  const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+  const dash = "-";
+  const slots: { billNo: string; billDate: string; amount: string; overdueDays: string }[] = [];
+  for (let i = 0; i < 3; i++) {
+    if (i < outstanding.length) {
+      const inv = outstanding[i];
+      slots.push({
+        billNo: inv.billNo,
+        billDate: inv.billDate,
+        amount: inv.outstandingAmount.toLocaleString("en-IN"),
+        overdueDays: String(getOverdueDays(inv.dueDate)),
+      });
+    } else {
+      slots.push({ billNo: dash, billDate: dash, amount: dash, overdueDays: dash });
+    }
+  }
+
+  const parameters = [
+    { name: "1", value: customerName },
+    { name: "2", value: slots[0].billNo },
+    { name: "3", value: slots[0].billDate },
+    { name: "4", value: slots[0].amount },
+    { name: "5", value: slots[0].overdueDays },
+    { name: "6", value: slots[1].billNo },
+    { name: "7", value: slots[1].billDate },
+    { name: "8", value: slots[1].amount },
+    { name: "9", value: slots[1].overdueDays },
+    { name: "10", value: slots[2].billNo },
+    { name: "11", value: slots[2].billDate },
+    { name: "12", value: slots[2].amount },
+    { name: "13", value: slots[2].overdueDays },
+    { name: "14", value: total.toLocaleString("en-IN") },
+  ];
+
+  const result = await sendWatiTemplateMessage(phone, "payment_reminder_marathi", parameters, "payment_reminder");
   return { success: result.success, error: result.error };
 }
