@@ -7,12 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon, IndianRupee } from "lucide-react";
+import { Search, ArrowLeft, RefreshCw, Calendar as CalendarIcon, IndianRupee, Pencil } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 
 function parseDate(timestamp: string): Date | null {
   if (!timestamp) return null;
@@ -55,6 +56,8 @@ const RecordedPayments = () => {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  const [editPayment, setEditPayment] = useState<RecordedPayment | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return [...payments].filter((p) => {
@@ -193,12 +196,13 @@ const RecordedPayments = () => {
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Payment Date</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Notes</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Recorded At</TableHead>
+                      <TableHead className="font-semibold text-xs text-center whitespace-nowrap">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                           No recorded payments found
                         </TableCell>
                       </TableRow>
@@ -217,6 +221,11 @@ const RecordedPayments = () => {
                           <TableCell className="text-xs whitespace-nowrap">{p.paymentDate || "—"}</TableCell>
                           <TableCell className="text-xs max-w-[150px] truncate" title={p.notes}>{p.notes || "—"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.timestamp}</TableCell>
+                          <TableCell className="text-center">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditPayment(p); setEditOpen(true); }}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -226,6 +235,12 @@ const RecordedPayments = () => {
             </div>
           </>
         )}
+        <EditPaymentDialog
+          payment={editPayment}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onSuccess={() => refetch()}
+        />
       </main>
     </div>
   );

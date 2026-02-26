@@ -78,6 +78,24 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
   })).filter((p: RecordedPayment) => p.billNo);
 }
 
+export async function editPayment(params: {
+  billNo: string;
+  originalTimestamp: string;
+  paidAmount: number;
+  paymentDate?: string;
+  paymentMode?: string;
+  discount?: number;
+  notes?: string;
+}): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=edit-payment`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error(`Failed to edit payment: ${await response.text()}`);
+}
+
 // ---- Follow-up API ----
 
 export interface FollowUp {
