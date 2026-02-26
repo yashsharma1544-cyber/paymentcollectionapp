@@ -31,7 +31,7 @@ function groupInvoicesByCustomer(invoices: Invoice[]): CustomerGroup[] {
     .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
-function buildRows(invoices: Invoice[]) {
+function buildRows(invoices: Invoice[], currencyPrefix = "Rs.") {
   const groups = groupInvoicesByCustomer(invoices);
   const rows: string[][] = [];
   for (const g of groups) {
@@ -42,9 +42,9 @@ function buildRows(invoices: Invoice[]) {
         inv.billNo,
         inv.billDate,
         inv.dueDate,
-        `₹${inv.billAmount.toLocaleString("en-IN")}`,
-        `₹${inv.paidAmount.toLocaleString("en-IN")}`,
-        `₹${inv.outstandingAmount.toLocaleString("en-IN")}`,
+        `${currencyPrefix}${inv.billAmount.toLocaleString("en-IN")}`,
+        `${currencyPrefix}${inv.paidAmount.toLocaleString("en-IN")}`,
+        `${currencyPrefix}${inv.outstandingAmount.toLocaleString("en-IN")}`,
         inv.beat || "",
       ]);
     }
@@ -55,7 +55,7 @@ function buildRows(invoices: Invoice[]) {
 const HEADERS = ["Customer", "Mobile", "Bill No", "Bill Date", "Due Date", "Bill Amt", "Paid", "Outstanding", "Beat"];
 
 export function exportToPDF(invoices: Invoice[], title: string) {
-  const { rows, groups } = buildRows(invoices);
+  const { rows, groups } = buildRows(invoices, "Rs.");
   const totalOutstanding = groups.reduce((s, g) => s + g.totalOutstanding, 0);
 
   const doc = new jsPDF({ orientation: "landscape" });
@@ -63,7 +63,7 @@ export function exportToPDF(invoices: Invoice[], title: string) {
   doc.text(title, 14, 18);
   doc.setFontSize(10);
   doc.text(`Generated: ${new Date().toLocaleDateString("en-IN")}`, 14, 25);
-  doc.text(`Total Outstanding: ₹${totalOutstanding.toLocaleString("en-IN")}`, 14, 31);
+  doc.text(`Total Outstanding: Rs.${totalOutstanding.toLocaleString("en-IN")}`, 14, 31);
   doc.text(`Customers: ${groups.length} | Invoices: ${rows.length}`, 14, 37);
 
   autoTable(doc, {
@@ -85,7 +85,7 @@ export function exportToPDF(invoices: Invoice[], title: string) {
 }
 
 export function exportToExcel(invoices: Invoice[], title: string) {
-  const { rows, groups } = buildRows(invoices);
+  const { rows, groups } = buildRows(invoices, "₹");
   const totalOutstanding = groups.reduce((s, g) => s + g.totalOutstanding, 0);
 
   // Build data with summary header
