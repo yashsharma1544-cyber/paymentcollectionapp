@@ -287,6 +287,21 @@ serve(async (req) => {
         });
       }
 
+    } else if (action === "update-payment-headers") {
+      // One-time: update header row of Record Payments to include all columns
+      const range = encodeURIComponent("Record Payments!A1:H1");
+      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+      const response = await fetch(sheetsUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ values: [["Bill No", "Customer Name", "Paid Amount", "Timestamp", "Payment Date", "Payment Mode", "Discount", "Notes"]] }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(result)}`);
+      return new Response(JSON.stringify({ success: true, data: result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }
