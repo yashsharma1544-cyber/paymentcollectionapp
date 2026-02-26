@@ -130,6 +130,7 @@ export function exportToPDF(invoices: Invoice[], title: string) {
         textColor: [0, 0, 0],
         lineColor: [200, 200, 200],
         lineWidth: 0.2,
+        halign: "center",
       },
       headStyles: {
         fillColor: [41, 98, 180],
@@ -139,12 +140,7 @@ export function exportToPDF(invoices: Invoice[], title: string) {
         halign: "center",
       },
       columnStyles: {
-        0: { halign: "center" },
-        1: { halign: "center" },
-        2: { halign: "center" },
-        3: { halign: "right" },
-        4: { halign: "right" },
-        5: { halign: "right", fontStyle: "bold" },
+        5: { fontStyle: "bold" },
       },
       margin: { left: 14, right: 14 },
     });
