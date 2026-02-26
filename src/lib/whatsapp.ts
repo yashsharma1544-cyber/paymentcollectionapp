@@ -1,6 +1,6 @@
 import type { Invoice } from "@/lib/invoice";
 import { getOverdueDays } from "@/lib/date-utils";
-import { sendWatiSessionMessage } from "@/lib/wati";
+import { sendWatiTemplateMessage } from "@/lib/wati";
 
 export function buildReminderMessage(customerName: string, invoices: Invoice[]): string {
   const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
@@ -33,17 +33,9 @@ export function buildReminderMessage(customerName: string, invoices: Invoice[]):
 }
 
 export function openWhatsApp(phone: string, message: string): void {
-  // Clean phone number - remove spaces, dashes, etc.
   let cleaned = phone.replace(/[\s\-()]/g, "");
-  // Remove leading + if present
-  if (cleaned.startsWith("+")) {
-    cleaned = cleaned.slice(1);
-  }
-  // Remove leading 0
-  if (cleaned.startsWith("0")) {
-    cleaned = cleaned.slice(1);
-  }
-  // Add India country code if not already prefixed with 91
+  if (cleaned.startsWith("+")) cleaned = cleaned.slice(1);
+  if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
   if (!cleaned.startsWith("91") || cleaned.length <= 10) {
     cleaned = "91" + cleaned;
   }
@@ -51,11 +43,33 @@ export function openWhatsApp(phone: string, message: string): void {
   window.open(url, "_blank");
 }
 
-/** Send via WATI API instead of opening wa.me link */
+/** Send via WATI template API */
 export async function sendViaWati(
   phone: string,
-  message: string
+  customerName: string,
+  invoices: Invoice[]
 ): Promise<{ success: boolean; error?: string }> {
-  const result = await sendWatiSessionMessage(phone, message);
+  const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
+  const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+
+  const invoiceLines = outstanding
+    .map((inv) => {
+      const overdueDays = getOverdueDays(inv.dueDate);
+      return `बिल नं: ${inv.billNo} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
+    })
+    .join("\n");
+
+  const parameters = [
+    { name: "customer_name", value: customerName },
+    { name: "invoice_details", value: invoiceLines },
+    { name: "total_outstanding", value: `₹${total.toLocaleString("en-IN")}` },
+  ];
+
+  const result = await sendWatiTemplateMessage(
+    phone,
+    "payment_reminder_marathi",
+    parameters,
+    "payment_reminder"
+  );
   return { success: result.success, error: result.error };
 }
