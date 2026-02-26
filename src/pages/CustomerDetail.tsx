@@ -15,7 +15,7 @@ import { FollowUpList } from "@/components/FollowUpList";
 import { WhatsAppChatView } from "@/components/WhatsAppChatView";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Invoice } from "@/lib/invoice";
@@ -54,6 +54,25 @@ const CustomerDetail = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lumpsumOpen, setLumpsumOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+
+  const toggleBillExpand = (billNo: string) => {
+    setExpandedBills(prev => {
+      const next = new Set(prev);
+      if (next.has(billNo)) next.delete(billNo);
+      else next.add(billNo);
+      return next;
+    });
+  };
+
+  const paymentsByBill = useMemo(() => {
+    const map = new Map<string, RecordedPayment[]>();
+    for (const p of payments) {
+      if (!map.has(p.billNo)) map.set(p.billNo, []);
+      map.get(p.billNo)!.push(p);
+    }
+    return map;
+  }, [payments]);
 
   const kpis = useMemo(() => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
@@ -219,31 +238,68 @@ const CustomerDetail = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {invoices.map((inv) => (
-                        <TableRow key={inv.billNo} className="hover:bg-muted/20 transition-colors">
-                          <TableCell className="font-mono text-xs whitespace-nowrap">{inv.billNo}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{inv.billDate}</TableCell>
-                          <TableCell className="text-right text-xs font-medium whitespace-nowrap">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
-                          <TableCell className="text-right text-xs text-success font-medium whitespace-nowrap">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
-                          <TableCell className="text-right text-xs text-destructive font-semibold whitespace-nowrap">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
-                          <TableCell className="text-xs whitespace-nowrap">{inv.dueDate}</TableCell>
-                          <TableCell className="text-center">
-                            {inv.outstandingAmount > 0 ? (
-                              <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
-                                {formatOverdue(getOverdueDays(inv.dueDate))}
-                              </span>
-                            ) : <span className="text-xs text-muted-foreground">—</span>}
-                          </TableCell>
-                          <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
-                          <TableCell className="text-center">
-                            {inv.outstandingAmount > 0 && (
-                              <Button size="sm" onClick={() => { setSelectedInvoice(inv); setDialogOpen(true); }} className="gap-1.5 h-7 text-xs">
-                                <CreditCard className="h-3 w-3" />Collect
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {invoices.map((inv) => {
+                        const isPaid = inv.outstandingAmount === 0;
+                        const billPayments = paymentsByBill.get(inv.billNo) || [];
+                        const hasPayments = billPayments.length > 0;
+                        const isExpanded = expandedBills.has(inv.billNo);
+                        const isClickable = isPaid && hasPayments;
+
+                        return (
+                          <>
+                            <TableRow
+                              key={inv.billNo}
+                              className={`transition-colors ${isClickable ? "cursor-pointer hover:bg-primary/5" : "hover:bg-muted/20"} ${isExpanded ? "bg-primary/5" : ""}`}
+                              onClick={() => isClickable && toggleBillExpand(inv.billNo)}
+                            >
+                              <TableCell className="font-mono text-xs whitespace-nowrap">
+                                <span className="flex items-center gap-1">
+                                  {isClickable && (
+                                    <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                  )}
+                                  {inv.billNo}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{inv.billDate}</TableCell>
+                              <TableCell className="text-right text-xs font-medium whitespace-nowrap">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
+                              <TableCell className="text-right text-xs text-success font-medium whitespace-nowrap">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
+                              <TableCell className="text-right text-xs text-destructive font-semibold whitespace-nowrap">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">{inv.dueDate}</TableCell>
+                              <TableCell className="text-center">
+                                {inv.outstandingAmount > 0 ? (
+                                  <span className={`text-xs font-bold ${getOverdueDays(inv.dueDate) > 0 ? "text-destructive" : "text-success"}`}>
+                                    {formatOverdue(getOverdueDays(inv.dueDate))}
+                                  </span>
+                                ) : <span className="text-xs text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
+                              <TableCell className="text-center">
+                                {inv.outstandingAmount > 0 && (
+                                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setSelectedInvoice(inv); setDialogOpen(true); }} className="gap-1.5 h-7 text-xs">
+                                    <CreditCard className="h-3 w-3" />Collect
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                            {isExpanded && billPayments.map((p, pi) => (
+                              <TableRow key={`${inv.billNo}-pay-${pi}`} className="bg-muted/20 border-l-2 border-l-primary/30">
+                                <TableCell colSpan={2} className="text-[11px] text-muted-foreground pl-8">
+                                  Payment #{pi + 1}
+                                </TableCell>
+                                <TableCell className="text-right text-[11px] font-medium text-success">₹{p.paidAmount.toLocaleString("en-IN")}</TableCell>
+                                <TableCell className="text-[11px] text-muted-foreground" colSpan={2}>
+                                  {p.paymentDate || p.timestamp}
+                                  {p.paymentMode && <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">{p.paymentMode}</span>}
+                                </TableCell>
+                                <TableCell className="text-[11px] text-muted-foreground" colSpan={2}>
+                                  {p.discount > 0 && <span className="text-primary font-medium">Disc: ₹{p.discount.toLocaleString("en-IN")}</span>}
+                                </TableCell>
+                                <TableCell colSpan={2} className="text-[10px] text-muted-foreground">{p.timestamp}</TableCell>
+                              </TableRow>
+                            ))}
+                          </>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
