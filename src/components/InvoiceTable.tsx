@@ -148,7 +148,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
                     </p>
                   </div>
                   <div className="text-right shrink-0 -ml-2">
-                    <p className="text-base font-extrabold text-destructive">
+                    <p className="text-lg font-extrabold text-destructive">
                       ₹{cg.totalOutstanding.toLocaleString("en-IN")}
                     </p>
                     <p className="text-xs text-muted-foreground">
