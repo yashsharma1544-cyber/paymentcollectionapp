@@ -94,19 +94,25 @@ export function exportToPDF(invoices: Invoice[], title: string) {
       startY = 20;
     }
 
-    // Customer header row
+    // Customer header row - use a 4-column layout with generous widths
     autoTable(doc, {
       startY,
       head: [[
-        { content: group.customerName, colSpan: 2, styles: { halign: "left", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
-        { content: `Beat: ${group.invoices[0]?.beat || "N/A"}`, colSpan: 1, styles: { halign: "center", fontSize: 9 } },
-        { content: `Mobile: ${group.mobileNo}`, colSpan: 1, styles: { halign: "center", fontSize: 10 } },
-        { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, colSpan: 2, styles: { halign: "right", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
+        { content: group.customerName, styles: { halign: "left" } },
+        { content: `Beat: ${group.invoices[0]?.beat || "N/A"}`, styles: { halign: "center" } },
+        { content: `Mobile: ${group.mobileNo}`, styles: { halign: "center" } },
+        { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, styles: { halign: "right" } },
       ]],
       body: [],
       theme: "plain",
-      styles: { fontSize: 11, cellPadding: 4, textColor: [0, 0, 0], fontStyle: "bold", overflow: "visible" as any },
-      headStyles: { fillColor: [230, 235, 245], lineWidth: 0.3, lineColor: [180, 180, 180], minCellHeight: 10 },
+      styles: { fontSize: 11, cellPadding: 4, textColor: [0, 0, 0], fontStyle: "bold" },
+      headStyles: { fillColor: [230, 235, 245], lineWidth: 0.3, lineColor: [180, 180, 180], minCellHeight: 12 },
+      columnStyles: {
+        0: { cellWidth: "auto" },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 80 },
+      },
       margin: { left: 14, right: 14 },
     });
 
