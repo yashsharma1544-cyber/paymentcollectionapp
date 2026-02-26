@@ -16,6 +16,7 @@ import { ExportMenu } from "@/components/ExportMenu";
 interface InvoiceTableProps {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
+  exportTitle?: string;
 }
 
 interface CustomerGroup {
@@ -49,7 +50,7 @@ function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
     .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
-export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) {
+export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: InvoiceTableProps) {
   const [search, setSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -112,7 +113,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess }: InvoiceTableProps) 
             className="pl-9"
           />
         </div>
-        <ExportMenu invoices={filtered} title="All Customers" />
+        <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} />
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
