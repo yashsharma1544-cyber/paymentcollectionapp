@@ -99,7 +99,8 @@ export function exportToPDF(invoices: Invoice[], title: string) {
       startY,
       head: [[
         { content: group.customerName, colSpan: 2, styles: { halign: "left", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
-        { content: `Mobile: ${group.mobileNo}`, colSpan: 2, styles: { halign: "center", fontSize: 10 } },
+        { content: `Beat: ${group.invoices[0]?.beat || "N/A"}`, colSpan: 1, styles: { halign: "center", fontSize: 9 } },
+        { content: `Mobile: ${group.mobileNo}`, colSpan: 1, styles: { halign: "center", fontSize: 10 } },
         { content: `Outstanding: Rs.${group.totalOutstanding.toLocaleString("en-IN")}`, colSpan: 2, styles: { halign: "right", fontSize: 11, cellPadding: 4, overflow: "visible" as any } },
       ]],
       body: [],
