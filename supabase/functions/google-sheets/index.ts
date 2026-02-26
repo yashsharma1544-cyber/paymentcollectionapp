@@ -287,6 +287,44 @@ serve(async (req) => {
         });
       }
 
+    } else if (action === "edit-payment") {
+      // Find row by billNo + timestamp, update fields
+      const body = await req.json();
+      const { billNo, originalTimestamp, paidAmount, paymentDate, paymentMode, discount, notes } = body;
+      if (!billNo || !originalTimestamp) throw new Error("Missing billNo or originalTimestamp");
+
+      const data = await fetchSheet(accessToken, "Record Payments!A:H");
+      const rows = data.values || [];
+      let targetRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === billNo && rows[i][3] === originalTimestamp) {
+          targetRow = i + 1; // 1-indexed
+          break;
+        }
+      }
+      if (targetRow === -1) throw new Error("Payment record not found");
+
+      // Update columns C through H (Paid Amount, keep Timestamp, Payment Date, Payment Mode, Discount, Notes)
+      const range = encodeURIComponent(`Record Payments!C${targetRow}:H${targetRow}`);
+      const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+      const response = await fetch(sheetsUrl, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ values: [[
+          paidAmount ?? 0,
+          timestamp, // update timestamp to now
+          paymentDate || "",
+          paymentMode || "Cash",
+          discount || 0,
+          notes || "",
+        ]] }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(result)}`);
+      return new Response(JSON.stringify({ success: true, data: result }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else if (action === "update-payment-headers") {
       // One-time: update header row of Record Payments to include all columns
       const range = encodeURIComponent("Record Payments!A1:H1");
