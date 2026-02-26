@@ -13,6 +13,7 @@ import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import { FollowUpList } from "@/components/FollowUpList";
 import { WhatsAppChatView } from "@/components/WhatsAppChatView";
+import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
   CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2,
@@ -184,6 +185,7 @@ const CustomerDetail = () => {
             <Button size="sm" variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
               <CalendarClock className="h-3.5 w-3.5" />Follow-up
             </Button>
+            <ExportMenu invoices={invoices} title={decoded} size="sm" />
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5 text-xs hidden sm:inline-flex">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />Refresh
             </Button>
