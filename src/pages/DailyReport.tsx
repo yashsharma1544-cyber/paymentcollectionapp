@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchRecordedPayments } from "@/lib/api";
 import { fetchInvoices } from "@/lib/api";
 import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,10 +21,8 @@ import { Link } from "react-router-dom";
 
 function parseTimestamp(ts: string): Date | null {
   if (!ts) return null;
-  // Handle Indian locale format like "25/2/2026, 10:30:00 pm" or ISO strings
   const d = new Date(ts);
   if (!isNaN(d.getTime())) return d;
-  // Try DD/MM/YYYY or D/M/YYYY format
   const match = ts.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (match) {
     const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
@@ -49,6 +48,7 @@ interface CustomerSummary {
 
 const DailyReport = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedBeat, setSelectedBeat] = useState<string>("all");
 
   const { data: payments = [], isLoading: loadingPayments, refetch: refetchPayments, isFetching: fetchingPayments } = useQuery({
     queryKey: ["recorded-payments"],
@@ -111,6 +111,21 @@ const DailyReport = () => {
     return { customers, totalCollected, totalBills };
   }, [payments, selectedDate, customerBeatMap]);
 
+  // All beats available for the selected date
+  const allBeats = useMemo(() => {
+    const beats = new Set(customers.map((c) => c.beat));
+    return Array.from(beats).sort();
+  }, [customers]);
+
+  // Filtered customers by beat
+  const filteredCustomers = useMemo(() => {
+    if (selectedBeat === "all") return customers;
+    return customers.filter((c) => c.beat === selectedBeat);
+  }, [customers, selectedBeat]);
+
+  const filteredTotal = filteredCustomers.reduce((s, c) => s + c.totalCollected, 0);
+  const filteredBills = filteredCustomers.reduce((s, c) => s + c.invoiceCount, 0);
+
   const uniqueBeats = useMemo(() => new Set(customers.map((c) => c.beat)).size, [customers]);
 
   return (
@@ -167,6 +182,18 @@ const DailyReport = () => {
               <span className="text-xs text-muted-foreground">
                 {isSameDay(selectedDate, new Date()) ? "Today" : format(selectedDate, "EEEE")}
               </span>
+              <Select value={selectedBeat} onValueChange={setSelectedBeat}>
+                <SelectTrigger className="h-8 w-[140px] text-xs">
+                  <MapPin className="h-3.5 w-3.5 mr-1 shrink-0" />
+                  <SelectValue placeholder="All Beats" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Beats</SelectItem>
+                  {allBeats.map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* KPI Cards */}
@@ -176,7 +203,7 @@ const DailyReport = () => {
                   <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Collected</p>
                   <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">
-                    ₹{totalCollected.toLocaleString("en-IN")}
+                    ₹{filteredTotal.toLocaleString("en-IN")}
                   </p>
                 </CardContent>
               </Card>
@@ -184,7 +211,7 @@ const DailyReport = () => {
                 <CardContent className="p-2 sm:p-3 text-center">
                   <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider">Customers</p>
-                  <p className="text-xs sm:text-lg font-black text-primary leading-tight">{customers.length}</p>
+                  <p className="text-xs sm:text-lg font-black text-primary leading-tight">{filteredCustomers.length}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm">
@@ -216,7 +243,7 @@ const DailyReport = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {customers.length === 0 ? (
+                    {filteredCustomers.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-12 text-muted-foreground">
                           No collections for {format(selectedDate, "dd MMM yyyy")}
@@ -224,7 +251,7 @@ const DailyReport = () => {
                       </TableRow>
                     ) : (
                       <>
-                        {customers.map((c, i) => (
+                        {filteredCustomers.map((c, i) => (
                           <TableRow key={`${c.customerName}-${i}`} className="hover:bg-muted/30 transition-colors">
                             <TableCell className="font-medium text-xs">
                               <Link to={`/customer/${encodeURIComponent(c.customerName)}`} className="hover:underline text-primary break-words">
@@ -246,9 +273,9 @@ const DailyReport = () => {
                         <TableRow className="bg-muted/30 font-semibold">
                           <TableCell className="text-xs">Total</TableCell>
                           <TableCell />
-                          <TableCell className="text-xs text-center">{totalBills}</TableCell>
+                          <TableCell className="text-xs text-center">{filteredBills}</TableCell>
                           <TableCell className="text-right text-success text-xs">
-                            ₹{totalCollected.toLocaleString("en-IN")}
+                            ₹{filteredTotal.toLocaleString("en-IN")}
                           </TableCell>
                         </TableRow>
                       </>
