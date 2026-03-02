@@ -13,6 +13,7 @@ import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import { FollowUpList } from "@/components/FollowUpList";
 import { WhatsAppChatView } from "@/components/WhatsAppChatView";
+import { WhatsAppInvoiceSelector } from "@/components/WhatsAppInvoiceSelector";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
@@ -57,6 +58,7 @@ const CustomerDetail = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lumpsumOpen, setLumpsumOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
+  const [whatsAppSelectorOpen, setWhatsAppSelectorOpen] = useState(false);
   const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
   const [sendingWati, setSendingWati] = useState(false);
   const [editPaymentRec, setEditPaymentRec] = useState<RecordedPayment | null>(null);
@@ -109,12 +111,12 @@ const CustomerDetail = () => {
 
   const info = invoices[0];
 
-  const handleWhatsApp = async () => {
-    if (!info?.mobileNo || kpis.totalOutstanding === 0) return;
-    const msg = buildReminderMessage(decoded, invoices);
+  const handleWhatsApp = async (selectedInvoices: Invoice[]) => {
+    if (!info?.mobileNo || selectedInvoices.length === 0) return;
+    const msg = buildReminderMessage(decoded, selectedInvoices);
     setSendingWati(true);
     try {
-      const result = await sendViaWati(info.mobileNo, decoded, invoices);
+      const result = await sendViaWati(info.mobileNo, decoded, selectedInvoices);
       if (result.success) {
         await logWhatsApp(decoded, info.mobileNo);
         toast({ title: "✅ WhatsApp sent via WATI", description: decoded });
@@ -127,6 +129,7 @@ const CustomerDetail = () => {
       toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
     } finally {
       setSendingWati(false);
+      setWhatsAppSelectorOpen(false);
     }
   };
 
@@ -183,7 +186,7 @@ const CustomerDetail = () => {
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />Refresh
             </Button>
             <div className="flex-1 sm:flex-none" />
-            <Button size="sm" variant="outline" onClick={handleWhatsApp}
+            <Button size="sm" variant="outline" onClick={() => setWhatsAppSelectorOpen(true)}
               disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
               className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none ml-auto"
             >
@@ -447,6 +450,14 @@ const CustomerDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <WhatsAppInvoiceSelector
+        open={whatsAppSelectorOpen}
+        onClose={() => setWhatsAppSelectorOpen(false)}
+        invoices={invoices}
+        onSend={handleWhatsApp}
+        sending={sendingWati}
+      />
     </div>
   );
 };
