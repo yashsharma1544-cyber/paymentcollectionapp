@@ -95,6 +95,9 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3 shrink-0" />
                       <span>{f.followUpDate} {f.followUpTime}</span>
+                      {f.addedBy && (
+                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full">{f.addedBy.split(" ")[0]}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
