@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ interface EditPaymentDialogProps {
 
 export function EditPaymentDialog({ payment, open, onOpenChange, onSuccess }: EditPaymentDialogProps) {
   const { toast } = useToast();
+  const { currentUser } = useUser();
   const [saving, setSaving] = useState(false);
   const [paidAmount, setPaidAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
@@ -56,6 +58,7 @@ export function EditPaymentDialog({ payment, open, onOpenChange, onSuccess }: Ed
         paymentMode,
         discount: parseFloat(discount) || 0,
         notes,
+        collectedBy: currentUser || undefined,
       });
       toast({ title: "✅ Payment updated successfully" });
       onOpenChange(false);

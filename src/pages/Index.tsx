@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
+import { useUser } from "@/contexts/UserContext";
 import { getOverdueDays } from "@/lib/date-utils";
 
 import { BulkWatiSend } from "@/components/BulkWatiSend";
@@ -28,6 +29,7 @@ const Index = () => {
 
 
   const [globalSearch, setGlobalSearch] = useState("");
+  const { currentUser, clearUser } = useUser();
 
   const searchResults = useMemo(() => {
     if (!globalSearch) return null;
@@ -62,7 +64,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold tracking-tight leading-tight">Payment Collector</h1>
-                <p className="text-[11px] text-muted-foreground hidden sm:block">Manage invoices & collect payments</p>
+                <p className="text-[11px] text-muted-foreground hidden sm:block">Logged in as <span className="font-semibold text-foreground">{currentUser}</span></p>
               </div>
             </div>
             <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">

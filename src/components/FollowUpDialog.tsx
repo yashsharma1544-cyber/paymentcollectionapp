@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useUser } from "@/contexts/UserContext";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -24,6 +25,7 @@ export function FollowUpDialog({ customerName, open, onClose, onSuccess, default
   const [nextDate, setNextDate] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useUser();
 
   const handleSubmit = async () => {
     const finalName = allowCustomerNameEdit ? editableCustomerName.trim() : customerName;
@@ -47,6 +49,7 @@ export function FollowUpDialog({ customerName, open, onClose, onSuccess, default
         remarks: remarks.trim(),
         nextFollowUpDate: nextDate,
         type: defaultType,
+        addedBy: currentUser || undefined,
       });
       toast({ title: "Follow-up Added", description: `Follow-up scheduled for ${finalName}` });
       setEditableCustomerName("");

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
+import { useUser } from "@/contexts/UserContext";
 import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -39,6 +40,7 @@ export function LumpsumPaymentDialog({
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useUser();
 
   const outstandingInvoices = useMemo(
     () => invoices.filter((inv) => inv.outstandingAmount > 0),
@@ -117,7 +119,7 @@ export function LumpsumPaymentDialog({
 
     setLoading(true);
     try {
-      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined);
+      await recordBatchPayments(paymentAllocations, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined, currentUser || undefined);
       toast({
         title: "Lumpsum Payment Recorded",
         description: `₹${parsedLumpsum.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} across ${paymentAllocations.length} invoice(s)`,

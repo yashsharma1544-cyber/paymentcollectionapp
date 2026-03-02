@@ -137,24 +137,23 @@ serve(async (req) => {
 
     } else if (action === "record") {
       const body = await req.json();
-      const { billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes } = body;
+      const { billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy } = body;
       if (!billNo || !customerName || paidAmount === undefined) {
         throw new Error("Missing required fields: billNo, customerName, paidAmount");
       }
-      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0, notes || ""]]);
+      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0, notes || "", collectedBy || ""]]);
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
     } else if (action === "record-batch") {
       const body = await req.json();
-      const { allocations, paymentDate, paymentMode, discount, notes } = body;
+      const { allocations, paymentDate, paymentMode, discount, notes, collectedBy } = body;
       if (!allocations || !Array.isArray(allocations) || allocations.length === 0) {
         throw new Error("Missing or empty allocations array");
       }
-      // Add discount only to the first row for batch payments, notes on first row only
       const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }, idx: number) => [
-        a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", idx === 0 ? (discount || 0) : 0, idx === 0 ? (notes || "") : "",
+        a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", idx === 0 ? (discount || 0) : 0, idx === 0 ? (notes || "") : "", collectedBy || "",
       ]);
       const data = await appendToSheet(accessToken, "Record Payments", values);
       return new Response(JSON.stringify({ success: true, data }), {
@@ -168,9 +167,9 @@ serve(async (req) => {
       });
 
     } else if (action === "add-followup") {
-      // Columns: Customer Name, Follow Up Date, Follow Up Time, Remarks, Next Follow Up Date, Status, Created At, Type
+      // Columns: Customer Name, Follow Up Date, Follow Up Time, Remarks, Next Follow Up Date, Status, Created At, Type, Added By
       const body = await req.json();
-      const { customerName, remarks, nextFollowUpDate, type } = body;
+      const { customerName, remarks, nextFollowUpDate, type, addedBy } = body;
       if (!customerName) throw new Error("Missing customerName");
       const values = [[
         customerName,
@@ -181,6 +180,7 @@ serve(async (req) => {
         "Pending",
         timestamp,
         type || "Manual",
+        addedBy || "",
       ]];
       const data = await appendToSheet(accessToken, "Follow Ups", values);
       return new Response(JSON.stringify({ success: true, data }), {
@@ -194,11 +194,11 @@ serve(async (req) => {
       });
 
     } else if (action === "log-whatsapp") {
-      // Columns: Customer Name, Phone, Timestamp
+      // Columns: Customer Name, Phone, Timestamp, Sent By
       const body = await req.json();
-      const { customerName, phone } = body;
+      const { customerName, phone, sentBy } = body;
       if (!customerName) throw new Error("Missing customerName");
-      const values = [[customerName, phone || "", timestamp]];
+      const values = [[customerName, phone || "", timestamp, sentBy || ""]];
       const data = await appendToSheet(accessToken, "WhatsApp Log", values);
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -290,33 +290,34 @@ serve(async (req) => {
     } else if (action === "edit-payment") {
       // Find row by billNo + timestamp, update fields
       const body = await req.json();
-      const { billNo, originalTimestamp, paidAmount, paymentDate, paymentMode, discount, notes } = body;
+      const { billNo, originalTimestamp, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy } = body;
       if (!billNo || !originalTimestamp) throw new Error("Missing billNo or originalTimestamp");
 
-      const data = await fetchSheet(accessToken, "Record Payments!A:H");
+      const data = await fetchSheet(accessToken, "Record Payments!A:I");
       const rows = data.values || [];
       let targetRow = -1;
       for (let i = 0; i < rows.length; i++) {
         if (rows[i][0] === billNo && rows[i][3] === originalTimestamp) {
-          targetRow = i + 1; // 1-indexed
+          targetRow = i + 1;
           break;
         }
       }
       if (targetRow === -1) throw new Error("Payment record not found");
 
-      // Update columns C through H (Paid Amount, keep Timestamp, Payment Date, Payment Mode, Discount, Notes)
-      const range = encodeURIComponent(`Record Payments!C${targetRow}:H${targetRow}`);
+      // Update columns C through I (Paid Amount, Timestamp, Payment Date, Payment Mode, Discount, Notes, Collected By)
+      const range = encodeURIComponent(`Record Payments!C${targetRow}:I${targetRow}`);
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const response = await fetch(sheetsUrl, {
         method: "PUT",
         headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ values: [[
           paidAmount ?? 0,
-          timestamp, // update timestamp to now
+          timestamp,
           paymentDate || "",
           paymentMode || "Cash",
           discount || 0,
           notes || "",
+          collectedBy || "",
         ]] }),
       });
       const result = await response.json();
@@ -369,13 +370,12 @@ serve(async (req) => {
       });
 
     } else if (action === "update-payment-headers") {
-      // One-time: update header row of Record Payments to include all columns
-      const range = encodeURIComponent("Record Payments!A1:H1");
+      const range = encodeURIComponent("Record Payments!A1:I1");
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const response = await fetch(sheetsUrl, {
         method: "PUT",
         headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ values: [["Bill No", "Customer Name", "Paid Amount", "Timestamp", "Payment Date", "Payment Mode", "Discount", "Notes"]] }),
+        body: JSON.stringify({ values: [["Bill No", "Customer Name", "Paid Amount", "Timestamp", "Payment Date", "Payment Mode", "Discount", "Notes", "Collected By"]] }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(`Sheets API error: ${JSON.stringify(result)}`);
