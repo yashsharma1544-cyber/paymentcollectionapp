@@ -48,7 +48,16 @@ const CustomerDetail = () => {
     queryKey: ["whatsapp-log"], queryFn: fetchWhatsAppLog,
   });
 
-  const invoices = useMemo(() => sortInvoicesUnpaidFirst(allInvoices.filter((inv) => inv.customerName === decoded)), [allInvoices, decoded]);
+  const invoices = useMemo(() => {
+    const filtered = allInvoices.filter((inv) => inv.customerName === decoded);
+    return [...filtered].sort((a, b) => {
+      // Unpaid first, then by overdue days descending
+      const aPaid = a.outstandingAmount === 0 ? 1 : 0;
+      const bPaid = b.outstandingAmount === 0 ? 1 : 0;
+      if (aPaid !== bPaid) return aPaid - bPaid;
+      return getOverdueDays(b.billDate) - getOverdueDays(a.billDate);
+    });
+  }, [allInvoices, decoded]);
   const payments = useMemo(() => allPayments.filter((p) => p.customerName === decoded), [allPayments, decoded]);
   const followUps = useMemo(() => allFollowUps.filter((f) => f.customerName === decoded), [allFollowUps, decoded]);
   const lastWA = useMemo(() => {
