@@ -43,7 +43,7 @@ export function openWhatsApp(phone: string, message: string): void {
   window.open(url, "_blank");
 }
 
-/** Send via WATI template API */
+/** Send via WATI template API — each invoice is a separate param for newline support */
 export async function sendViaWati(
   phone: string,
   customerName: string,
@@ -53,19 +53,30 @@ export async function sendViaWati(
   if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+  const MAX_INVOICE_SLOTS = 50;
 
-  // WATI rejects any newline/tab chars in template params — use ◆ separator
-  const invoiceLines = outstanding.map((inv) => {
-    const overdueDays = getOverdueDays(inv.billDate);
-    return `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-  }).join(" ◆ ");
+  // Build individual invoice lines (one per template param slot)
+  const invoiceParams: { name: string; value: string }[] = [];
+  for (let idx = 0; idx < MAX_INVOICE_SLOTS; idx++) {
+    const paramIndex = idx + 2; // params 2..51
+    if (idx < outstanding.length) {
+      const inv = outstanding[idx];
+      const overdueDays = getOverdueDays(inv.billDate);
+      invoiceParams.push({
+        name: String(paramIndex),
+        value: `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`,
+      });
+    } else {
+      invoiceParams.push({ name: String(paramIndex), value: " " });
+    }
+  }
 
   const parameters = [
     { name: "1", value: customerName },
-    { name: "2", value: invoiceLines },
-    { name: "3", value: total.toLocaleString("en-IN") },
+    ...invoiceParams,
+    { name: "52", value: total.toLocaleString("en-IN") },
   ];
 
-  const result = await sendWatiTemplateMessage(phone, "payment_reminder_utility_v1", parameters, "payment_reminder");
+  const result = await sendWatiTemplateMessage(phone, "payment_reminder_v2", parameters, "payment_reminder");
   return { success: result.success, error: result.error };
 }
