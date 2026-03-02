@@ -53,37 +53,17 @@ export async function sendViaWati(
   if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
-  const dash = "-";
-  const slots: { billNo: string; billDate: string; amount: string; overdueDays: string }[] = [];
-  for (let i = 0; i < 3; i++) {
-    if (i < outstanding.length) {
-      const inv = outstanding[i];
-      slots.push({
-        billNo: inv.billNo,
-        billDate: inv.billDate,
-        amount: inv.outstandingAmount.toLocaleString("en-IN"),
-        overdueDays: String(getOverdueDays(inv.billDate)),
-      });
-    } else {
-      slots.push({ billNo: dash, billDate: dash, amount: dash, overdueDays: dash });
-    }
-  }
+
+  // Build invoice details as a single text block for param 2
+  const invoiceLines = outstanding.map((inv) => {
+    const overdueDays = getOverdueDays(inv.billDate);
+    return `बिल नं: ${inv.billNo} | दिनांक: ${inv.billDate} | थकबाकी: ₹${inv.outstandingAmount.toLocaleString("en-IN")} | थकीत दिवस: ${overdueDays}`;
+  }).join("\n");
 
   const parameters = [
     { name: "1", value: customerName },
-    { name: "2", value: slots[0].billNo },
-    { name: "3", value: slots[0].billDate },
-    { name: "4", value: slots[0].amount },
-    { name: "5", value: slots[0].overdueDays },
-    { name: "6", value: slots[1].billNo },
-    { name: "7", value: slots[1].billDate },
-    { name: "8", value: slots[1].amount },
-    { name: "9", value: slots[1].overdueDays },
-    { name: "10", value: slots[2].billNo },
-    { name: "11", value: slots[2].billDate },
-    { name: "12", value: slots[2].amount },
-    { name: "13", value: slots[2].overdueDays },
-    { name: "14", value: total.toLocaleString("en-IN") },
+    { name: "2", value: invoiceLines },
+    { name: "3", value: total.toLocaleString("en-IN") },
   ];
 
   const result = await sendWatiTemplateMessage(phone, "payment_reminder_utility_v1", parameters, "payment_reminder");
