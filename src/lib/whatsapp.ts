@@ -54,11 +54,11 @@ export async function sendViaWati(
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
 
-  // Build invoice details with newline separator
+  // WATI renders literal \n as newline in the final WhatsApp message
   const invoiceLines = outstanding.map((inv) => {
     const overdueDays = getOverdueDays(inv.billDate);
     return `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-  }).join("\n");
+  }).join("\\n");
 
   const parameters = [
     { name: "1", value: customerName },
