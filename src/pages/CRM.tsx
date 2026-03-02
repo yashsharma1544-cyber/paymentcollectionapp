@@ -41,15 +41,19 @@ const CRM = () => {
   const lastWhatsApp = useMemo(() => {
     const map = new Map<string, WhatsAppLogEntry>();
     for (const entry of whatsAppLog) {
-      const existing = map.get(entry.customerName);
-      if (!existing) {
-        map.set(entry.customerName, entry);
-      }
-      // since entries are appended, last one wins
       map.set(entry.customerName, entry);
     }
     return map;
   }, [whatsAppLog]);
+
+  // Outstanding per customer
+  const outstandingByCustomer = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const inv of invoices) {
+      map.set(inv.customerName, (map.get(inv.customerName) || 0) + inv.outstandingAmount);
+    }
+    return map;
+  }, [invoices]);
 
   // Today's follow-ups
   const todayStr = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
@@ -284,6 +288,14 @@ const CRM = () => {
                           <p className="text-xs text-muted-foreground">{entry.phone}</p>
                         </div>
                         <div className="flex flex-col items-end gap-0.5">
+                          {(() => {
+                            const amt = outstandingByCustomer.get(entry.customerName) || 0;
+                            return amt > 0 ? (
+                              <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                            ) : (
+                              <span className="text-xs font-medium text-success">Cleared</span>
+                            );
+                          })()}
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             {entry.timestamp}
