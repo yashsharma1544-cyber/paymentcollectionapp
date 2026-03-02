@@ -64,7 +64,9 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-lg font-bold tracking-tight leading-tight">Payment Collector</h1>
-                <p className="text-[11px] text-muted-foreground hidden sm:block">Logged in as <span className="font-semibold text-foreground">{currentUser}</span></p>
+                <p className="text-[11px] text-muted-foreground">
+                  Logged in as <span className="font-semibold text-foreground">{currentUser}</span>
+                </p>
               </div>
             </div>
             <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">
