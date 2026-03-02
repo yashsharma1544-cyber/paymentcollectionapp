@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import type { Invoice } from "@/lib/invoice";
 import { sendViaWati } from "@/lib/whatsapp";
 import { logWhatsApp } from "@/lib/api";
+import { useUser } from "@/contexts/UserContext";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,6 +36,7 @@ interface BulkEntry {
 export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useUser();
 
   const customers = useMemo(() => {
     const map = new Map<string, Invoice[]>();
@@ -124,7 +126,7 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
         const result = await sendViaWati(entry.customer.mobileNo, entry.customer.customerName, selectedInvoices);
 
         if (result.success) {
-          await logWhatsApp(entry.customer.customerName, entry.customer.mobileNo);
+          await logWhatsApp(entry.customer.customerName, entry.customer.mobileNo, currentUser || undefined);
           setEntries((prev) =>
             prev.map((e, idx) => (idx === entryIndex ? { ...e, status: "sent" } : e))
           );

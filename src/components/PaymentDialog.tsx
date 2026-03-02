@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { useUser } from "@/contexts/UserContext";
 import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
 import {
   Dialog,
@@ -34,6 +35,7 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
   const [paymentDate, setPaymentDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { currentUser } = useUser();
 
   const parsedAmount = parseFloat(amount) || 0;
   const parsedDiscount = parseFloat(discount) || 0;
@@ -56,7 +58,7 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
 
     setLoading(true);
     try {
-      await recordPayment(invoice.billNo, invoice.customerName, parsedAmount, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined);
+      await recordPayment(invoice.billNo, invoice.customerName, parsedAmount, format(paymentDate, "dd/MM/yyyy"), paymentMode, parsedDiscount, notes.trim() || undefined, currentUser || undefined);
       toast({ title: "Payment Recorded", description: `₹${parsedAmount.toLocaleString("en-IN")} received${parsedDiscount > 0 ? ` + ₹${parsedDiscount.toLocaleString("en-IN")} discount` : ""} for ${invoice.customerName}` });
       setAmount("");
       setDiscount("");

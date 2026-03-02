@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, CalendarClock, History, ClipboardList, Users } from "lucide-react";
+import { Home, CalendarClock, History, ClipboardList, Users, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 
 const navItems = [
   { to: "/", label: "Home", icon: Home },
@@ -12,6 +13,7 @@ const navItems = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { currentUser, clearUser } = useUser();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:hidden">
@@ -36,6 +38,15 @@ export function BottomNav() {
             </Link>
           );
         })}
+        <button
+          onClick={clearUser}
+          className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+        >
+          <UserCircle className="h-5 w-5" />
+          <span className="text-[10px] font-medium truncate max-w-[48px]">
+            {currentUser?.split(" ")[0]}
+          </span>
+        </button>
       </div>
     </nav>
   );

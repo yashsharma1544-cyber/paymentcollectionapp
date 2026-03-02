@@ -22,12 +22,12 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return parseSheetData(await response.json());
 }
 
-export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string): Promise<void> {
+export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes }),
+    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy }),
   });
   if (!response.ok) throw new Error(`Failed to record payment: ${await response.text()}`);
 }
@@ -39,12 +39,12 @@ export interface PaymentAllocation {
   paymentDate?: string;
 }
 
-export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number, notes?: string): Promise<void> {
+export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record-batch`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount, notes }),
+    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount, notes, collectedBy }),
   });
   if (!response.ok) throw new Error(`Failed to record batch payments: ${await response.text()}`);
 }
@@ -58,6 +58,7 @@ export interface RecordedPayment {
   paymentMode: string;
   discount: number;
   notes: string;
+  collectedBy: string;
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -75,6 +76,7 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
     paymentMode: row[5] || "",
     discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
     notes: row[7] || "",
+    collectedBy: row[8] || "",
   })).filter((p: RecordedPayment) => p.billNo);
 }
 
@@ -86,6 +88,7 @@ export async function editPayment(params: {
   paymentMode?: string;
   discount?: number;
   notes?: string;
+  collectedBy?: string;
 }): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=edit-payment`, {
@@ -117,6 +120,7 @@ export interface FollowUp {
   status: string;
   createdAt: string;
   type: string;
+  addedBy: string;
 }
 
 export async function addFollowUp(params: {
@@ -124,6 +128,7 @@ export async function addFollowUp(params: {
   remarks: string;
   nextFollowUpDate: string;
   type?: string;
+  addedBy?: string;
 }): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=add-followup`, {
@@ -140,7 +145,6 @@ export async function fetchFollowUps(): Promise<FollowUp[]> {
   if (!response.ok) throw new Error(`Failed to fetch follow-ups: ${await response.text()}`);
   const data = await response.json();
   if (!data.values || data.values.length < 1) return [];
-  // Check if first row is a header row
   const startIdx = (data.values[0]?.[0] === "Customer Name" || data.values[0]?.[0] === "customerName") ? 1 : 0;
   return data.values.slice(startIdx).map((row: string[]) => ({
     customerName: row[0] || "",
@@ -151,6 +155,7 @@ export async function fetchFollowUps(): Promise<FollowUp[]> {
     status: row[5] || "Pending",
     createdAt: row[6] || "",
     type: row[7] || "Manual",
+    addedBy: row[8] || "",
   })).filter((f: FollowUp) => f.customerName);
 }
 
@@ -186,14 +191,15 @@ export interface WhatsAppLogEntry {
   customerName: string;
   phone: string;
   timestamp: string;
+  sentBy: string;
 }
 
-export async function logWhatsApp(customerName: string, phone: string): Promise<void> {
+export async function logWhatsApp(customerName: string, phone: string, sentBy?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=log-whatsapp`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ customerName, phone }),
+    body: JSON.stringify({ customerName, phone, sentBy }),
   });
   if (!response.ok) throw new Error(`Failed to log WhatsApp: ${await response.text()}`);
 }
@@ -208,10 +214,11 @@ export async function fetchWhatsAppLog(): Promise<WhatsAppLogEntry[]> {
     customerName: row[0] || "",
     phone: row[1] || "",
     timestamp: row[2] || "",
+    sentBy: row[3] || "",
   })).filter((e: WhatsAppLogEntry) => e.customerName);
 }
 
-// ---- WA Replies API (incoming messages from webhook) ----
+// ---- WA Replies API ----
 
 export interface WAReply {
   phone: string;

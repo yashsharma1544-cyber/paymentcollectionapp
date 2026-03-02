@@ -26,12 +26,14 @@ import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 const CustomerDetail = () => {
   const { customerName } = useParams<{ customerName: string }>();
   const decoded = decodeURIComponent(customerName || "");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentUser } = useUser();
 
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
@@ -118,7 +120,7 @@ const CustomerDetail = () => {
     try {
       const result = await sendViaWati(info.mobileNo, decoded, selectedInvoices);
       if (result.success) {
-        await logWhatsApp(decoded, info.mobileNo);
+        await logWhatsApp(decoded, info.mobileNo, currentUser || undefined);
         toast({ title: "✅ WhatsApp sent via WATI", description: decoded });
       } else {
         openWhatsApp(info.mobileNo, msg);
