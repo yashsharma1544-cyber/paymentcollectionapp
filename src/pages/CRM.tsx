@@ -70,7 +70,6 @@ const CRM = () => {
     now.setHours(0, 0, 0, 0);
 
     for (const f of filtered) {
-      // Check if nextFollowUpDate is today or overdue
       const nextDate = f.nextFollowUpDate ? parseDateForCRM(f.nextFollowUpDate) : null;
       if (nextDate) {
         nextDate.setHours(0, 0, 0, 0);
@@ -88,9 +87,35 @@ const CRM = () => {
     return { todayFollowUps: today, upcomingFollowUps: upcoming, allFollowUps: filtered };
   }, [followUps, search, userFilter]);
 
-  const overdueCustomers = useMemo(() => {
-    return invoices.filter((i) => i.outstandingAmount > 0 && getOverdueDays(i.billDate) > 0);
-  }, [invoices]);
+  // Per-user KPI breakdown
+  const userKPIs = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    return USERS.map((name) => {
+      const userFollowUps = followUps.filter((f) => f.addedBy === name);
+      let todayCount = 0;
+      let completedCount = 0;
+      let pendingCount = 0;
+
+      for (const f of userFollowUps) {
+        if (f.status === "Done") {
+          completedCount++;
+          continue;
+        }
+        const nextDate = f.nextFollowUpDate ? parseDateForCRM(f.nextFollowUpDate) : null;
+        if (nextDate) {
+          nextDate.setHours(0, 0, 0, 0);
+          if (nextDate <= now && f.status === "Pending") {
+            todayCount++;
+          }
+        }
+        if (f.status === "Pending") pendingCount++;
+      }
+
+      return { name, todayCount, completedCount, pendingCount, total: userFollowUps.length };
+    });
+  }, [followUps]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,29 +151,32 @@ const CRM = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-4">
-        {/* KPI Cards */}
-        <div className="grid grid-cols-3 gap-2">
-          <Card className="border-0 shadow-sm bg-primary/10">
-            <CardContent className="p-2 sm:p-4 text-center">
-              <CalendarClock className="h-4 w-4 text-primary mx-auto mb-0.5" />
-              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase">Today's Follow-ups</p>
-              <p className="text-lg font-black text-primary">{todayFollowUps.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-warning/10">
-            <CardContent className="p-2 sm:p-4 text-center">
-              <Users className="h-4 w-4 text-warning mx-auto mb-0.5" />
-              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase">Upcoming</p>
-              <p className="text-lg font-black text-warning">{upcomingFollowUps.length}</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-sm bg-success/10">
-            <CardContent className="p-2 sm:p-4 text-center">
-              <MessageCircle className="h-4 w-4 text-success mx-auto mb-0.5" />
-              <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase">Total Follow-ups</p>
-              <p className="text-lg font-black text-success">{allFollowUps.length}</p>
-            </CardContent>
-          </Card>
+        {/* Per-User KPI Cards */}
+        <div className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Follow-ups by Person</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {userKPIs.map((u) => (
+              <Card key={u.name} className="border-0 shadow-sm">
+                <CardContent className="p-3">
+                  <p className="text-sm font-bold mb-2">{u.name.split(" ")[0]}</p>
+                  <div className="grid grid-cols-3 gap-1 text-center">
+                    <div className="bg-primary/10 rounded-lg p-1.5">
+                      <p className="text-lg font-black text-primary">{u.todayCount}</p>
+                      <p className="text-[8px] text-muted-foreground uppercase">Today</p>
+                    </div>
+                    <div className="bg-success/10 rounded-lg p-1.5">
+                      <p className="text-lg font-black text-success">{u.completedCount}</p>
+                      <p className="text-[8px] text-muted-foreground uppercase">Done</p>
+                    </div>
+                    <div className="bg-warning/10 rounded-lg p-1.5">
+                      <p className="text-lg font-black text-warning">{u.pendingCount}</p>
+                      <p className="text-[8px] text-muted-foreground uppercase">Pending</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* Search + User Filter */}
