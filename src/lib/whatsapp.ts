@@ -77,6 +77,6 @@ export async function sendViaWati(
     { name: "12", value: total.toLocaleString("en-IN") },
   ];
 
-  const result = await sendWatiTemplateMessage(phone, "payment_reminder_v2", parameters, "payment_reminder");
+  const result = await sendWatiTemplateMessage(phone, "payment_reminder_v3", parameters, "payment_reminder");
   return { success: result.success, error: result.error };
 }
