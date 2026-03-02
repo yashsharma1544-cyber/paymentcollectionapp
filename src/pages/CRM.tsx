@@ -156,7 +156,11 @@ const CRM = () => {
           <h2 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Follow-ups by Person</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {userKPIs.map((u) => (
-              <Card key={u.name} className="border-0 shadow-sm">
+              <Card
+                key={u.name}
+                className={`border-0 shadow-sm cursor-pointer transition-all ${userFilter === u.name ? "ring-2 ring-primary" : "hover:ring-1 hover:ring-primary/30"}`}
+                onClick={() => setUserFilter(userFilter === u.name ? "all" : u.name)}
+              >
                 <CardContent className="p-3">
                   <p className="text-sm font-bold mb-2">{u.name.split(" ")[0]}</p>
                   <div className="grid grid-cols-4 gap-1 text-center">
