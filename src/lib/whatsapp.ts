@@ -67,7 +67,7 @@ export async function sendViaWati(
         value: `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`,
       });
     } else {
-      invoiceParams.push({ name: String(paramIndex), value: " " });
+      invoiceParams.push({ name: String(paramIndex), value: "\u200B" });
     }
   }
 
