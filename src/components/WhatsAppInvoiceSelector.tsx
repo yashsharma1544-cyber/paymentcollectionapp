@@ -16,12 +16,20 @@ interface WhatsAppInvoiceSelectorProps {
 
 export function WhatsAppInvoiceSelector({ open, onClose, invoices, onSend, sending }: WhatsAppInvoiceSelectorProps) {
   const outstanding = useMemo(() => invoices.filter((i) => i.outstandingAmount > 0), [invoices]);
-  const [selected, setSelected] = useState<Set<string>>(new Set(outstanding.map((i) => i.billNo)));
+  const oldest10 = useMemo(() => {
+    return [...outstanding]
+      .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
+      .slice(0, 10);
+  }, [outstanding]);
+  const [selected, setSelected] = useState<Set<string>>(new Set(oldest10.map((i) => i.billNo)));
 
   // Reset selection when dialog opens
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      setSelected(new Set(outstanding.map((i) => i.billNo)));
+      const top10 = [...outstanding]
+        .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
+        .slice(0, 10);
+      setSelected(new Set(top10.map((i) => i.billNo)));
     } else {
       onClose();
     }
