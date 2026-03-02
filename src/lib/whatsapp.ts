@@ -54,11 +54,11 @@ export async function sendViaWati(
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
 
-  // WATI renders literal \n as newline in the final WhatsApp message
+  // Send literal \n token (not actual newline) so WATI can render it in template safely
   const invoiceLines = outstanding.map((inv) => {
     const overdueDays = getOverdueDays(inv.billDate);
     return `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-  }).join("\\n");
+  }).join("\\\\n");
 
   const parameters = [
     { name: "1", value: customerName },
