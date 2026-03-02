@@ -53,7 +53,7 @@ export async function sendViaWati(
   if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
-  const MAX_INVOICE_SLOTS = 20;
+  const MAX_INVOICE_SLOTS = 19;
 
   // Build individual invoice lines (one per template param slot)
   const invoiceParams: { name: string; value: string }[] = [];
@@ -74,7 +74,7 @@ export async function sendViaWati(
   const parameters = [
     { name: "1", value: customerName },
     ...invoiceParams,
-    { name: "22", value: total.toLocaleString("en-IN") },
+    { name: "21", value: total.toLocaleString("en-IN") },
   ];
 
   const result = await sendWatiTemplateMessage(phone, "payment_reminder_v2", parameters, "payment_reminder");
