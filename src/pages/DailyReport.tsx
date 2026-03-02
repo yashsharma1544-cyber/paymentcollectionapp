@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowLeft, RefreshCw, IndianRupee,
-  Users, MapPin, FileText, Calendar as CalendarIcon,
+  Users, MapPin, FileText, Calendar as CalendarIcon, UserCircle,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { USERS } from "@/contexts/UserContext";
 
 function parseTimestamp(ts: string): Date | null {
   if (!ts) return null;
@@ -78,16 +79,18 @@ const DailyReport = () => {
   }, [invoices]);
 
   // Filter payments by selected date using timestamp (column D)
-  const { customers, totalCollected, totalBills } = useMemo(() => {
-    const filtered = payments.filter((p) => {
+  const dayPayments = useMemo(() => {
+    return payments.filter((p) => {
       if (p.paidAmount <= 0) return false;
       const ts = parseTimestamp(p.timestamp);
       if (!ts) return false;
       return isSameDay(ts, selectedDate);
     });
+  }, [payments, selectedDate]);
 
+  const { customers, totalCollected, totalBills } = useMemo(() => {
     const map = new Map<string, { totalCollected: number; bills: Set<string> }>();
-    for (const p of filtered) {
+    for (const p of dayPayments) {
       if (!map.has(p.customerName)) {
         map.set(p.customerName, { totalCollected: 0, bills: new Set() });
       }
@@ -109,7 +112,23 @@ const DailyReport = () => {
     const totalBills = customers.reduce((s, c) => s + c.invoiceCount, 0);
 
     return { customers, totalCollected, totalBills };
-  }, [payments, selectedDate, customerBeatMap]);
+  }, [dayPayments, customerBeatMap]);
+
+  // Per-user breakdown
+  const userBreakdown = useMemo(() => {
+    const map = new Map<string, { amount: number; customers: Set<string>; bills: Set<string> }>();
+    for (const p of dayPayments) {
+      const user = p.collectedBy || "Unknown";
+      if (!map.has(user)) map.set(user, { amount: 0, customers: new Set(), bills: new Set() });
+      const entry = map.get(user)!;
+      entry.amount += p.paidAmount;
+      entry.customers.add(p.customerName);
+      entry.bills.add(p.billNo);
+    }
+    return Array.from(map.entries())
+      .map(([name, d]) => ({ name, amount: d.amount, customers: d.customers.size, bills: d.bills.size }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [dayPayments]);
 
   // All beats available for the selected date
   const allBeats = useMemo(() => {
@@ -229,6 +248,29 @@ const DailyReport = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Per-User Breakdown */}
+            {userBreakdown.length > 0 && (
+              <div>
+                <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <UserCircle className="h-3.5 w-3.5" />
+                  Collection by Person
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {userBreakdown.map((u) => (
+                    <Card key={u.name} className="border shadow-sm">
+                      <CardContent className="p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold">{u.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{u.customers} customer{u.customers !== 1 ? "s" : ""} · {u.bills} bill{u.bills !== 1 ? "s" : ""}</p>
+                        </div>
+                        <p className="text-sm font-bold text-success">₹{u.amount.toLocaleString("en-IN")}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Customer Table */}
             <div className="rounded-xl border bg-card overflow-hidden">
