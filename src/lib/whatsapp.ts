@@ -54,11 +54,11 @@ export async function sendViaWati(
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
 
-  // WATI does not allow newline/tab in template params, so use bullet separator
+  // Build invoice details with newline separator
   const invoiceLines = outstanding.map((inv) => {
     const overdueDays = getOverdueDays(inv.billDate);
     return `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-  }).join(" ◆ ");
+  }).join("\n");
 
   const parameters = [
     { name: "1", value: customerName },
