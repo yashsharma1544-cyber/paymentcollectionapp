@@ -83,6 +83,7 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
 export async function editPayment(params: {
   billNo: string;
   originalTimestamp: string;
+  customerName?: string;
   paidAmount: number;
   paymentDate?: string;
   paymentMode?: string;
@@ -99,12 +100,12 @@ export async function editPayment(params: {
   if (!response.ok) throw new Error(`Failed to edit payment: ${await response.text()}`);
 }
 
-export async function deletePayment(billNo: string, originalTimestamp: string): Promise<void> {
+export async function deletePayment(billNo: string, originalTimestamp: string, customerName?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=delete-payment`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({ billNo, originalTimestamp }),
+    body: JSON.stringify({ billNo, originalTimestamp: originalTimestamp || undefined, customerName }),
   });
   if (!response.ok) throw new Error(`Failed to delete payment: ${await response.text()}`);
 }

@@ -70,7 +70,7 @@ const RecordedPayments = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp, deleteTarget.customerName);
       toast({ title: "✅ Payment deleted successfully" });
       setDeleteTarget(null);
       refetch();
