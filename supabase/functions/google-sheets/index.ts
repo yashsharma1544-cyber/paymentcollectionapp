@@ -393,6 +393,49 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "backfill-timestamps") {
+      // Find all rows missing timestamps and fill them with payment date or "Imported"
+      const data = await fetchSheet(accessToken, "Record Payments!A:I");
+      const rows = data.values || [];
+      const updates: { range: string; values: string[][] }[] = [];
+      let count = 0;
+
+      for (let i = 1; i < rows.length; i++) {
+        const ts = rows[i][3] || "";
+        if (!ts.trim()) {
+          // Use payment date (col E/index 4) if available, otherwise "Imported"
+          const paymentDate = rows[i][4] || "";
+          const fallback = paymentDate ? `${paymentDate}, 00:00:00` : "Imported";
+          updates.push({
+            range: `Record Payments!D${i + 1}`,
+            values: [[fallback]],
+          });
+          count++;
+        }
+      }
+
+      if (updates.length === 0) {
+        return new Response(JSON.stringify({ success: true, updated: 0, message: "All records already have timestamps" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Batch update using batchUpdate values
+      const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`;
+      const batchRes = await fetch(batchUrl, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          valueInputOption: "USER_ENTERED",
+          data: updates,
+        }),
+      });
+      const batchResult = await batchRes.json();
+      if (!batchRes.ok) throw new Error(`Sheets API error: ${JSON.stringify(batchResult)}`);
+      return new Response(JSON.stringify({ success: true, updated: count, data: batchResult }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }
