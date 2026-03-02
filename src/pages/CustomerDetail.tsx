@@ -172,13 +172,6 @@ const CustomerDetail = () => {
           )}
 
           <div className="flex items-center gap-2 pl-10 flex-wrap">
-            <Button size="sm" variant="outline" onClick={handleWhatsApp}
-              disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
-              className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none"
-            >
-              {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
-              {sendingWati ? "Sending..." : "WhatsApp"}
-            </Button>
             <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
               <Wallet className="h-3.5 w-3.5" />Lumpsum
             </Button>
@@ -188,6 +181,14 @@ const CustomerDetail = () => {
             <ExportMenu invoices={invoices} title={decoded} size="sm" />
             <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5 text-xs hidden sm:inline-flex">
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />Refresh
+            </Button>
+            <div className="flex-1 sm:flex-none" />
+            <Button size="sm" variant="outline" onClick={handleWhatsApp}
+              disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
+              className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none ml-auto"
+            >
+              {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
+              {sendingWati ? "Sending..." : "WhatsApp"}
             </Button>
           </div>
         </div>
