@@ -19,7 +19,7 @@ export function WhatsAppInvoiceSelector({ open, onClose, invoices, onSend, sendi
   const oldest10 = useMemo(() => {
     return [...outstanding]
       .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
-      .slice(0, 10);
+      .slice(0, 8);
   }, [outstanding]);
   const [selected, setSelected] = useState<Set<string>>(new Set(oldest10.map((i) => i.billNo)));
 
@@ -28,7 +28,7 @@ export function WhatsAppInvoiceSelector({ open, onClose, invoices, onSend, sendi
     if (isOpen) {
       const top10 = [...outstanding]
         .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
-        .slice(0, 10);
+        .slice(0, 8);
       setSelected(new Set(top10.map((i) => i.billNo)));
     } else {
       onClose();
