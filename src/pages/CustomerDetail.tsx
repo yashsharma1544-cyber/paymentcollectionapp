@@ -401,6 +401,7 @@ const CustomerDetail = () => {
                          <TableHead className="text-xs font-semibold">Bill No</TableHead>
                           <TableHead className="text-xs font-semibold text-right">Amount Paid</TableHead>
                           <TableHead className="text-xs font-semibold">Date & Time</TableHead>
+                          <TableHead className="text-xs font-semibold">Collected By</TableHead>
                           <TableHead className="text-xs font-semibold text-center">Action</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -410,6 +411,7 @@ const CustomerDetail = () => {
                             <TableCell className="font-mono text-xs">{p.billNo}</TableCell>
                             <TableCell className="text-right text-xs text-success font-semibold">₹{p.paidAmount.toLocaleString("en-IN")}</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{p.timestamp}</TableCell>
+                            <TableCell className="text-xs font-medium">{p.collectedBy || "—"}</TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-0.5">
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditPaymentRec(p); setEditPaymentOpen(true); }}>
