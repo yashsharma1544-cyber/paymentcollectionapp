@@ -159,7 +159,7 @@ const CRM = () => {
               <Card key={u.name} className="border-0 shadow-sm">
                 <CardContent className="p-3">
                   <p className="text-sm font-bold mb-2">{u.name.split(" ")[0]}</p>
-                  <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="grid grid-cols-4 gap-1 text-center">
                     <div className="bg-primary/10 rounded-lg p-1.5">
                       <p className="text-lg font-black text-primary">{u.todayCount}</p>
                       <p className="text-[8px] text-muted-foreground uppercase">Today</p>
@@ -171,6 +171,10 @@ const CRM = () => {
                     <div className="bg-warning/10 rounded-lg p-1.5">
                       <p className="text-lg font-black text-warning">{u.pendingCount}</p>
                       <p className="text-[8px] text-muted-foreground uppercase">Pending</p>
+                    </div>
+                    <div className="bg-muted rounded-lg p-1.5">
+                      <p className="text-lg font-black text-foreground">{u.total}</p>
+                      <p className="text-[8px] text-muted-foreground uppercase">Total</p>
                     </div>
                   </div>
                 </CardContent>
