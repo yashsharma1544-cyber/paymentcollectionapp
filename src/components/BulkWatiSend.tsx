@@ -64,7 +64,7 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
     setEntries(customers.map((c) => {
       const oldest10 = [...c.invoices]
         .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
-        .slice(0, 10);
+        .slice(0, 8);
       return {
         customer: c,
         selected: true,

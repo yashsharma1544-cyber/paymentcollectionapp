@@ -53,12 +53,12 @@ export async function sendViaWati(
   if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
-  const MAX_INVOICE_SLOTS = 10;
+  const MAX_INVOICE_SLOTS = 8;
 
   // Build individual invoice lines (one per template param slot)
   const invoiceParams: { name: string; value: string }[] = [];
   for (let idx = 0; idx < MAX_INVOICE_SLOTS; idx++) {
-    const paramIndex = idx + 2; // params 2..11
+    const paramIndex = idx + 2; // params 2..9
     if (idx < outstanding.length) {
       const inv = outstanding[idx];
       const overdueDays = getOverdueDays(inv.billDate);
@@ -74,7 +74,7 @@ export async function sendViaWati(
   const parameters = [
     { name: "1", value: customerName },
     ...invoiceParams,
-    { name: "12", value: total.toLocaleString("en-IN") },
+    { name: "10", value: total.toLocaleString("en-IN") },
   ];
 
   const result = await sendWatiTemplateMessage(phone, "payment_reminder_v3", parameters, "payment_reminder");
