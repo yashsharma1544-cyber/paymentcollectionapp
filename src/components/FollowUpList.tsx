@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import type { FollowUp } from "@/lib/api";
-import { updateFollowUpStatus, editFollowUp } from "@/lib/api";
+import { updateFollowUpStatus, editFollowUp, fetchInvoices } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 
 interface FollowUpListProps {
   followUps: FollowUp[];
@@ -26,7 +27,13 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
   const [editNextDate, setEditNextDate] = useState("");
   const [editStatus, setEditStatus] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+  const [paymentCustomer, setPaymentCustomer] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  const { data: allInvoices = [] } = useQuery({
+    queryKey: ["invoices"],
+    queryFn: fetchInvoices,
+  });
 
   const handleMarkDone = async (f: FollowUp) => {
     const key = `${f.customerName}-${f.createdAt}`;
@@ -122,35 +129,44 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
                       <span>Next: {f.nextFollowUpDate}</span>
                     </div>
                   ) : <div />}
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => openEdit(f)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                      Edit
-                    </Button>
-                    {f.status === "Pending" && (
+                    <div className="flex items-center gap-1.5">
                       <Button
                         size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1 text-green-600 border-green-600 hover:bg-green-50"
-                        disabled={isMarking}
-                        onClick={() => handleMarkDone(f)}
+                        variant="ghost"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setPaymentCustomer(f.customerName)}
                       >
-                        <CheckCircle className="h-3 w-3" />
-                        {isMarking ? "Saving..." : "Done"}
+                        <CreditCard className="h-3 w-3" />
+                        Pay
                       </Button>
-                    )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => openEdit(f)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
+                      {f.status === "Pending" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs gap-1 text-green-600 border-green-600 hover:bg-green-50"
+                          disabled={isMarking}
+                          onClick={() => handleMarkDone(f)}
+                        >
+                          <CheckCircle className="h-3 w-3" />
+                          {isMarking ? "Saving..." : "Done"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
       {/* Edit Follow-up Dialog */}
       <Dialog open={!!editingFollowUp} onOpenChange={(v) => !v && setEditingFollowUp(null)}>
@@ -206,6 +222,19 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {paymentCustomer && (
+        <LumpsumPaymentDialog
+          invoices={allInvoices.filter((inv) => inv.customerName === paymentCustomer)}
+          customerName={paymentCustomer}
+          open={!!paymentCustomer}
+          onClose={() => setPaymentCustomer(null)}
+          onSuccess={() => {
+            setPaymentCustomer(null);
+            queryClient.invalidateQueries({ queryKey: ["invoices"] });
+          }}
+        />
+      )}
     </>
   );
 }
