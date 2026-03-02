@@ -54,11 +54,11 @@ export async function sendViaWati(
 
   const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
 
-  // Send literal \n token (not actual newline) so WATI can render it in template safely
+  // WATI rejects any newline/tab chars in template params — use ◆ separator
   const invoiceLines = outstanding.map((inv) => {
     const overdueDays = getOverdueDays(inv.billDate);
     return `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस`;
-  }).join("\\\\n");
+  }).join(" ◆ ");
 
   const parameters = [
     { name: "1", value: customerName },
