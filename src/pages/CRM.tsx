@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { parseDateDMY, getOverdueDays } from "@/lib/date-utils";
 import { USERS } from "@/contexts/UserContext";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const CRM = () => {
   const { data: followUps = [], isLoading, refetch, isFetching } = useQuery({
@@ -36,6 +40,7 @@ const CRM = () => {
   const [search, setSearch] = useState("");
   const [showNewFollowUp, setShowNewFollowUp] = useState(false);
   const [userFilter, setUserFilter] = useState<string>("all");
+  const [waDateFilter, setWaDateFilter] = useState<Date | undefined>(undefined);
 
   // Last WhatsApp per customer
   const lastWhatsApp = useMemo(() => {
@@ -273,42 +278,108 @@ const CRM = () => {
                 <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
                   No WhatsApp messages logged yet
                 </div>
-              ) : (
-                 <div className="space-y-2">
-                  {[...whatsAppLog].reverse().slice(0, 50).map((entry, i) => (
-                    <Card key={i} className="border shadow-sm">
+              ) : (() => {
+                // Filter by date
+                const filteredWA = waDateFilter
+                  ? whatsAppLog.filter((entry) => {
+                      const d = parseWATimestamp(entry.timestamp);
+                      if (!d) return false;
+                      return d.toDateString() === waDateFilter.toDateString();
+                    })
+                  : whatsAppLog;
+
+                // Unique customers who received reminders (in filtered list)
+                const uniqueCustomers = new Set(filteredWA.map((e) => e.customerName));
+                const totalOutstandingReminded = Array.from(uniqueCustomers).reduce(
+                  (sum, name) => sum + (outstandingByCustomer.get(name) || 0), 0
+                );
+
+                return (
+                  <div className="space-y-3">
+                    {/* Date filter */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !waDateFilter && "text-muted-foreground")}>
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                            {waDateFilter ? format(waDateFilter, "dd MMM yyyy") : "Filter by date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={waDateFilter}
+                            onSelect={setWaDateFilter}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {waDateFilter && (
+                        <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setWaDateFilter(undefined)}>
+                          Clear
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Summary card */}
+                    <Card className="border-0 shadow-sm bg-destructive/10">
                       <CardContent className="p-3 flex items-center justify-between">
-                        <div>
-                          <Link
-                            to={`/customer/${encodeURIComponent(entry.customerName)}`}
-                            className="text-sm font-semibold text-primary hover:underline"
-                          >
-                            {entry.customerName}
-                          </Link>
-                          <p className="text-xs text-muted-foreground">{entry.phone}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-0.5">
-                          {(() => {
-                            const amt = outstandingByCustomer.get(entry.customerName) || 0;
-                            return amt > 0 ? (
-                              <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
-                            ) : (
-                              <span className="text-xs font-medium text-success">Cleared</span>
-                            );
-                          })()}
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {entry.timestamp}
+                        <div className="flex items-center gap-2">
+                          <IndianRupee className="h-4 w-4 text-destructive" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Outstanding (Reminded)</p>
+                            <p className="text-lg font-black text-destructive">₹{totalOutstandingReminded.toLocaleString("en-IN")}</p>
                           </div>
-                          {entry.sentBy && (
-                            <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-medium">{entry.sentBy}</span>
-                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">{uniqueCustomers.size} customer{uniqueCustomers.size !== 1 ? "s" : ""}</p>
+                          <p className="text-xs text-muted-foreground">{filteredWA.length} message{filteredWA.length !== 1 ? "s" : ""}</p>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
+
+                    {/* Entries */}
+                    {[...filteredWA].reverse().slice(0, 50).map((entry, i) => (
+                      <Card key={i} className="border shadow-sm">
+                        <CardContent className="p-3 flex items-center justify-between">
+                          <div>
+                            <Link
+                              to={`/customer/${encodeURIComponent(entry.customerName)}`}
+                              className="text-sm font-semibold text-primary hover:underline"
+                            >
+                              {entry.customerName}
+                            </Link>
+                            <p className="text-xs text-muted-foreground">{entry.phone}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-0.5">
+                            {(() => {
+                              const amt = outstandingByCustomer.get(entry.customerName) || 0;
+                              return amt > 0 ? (
+                                <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                              ) : (
+                                <span className="text-xs font-medium text-success">Cleared</span>
+                              );
+                            })()}
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />
+                              {entry.timestamp}
+                            </div>
+                            {entry.sentBy && (
+                              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-medium">{entry.sentBy}</span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                    {filteredWA.length === 0 && (
+                      <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                        No messages on this date
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </TabsContent>
 
             <TabsContent value="replies" className="mt-3">
@@ -376,6 +447,24 @@ function parseDateForCRM(dateStr: string): Date | null {
     return isNaN(d.getTime()) ? null : d;
   }
   return null;
+}
+
+/** Parse WA log timestamp like "02/03/2026, 10:30 AM" or "2/3/2026 10:30:00" */
+function parseWATimestamp(ts: string): Date | null {
+  if (!ts) return null;
+  // Try common formats: "DD/MM/YYYY, HH:MM AM" or "DD/MM/YYYY HH:MM:SS"
+  const cleaned = ts.replace(",", "").trim();
+  const parts = cleaned.split(/[\s]+/);
+  if (parts.length >= 1) {
+    const datePart = parts[0];
+    const segments = datePart.split("/");
+    if (segments.length === 3) {
+      const d = new Date(Number(segments[2]), Number(segments[1]) - 1, Number(segments[0]));
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+  const fallback = new Date(ts);
+  return isNaN(fallback.getTime()) ? null : fallback;
 }
 
 export default CRM;
