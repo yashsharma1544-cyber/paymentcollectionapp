@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard,
 } from "lucide-react";
+import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { parseDateDMY, getOverdueDays } from "@/lib/date-utils";
@@ -41,6 +42,7 @@ const CRM = () => {
   const [showNewFollowUp, setShowNewFollowUp] = useState(false);
   const [userFilter, setUserFilter] = useState<string>("all");
   const [waDateFilter, setWaDateFilter] = useState<Date | undefined>(undefined);
+  const [paymentCustomer, setPaymentCustomer] = useState<string | null>(null);
 
   // Last WhatsApp per customer
   const lastWhatsApp = useMemo(() => {
@@ -340,38 +342,54 @@ const CRM = () => {
                     </Card>
 
                     {/* Entries */}
-                    {[...filteredWA].reverse().slice(0, 50).map((entry, i) => (
-                      <Card key={i} className="border shadow-sm">
-                        <CardContent className="p-3 flex items-center justify-between">
-                          <div>
-                            <Link
-                              to={`/customer/${encodeURIComponent(entry.customerName)}`}
-                              className="text-sm font-semibold text-primary hover:underline"
-                            >
-                              {entry.customerName}
-                            </Link>
-                            <p className="text-xs text-muted-foreground">{entry.phone}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-0.5">
-                            {(() => {
-                              const amt = outstandingByCustomer.get(entry.customerName) || 0;
-                              return amt > 0 ? (
-                                <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
-                              ) : (
-                                <span className="text-xs font-medium text-success">Cleared</span>
-                              );
-                            })()}
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="h-3 w-3" />
-                              {entry.timestamp}
+                    {[...filteredWA].reverse().slice(0, 50).map((entry, i) => {
+                      const amt = outstandingByCustomer.get(entry.customerName) || 0;
+                      return (
+                        <Card key={i} className="border shadow-sm">
+                          <CardContent className="p-3 flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <Link
+                                to={`/customer/${encodeURIComponent(entry.customerName)}`}
+                                className="text-sm font-semibold text-primary hover:underline"
+                              >
+                                {entry.customerName}
+                              </Link>
+                              <p className="text-xs text-muted-foreground">{entry.phone}</p>
                             </div>
-                            {entry.sentBy && (
-                              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-medium">{entry.sentBy}</span>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                            <div className="flex items-center gap-2">
+                              {amt > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-7 px-2"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setPaymentCustomer(entry.customerName);
+                                  }}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  Pay
+                                </Button>
+                              )}
+                              <div className="flex flex-col items-end gap-0.5">
+                                {amt > 0 ? (
+                                  <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                                ) : (
+                                  <span className="text-xs font-medium text-success">Cleared</span>
+                                )}
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {entry.timestamp}
+                                </div>
+                                {entry.sentBy && (
+                                  <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-medium">{entry.sentBy}</span>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                     {filteredWA.length === 0 && (
                       <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
                         No messages on this date
@@ -428,6 +446,19 @@ const CRM = () => {
           onSuccess={() => refetch()}
           allowCustomerNameEdit
         />
+
+        {paymentCustomer && (
+          <LumpsumPaymentDialog
+            invoices={invoices.filter((inv) => inv.customerName === paymentCustomer)}
+            customerName={paymentCustomer}
+            open={!!paymentCustomer}
+            onClose={() => setPaymentCustomer(null)}
+            onSuccess={() => {
+              setPaymentCustomer(null);
+              refetch();
+            }}
+          />
+        )}
       </main>
     </div>
   );
