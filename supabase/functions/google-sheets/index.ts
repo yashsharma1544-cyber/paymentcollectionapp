@@ -288,18 +288,23 @@ serve(async (req) => {
       }
 
     } else if (action === "edit-payment") {
-      // Find row by billNo + timestamp, update fields
+      // Find row by billNo + timestamp (or billNo + customerName if timestamp is empty)
       const body = await req.json();
-      const { billNo, originalTimestamp, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy } = body;
-      if (!billNo || !originalTimestamp) throw new Error("Missing billNo or originalTimestamp");
+      const { billNo, originalTimestamp, customerName, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy } = body;
+      if (!billNo) throw new Error("Missing billNo");
 
       const data = await fetchSheet(accessToken, "Record Payments!A:I");
       const rows = data.values || [];
       let targetRow = -1;
       for (let i = 0; i < rows.length; i++) {
-        if (rows[i][0] === billNo && rows[i][3] === originalTimestamp) {
-          targetRow = i + 1;
-          break;
+        if (rows[i][0] === billNo) {
+          if (originalTimestamp && rows[i][3] === originalTimestamp) {
+            targetRow = i + 1;
+            break;
+          } else if (!originalTimestamp && (!rows[i][3] || rows[i][3] === "") && customerName && rows[i][1] === customerName) {
+            targetRow = i + 1;
+            break;
+          }
         }
       }
       if (targetRow === -1) throw new Error("Payment record not found");
@@ -328,16 +333,21 @@ serve(async (req) => {
 
     } else if (action === "delete-payment") {
       const body = await req.json();
-      const { billNo, originalTimestamp } = body;
-      if (!billNo || !originalTimestamp) throw new Error("Missing billNo or originalTimestamp");
+      const { billNo, originalTimestamp, customerName } = body;
+      if (!billNo) throw new Error("Missing billNo");
 
-      const data = await fetchSheet(accessToken, "Record Payments!A:H");
+      const data = await fetchSheet(accessToken, "Record Payments!A:I");
       const rows = data.values || [];
       let targetRow = -1;
       for (let i = 0; i < rows.length; i++) {
-        if (rows[i][0] === billNo && rows[i][3] === originalTimestamp) {
-          targetRow = i; // 0-indexed for batchUpdate
-          break;
+        if (rows[i][0] === billNo) {
+          if (originalTimestamp && rows[i][3] === originalTimestamp) {
+            targetRow = i; // 0-indexed for batchUpdate
+            break;
+          } else if (!originalTimestamp && (!rows[i][3] || rows[i][3] === "") && customerName && rows[i][1] === customerName) {
+            targetRow = i;
+            break;
+          }
         }
       }
       if (targetRow === -1) throw new Error("Payment record not found");

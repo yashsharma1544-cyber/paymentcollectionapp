@@ -53,6 +53,7 @@ export function EditPaymentDialog({ payment, open, onOpenChange, onSuccess }: Ed
       await editPayment({
         billNo: payment.billNo,
         originalTimestamp: payment.timestamp,
+        customerName: payment.customerName,
         paidAmount: amount,
         paymentDate,
         paymentMode,
