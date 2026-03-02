@@ -61,12 +61,17 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
 
   const handleOpen = () => {
-    setEntries(customers.map((c) => ({
-      customer: c,
-      selected: true,
-      status: "pending",
-      selectedBillNos: new Set(c.invoices.map((i) => i.billNo)),
-    })));
+    setEntries(customers.map((c) => {
+      const oldest10 = [...c.invoices]
+        .sort((a, b) => getOverdueDays(b.billDate) - getOverdueDays(a.billDate))
+        .slice(0, 10);
+      return {
+        customer: c,
+        selected: true,
+        status: "pending" as SendStatus,
+        selectedBillNos: new Set(oldest10.map((i) => i.billNo)),
+      };
+    }));
     setExpandedCustomer(null);
     setOpen(true);
   };
