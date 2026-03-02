@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { parseDateDMY, getOverdueDays } from "@/lib/date-utils";
+import { USERS } from "@/contexts/UserContext";
 
 const CRM = () => {
   const { data: followUps = [], isLoading, refetch, isFetching } = useQuery({
@@ -34,6 +35,7 @@ const CRM = () => {
 
   const [search, setSearch] = useState("");
   const [showNewFollowUp, setShowNewFollowUp] = useState(false);
+  const [userFilter, setUserFilter] = useState<string>("all");
 
   // Last WhatsApp per customer
   const lastWhatsApp = useMemo(() => {
@@ -53,9 +55,13 @@ const CRM = () => {
   const todayStr = new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
 
   const { todayFollowUps, upcomingFollowUps, allFollowUps } = useMemo(() => {
-    const filtered = search
+    let filtered = search
       ? followUps.filter((f) => f.customerName.toLowerCase().includes(search.toLowerCase()))
-      : followUps;
+      : [...followUps];
+
+    if (userFilter !== "all") {
+      filtered = filtered.filter((f) => f.addedBy === userFilter);
+    }
 
     const today: FollowUp[] = [];
     const upcoming: FollowUp[] = [];
@@ -80,7 +86,7 @@ const CRM = () => {
     }
 
     return { todayFollowUps: today, upcomingFollowUps: upcoming, allFollowUps: filtered };
-  }, [followUps, search]);
+  }, [followUps, search, userFilter]);
 
   const overdueCustomers = useMemo(() => {
     return invoices.filter((i) => i.outstandingAmount > 0 && getOverdueDays(i.billDate) > 0);
@@ -145,15 +151,43 @@ const CRM = () => {
           </Card>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+        {/* Search + User Filter */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search customer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-1 flex-wrap">
+            <Button
+              variant={userFilter === "all" ? "default" : "outline"}
+              size="sm"
+              className="text-xs h-8"
+              onClick={() => setUserFilter("all")}
+            >
+              All
+            </Button>
+            {USERS.map((name) => (
+              <Button
+                key={name}
+                variant={userFilter === name ? "default" : "outline"}
+                size="sm"
+                className="text-xs h-8"
+                onClick={() => setUserFilter(name)}
+              >
+                {name.split(" ")[0]}
+              </Button>
+            ))}
+            {userFilter !== "all" && (
+              <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setUserFilter("all")}>
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

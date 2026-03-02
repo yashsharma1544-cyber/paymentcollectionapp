@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
+import { USERS } from "@/contexts/UserContext";
 
 function parseDate(timestamp: string): Date | null {
   if (!timestamp) return null;
@@ -58,6 +59,7 @@ const RecordedPayments = () => {
   const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
+  const [userFilter, setUserFilter] = useState<string>("all");
   const [editPayment, setEditPayment] = useState<RecordedPayment | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RecordedPayment | null>(null);
@@ -86,6 +88,8 @@ const RecordedPayments = () => {
         p.billNo.toLowerCase().includes(search.toLowerCase()) ||
         p.customerName.toLowerCase().includes(search.toLowerCase());
 
+      const matchesUser = userFilter === "all" || p.collectedBy === userFilter;
+
       let matchesDate = true;
       if (fromDate || toDate) {
         const d = parseDate(p.timestamp);
@@ -101,7 +105,7 @@ const RecordedPayments = () => {
         }
       }
 
-      return matchesSearch && matchesDate;
+      return matchesSearch && matchesDate && matchesUser;
     }).sort((a, b) => {
       const dateA = parseDate(a.timestamp);
       const dateB = parseDate(b.timestamp);
@@ -110,7 +114,7 @@ const RecordedPayments = () => {
       if (!dateB) return -1;
       return dateB.getTime() - dateA.getTime();
     });
-  }, [payments, search, fromDate, toDate]);
+  }, [payments, search, fromDate, toDate, userFilter]);
 
   const totalCollected = filtered.reduce((s, p) => s + p.paidAmount, 0);
 
@@ -166,6 +170,29 @@ const RecordedPayments = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
+                {/* User filter */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant={userFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs h-8"
+                    onClick={() => setUserFilter("all")}
+                  >
+                    All
+                  </Button>
+                  {USERS.map((name) => (
+                    <Button
+                      key={name}
+                      variant={userFilter === name ? "default" : "outline"}
+                      size="sm"
+                      className="text-xs h-8"
+                      onClick={() => setUserFilter(name)}
+                    >
+                      {name.split(" ")[0]}
+                    </Button>
+                  ))}
+                </div>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs", !fromDate && "text-muted-foreground")}>
@@ -190,8 +217,8 @@ const RecordedPayments = () => {
                   </PopoverContent>
                 </Popover>
 
-                {(fromDate || toDate) && (
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setFromDate(undefined); setToDate(undefined); }}>
+                {(fromDate || toDate || userFilter !== "all") && (
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setFromDate(undefined); setToDate(undefined); setUserFilter("all"); }}>
                     Clear
                   </Button>
                 )}
@@ -215,6 +242,7 @@ const RecordedPayments = () => {
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Mode</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Payment Date</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Notes</TableHead>
+                      <TableHead className="font-semibold text-xs whitespace-nowrap">Collected By</TableHead>
                       <TableHead className="font-semibold text-xs whitespace-nowrap">Recorded At</TableHead>
                       <TableHead className="font-semibold text-xs text-center whitespace-nowrap">Action</TableHead>
                     </TableRow>
@@ -222,7 +250,7 @@ const RecordedPayments = () => {
                   <TableBody>
                     {filtered.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
                           No recorded payments found
                         </TableCell>
                       </TableRow>
@@ -240,6 +268,7 @@ const RecordedPayments = () => {
                           <TableCell className="text-xs whitespace-nowrap">{p.paymentMode || "—"}</TableCell>
                           <TableCell className="text-xs whitespace-nowrap">{p.paymentDate || "—"}</TableCell>
                           <TableCell className="text-xs max-w-[150px] truncate" title={p.notes}>{p.notes || "—"}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap font-medium">{p.collectedBy || "—"}</TableCell>
                           <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.timestamp}</TableCell>
                           <TableCell className="text-center">
                             <div className="flex items-center justify-center gap-0.5">
