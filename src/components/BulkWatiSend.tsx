@@ -1,14 +1,14 @@
 import { useState, useMemo } from "react";
 import type { Invoice } from "@/lib/invoice";
-import { buildReminderMessage, sendViaWati } from "@/lib/whatsapp";
+import { sendViaWati } from "@/lib/whatsapp";
 import { logWhatsApp } from "@/lib/api";
+import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { MessageCircle, Send, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { MessageCircle, Send, Loader2, CheckCircle, XCircle, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerForBulk {
@@ -29,6 +29,7 @@ interface BulkEntry {
   selected: boolean;
   status: SendStatus;
   error?: string;
+  selectedBillNos: Set<string>;
 }
 
 export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
@@ -55,19 +56,50 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
 
   const [entries, setEntries] = useState<BulkEntry[]>([]);
   const [sending, setSending] = useState(false);
+  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
 
   const handleOpen = () => {
-    setEntries(customers.map((c) => ({ customer: c, selected: true, status: "pending" })));
+    setEntries(customers.map((c) => ({
+      customer: c,
+      selected: true,
+      status: "pending",
+      selectedBillNos: new Set(c.invoices.map((i) => i.billNo)),
+    })));
+    setExpandedCustomer(null);
     setOpen(true);
   };
 
   const toggleAll = (checked: boolean) => {
-    setEntries((prev) => prev.map((e) => ({ ...e, selected: checked })));
+    setEntries((prev) => prev.map((e) => ({
+      ...e,
+      selected: checked,
+      selectedBillNos: checked ? new Set(e.customer.invoices.map((i) => i.billNo)) : new Set(),
+    })));
   };
 
   const toggleOne = (index: number) => {
     setEntries((prev) =>
-      prev.map((e, i) => (i === index ? { ...e, selected: !e.selected } : e))
+      prev.map((e, i) => {
+        if (i !== index) return e;
+        const newSelected = !e.selected;
+        return {
+          ...e,
+          selected: newSelected,
+          selectedBillNos: newSelected ? new Set(e.customer.invoices.map((inv) => inv.billNo)) : new Set(),
+        };
+      })
+    );
+  };
+
+  const toggleInvoice = (entryIndex: number, billNo: string) => {
+    setEntries((prev) =>
+      prev.map((e, i) => {
+        if (i !== entryIndex) return e;
+        const next = new Set(e.selectedBillNos);
+        if (next.has(billNo)) next.delete(billNo);
+        else next.add(billNo);
+        return { ...e, selectedBillNos: next, selected: next.size > 0 };
+      })
     );
   };
 
@@ -77,18 +109,19 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
 
   const handleSendAll = async () => {
     setSending(true);
-    const toSend = entries.filter((e) => e.selected && e.status === "pending");
+    const toSend = entries.filter((e) => e.selected && e.status === "pending" && e.selectedBillNos.size > 0);
 
     for (let i = 0; i < toSend.length; i++) {
       const entry = toSend[i];
       const entryIndex = entries.findIndex((e) => e.customer.customerName === entry.customer.customerName);
+      const selectedInvoices = entry.customer.invoices.filter((inv) => entry.selectedBillNos.has(inv.billNo));
 
       setEntries((prev) =>
         prev.map((e, idx) => (idx === entryIndex ? { ...e, status: "sending" } : e))
       );
 
       try {
-        const result = await sendViaWati(entry.customer.mobileNo, entry.customer.customerName, entry.customer.invoices);
+        const result = await sendViaWati(entry.customer.mobileNo, entry.customer.customerName, selectedInvoices);
 
         if (result.success) {
           await logWhatsApp(entry.customer.customerName, entry.customer.mobileNo);
@@ -106,7 +139,6 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
         );
       }
 
-      // Stagger requests (500ms delay between each)
       if (i < toSend.length - 1) {
         await new Promise((r) => setTimeout(r, 500));
       }
@@ -155,32 +187,86 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-1.5 py-2 max-h-[50vh]">
-            {entries.map((entry, i) => (
-              <div
-                key={entry.customer.customerName}
-                className={`flex items-center gap-2 p-2 rounded-lg border transition-colors ${
-                  entry.status === "sent" ? "bg-green-50 border-green-200" :
-                  entry.status === "failed" ? "bg-destructive/5 border-destructive/20" :
-                  entry.status === "sending" ? "bg-primary/5 border-primary/20" :
-                  "bg-card"
-                }`}
-              >
-                <Checkbox
-                  checked={entry.selected}
-                  onCheckedChange={() => toggleOne(i)}
-                  disabled={sending || entry.status !== "pending"}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold truncate">{entry.customer.customerName}</p>
-                  <p className="text-[10px] text-muted-foreground">{entry.customer.mobileNo} · ₹{entry.customer.totalOutstanding.toLocaleString("en-IN")}</p>
+            {entries.map((entry, i) => {
+              const isExpanded = expandedCustomer === entry.customer.customerName;
+              const selectedInvCount = entry.selectedBillNos.size;
+              const totalInvCount = entry.customer.invoices.length;
+
+              return (
+                <div
+                  key={entry.customer.customerName}
+                  className={`rounded-lg border transition-colors ${
+                    entry.status === "sent" ? "bg-green-50 border-green-200" :
+                    entry.status === "failed" ? "bg-destructive/5 border-destructive/20" :
+                    entry.status === "sending" ? "bg-primary/5 border-primary/20" :
+                    "bg-card"
+                  }`}
+                >
+                  {/* Customer row */}
+                  <div className="flex items-center gap-2 p-2">
+                    <Checkbox
+                      checked={entry.selected}
+                      onCheckedChange={() => toggleOne(i)}
+                      disabled={sending || entry.status !== "pending"}
+                    />
+                    <button
+                      type="button"
+                      className="flex-1 min-w-0 text-left"
+                      onClick={() => setExpandedCustomer(isExpanded ? null : entry.customer.customerName)}
+                      disabled={sending || entry.status !== "pending"}
+                    >
+                      <p className="text-xs font-semibold truncate">{entry.customer.customerName}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {entry.customer.mobileNo} · ₹{entry.customer.totalOutstanding.toLocaleString("en-IN")} · {selectedInvCount}/{totalInvCount} bills
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      className="p-1 rounded hover:bg-muted/50 shrink-0"
+                      onClick={() => setExpandedCustomer(isExpanded ? null : entry.customer.customerName)}
+                    >
+                      <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                    <div className="shrink-0">
+                      {entry.status === "sending" && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+                      {entry.status === "sent" && <CheckCircle className="h-4 w-4 text-green-600" />}
+                      {entry.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
+                    </div>
+                  </div>
+
+                  {/* Expanded invoice list */}
+                  {isExpanded && entry.status === "pending" && (
+                    <div className="border-t mx-2 mb-2 pt-1.5 space-y-0.5">
+                      {entry.customer.invoices.map((inv) => {
+                        const overdue = getOverdueDays(inv.billDate);
+                        return (
+                          <label
+                            key={inv.billNo}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/40 cursor-pointer text-[11px]"
+                          >
+                            <Checkbox
+                              checked={entry.selectedBillNos.has(inv.billNo)}
+                              onCheckedChange={() => toggleInvoice(i, inv.billNo)}
+                              className="h-3.5 w-3.5"
+                            />
+                            <span className="font-mono">{inv.billNo}</span>
+                            <span className="text-muted-foreground">{inv.billDate}</span>
+                            <span className="ml-auto font-semibold text-destructive">
+                              ₹{inv.outstandingAmount.toLocaleString("en-IN")}
+                            </span>
+                            {overdue > 0 && (
+                              <span className="text-[9px] text-destructive bg-destructive/10 px-1 rounded-full">
+                                {formatOverdue(overdue)}
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <div className="shrink-0">
-                  {entry.status === "sending" && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                  {entry.status === "sent" && <CheckCircle className="h-4 w-4 text-green-600" />}
-                  {entry.status === "failed" && <XCircle className="h-4 w-4 text-destructive" />}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <DialogFooter className="gap-2">
