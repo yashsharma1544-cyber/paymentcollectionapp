@@ -234,7 +234,7 @@ const CRM = () => {
                   No WhatsApp messages logged yet
                 </div>
               ) : (
-                <div className="space-y-2">
+                 <div className="space-y-2">
                   {[...whatsAppLog].reverse().slice(0, 50).map((entry, i) => (
                     <Card key={i} className="border shadow-sm">
                       <CardContent className="p-3 flex items-center justify-between">
@@ -247,9 +247,14 @@ const CRM = () => {
                           </Link>
                           <p className="text-xs text-muted-foreground">{entry.phone}</p>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {entry.timestamp}
+                        <div className="flex flex-col items-end gap-0.5">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {entry.timestamp}
+                          </div>
+                          {entry.sentBy && (
+                            <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full font-medium">{entry.sentBy}</span>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
