@@ -145,17 +145,25 @@ function parseDateText(text: string): string | null {
   return null;
 }
 
-/** Get a future date string */
+/** Get current date/time in IST */
+function getNowIST(): Date {
+  const now = new Date();
+  // IST is UTC+5:30
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  return new Date(now.getTime() + istOffset);
+}
+
+/** Get a future date string in IST */
 function getFutureDate(daysFromNow: number): string {
-  const d = new Date();
+  const d = getNowIST();
   d.setDate(d.getDate() + daysFromNow);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
 }
 
 function getEndOfMonth(): string {
-  const now = new Date();
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return `${String(lastDay.getDate()).padStart(2, "0")}/${String(lastDay.getMonth() + 1).padStart(2, "0")}/${lastDay.getFullYear()}`;
+  const now = getNowIST();
+  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
+  return `${String(lastDay.getUTCDate()).padStart(2, "0")}/${String(lastDay.getUTCMonth() + 1).padStart(2, "0")}/${lastDay.getUTCFullYear()}`;
 }
 
 // No in-memory state needed — date replies are detected by pattern matching
