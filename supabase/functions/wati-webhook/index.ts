@@ -74,7 +74,44 @@ async function logToSheets(data: Record<string, string>) {
   }
 }
 
-/** Parse a date from text like "25/03/2026" or "25-03-2026" */
+/** Create a follow-up entry via google-sheets function */
+async function createFollowUp(customerName: string, remarks: string, nextFollowUpDate: string) {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+
+  const gsUrl = `${SUPABASE_URL}/functions/v1/google-sheets?action=add-followup`;
+  try {
+    // Convert DD/MM/YYYY to YYYY-MM-DD for the follow-up date field
+    const parts = nextFollowUpDate.split("/");
+    const isoDate = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : nextFollowUpDate;
+
+    const gsResponse = await fetch(gsUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        customerName,
+        remarks,
+        nextFollowUpDate: isoDate,
+        type: "WhatsApp Auto",
+        addedBy: "WATI Bot",
+      }),
+    });
+    if (!gsResponse.ok) {
+      const errText = await gsResponse.text();
+      console.error("Failed to create follow-up:", errText);
+    } else {
+      console.log(`Follow-up created for ${customerName} on ${nextFollowUpDate}`);
+    }
+  } catch (err) {
+    console.error("Follow-up creation error:", err);
+  }
+}
+
 function parseDateText(text: string): string | null {
   const match = text.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (match) {
@@ -196,6 +233,9 @@ serve(async (req) => {
             waId,
           });
 
+          // Auto-create follow-up for the promised date
+          await createFollowUp(contactName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
+
           return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -220,6 +260,9 @@ serve(async (req) => {
           timestamp,
           waId,
         });
+
+        // Auto-create follow-up for today
+        await createFollowUp(contactName, "WhatsApp: Will pay today", today);
 
         return new Response(JSON.stringify({ success: true, action: "will_pay_today_logged" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
