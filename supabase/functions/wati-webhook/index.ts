@@ -112,14 +112,14 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
   }
 }
 
-/** Look up business customer name by phone number from Outstanding sheet */
+/** Look up business customer name by phone number (lightweight — fetches only 2 columns) */
 async function lookupCustomerName(phone: string): Promise<string | null> {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
 
   try {
-    const gsUrl = `${SUPABASE_URL}/functions/v1/google-sheets?action=fetch`;
+    const gsUrl = `${SUPABASE_URL}/functions/v1/google-sheets?action=lookup-customer&phone=${encodeURIComponent(phone)}`;
     const gsResponse = await fetch(gsUrl, {
       headers: {
         Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
@@ -128,18 +128,7 @@ async function lookupCustomerName(phone: string): Promise<string | null> {
     });
     if (!gsResponse.ok) return null;
     const data = await gsResponse.json();
-    const rows = data?.values || [];
-    
-    // Phone is in column C (index 2), Customer Name in column B (index 1)
-    // Normalize phone for matching: strip leading 91, spaces, dashes
-    const normalizedPhone = phone.replace(/[\s\-()]/g, "").replace(/^91/, "");
-    
-    for (let i = 1; i < rows.length; i++) {
-      const rowPhone = (rows[i][2] || "").toString().replace(/[\s\-()]/g, "").replace(/^91/, "");
-      if (rowPhone === normalizedPhone && rows[i][1]) {
-        return rows[i][1]; // Customer Name
-      }
-    }
+    return data?.customerName || null;
   } catch (err) {
     console.error("Customer lookup error:", err);
   }
