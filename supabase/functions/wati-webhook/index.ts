@@ -26,19 +26,23 @@ async function sendSessionMessage(phone: string, message: string) {
   }
 
   const whatsappNumber = cleanPhone(phone);
-  const url = `${WATI_API_ENDPOINT}/api/v2/sendSessionMessage/${whatsappNumber}`;
   
   try {
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${WATI_API_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ messageText: message }),
-    });
-    const text = await resp.text();
-    console.log(`Auto-reply to ${whatsappNumber}: ${resp.status}`, text);
+    // Try v1 first (more reliable), fall back to v2
+    for (const version of ["v1", "v2"]) {
+      const url = `${WATI_API_ENDPOINT}/api/${version}/sendSessionMessage/${whatsappNumber}?messageText=${encodeURIComponent(message)}`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${WATI_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ messageText: message }),
+      });
+      const text = await resp.text();
+      console.log(`Auto-reply (${version}) to ${whatsappNumber}: ${resp.status}`, text);
+      if (resp.ok || resp.status !== 404) return; // success or non-404 error
+    }
   } catch (err) {
     console.error("Auto-reply failed:", err);
   }
