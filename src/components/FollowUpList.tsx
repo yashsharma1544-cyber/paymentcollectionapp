@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
+import { sendManualReminder } from "@/lib/reminder";
 
 interface FollowUpListProps {
   followUps: FollowUp[];
@@ -22,6 +23,7 @@ interface FollowUpListProps {
 
 export function FollowUpList({ followUps, showCustomerName = false }: FollowUpListProps) {
   const [markingDone, setMarkingDone] = useState<string | null>(null);
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
   const [editRemarks, setEditRemarks] = useState("");
   const [editNextDate, setEditNextDate] = useState("");
@@ -129,7 +131,31 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
                       <span>Next: {f.nextFollowUpDate}</span>
                     </div>
                   ) : <div />}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1 text-blue-600"
+                        disabled={sendingReminder === key}
+                        onClick={async () => {
+                          setSendingReminder(key);
+                          try {
+                            const result = await sendManualReminder(f.customerName, f.nextFollowUpDate);
+                            if (result.success) {
+                              toast.success(`Reminder sent to ${f.customerName}`);
+                            } else {
+                              toast.error(result.error || "Failed to send reminder");
+                            }
+                          } catch {
+                            toast.error("Failed to send reminder");
+                          } finally {
+                            setSendingReminder(null);
+                          }
+                        }}
+                      >
+                        <Send className="h-3 w-3" />
+                        {sendingReminder === key ? "..." : "Remind"}
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
