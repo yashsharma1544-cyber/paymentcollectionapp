@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.wati-webhook]
 verify_jwt = false
+
+[functions.payment-reminder-cron]
+verify_jwt = false
