@@ -2,3 +2,6 @@ project_id = "ksrgccipkmncgiibecgv"
 
 [functions.google-sheets]
 verify_jwt = false
+
+[functions.wati-webhook]
+verify_jwt = false
