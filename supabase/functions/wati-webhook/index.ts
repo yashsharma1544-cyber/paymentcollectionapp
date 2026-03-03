@@ -223,8 +223,8 @@ serve(async (req) => {
       }
 
       // --- Handle "Send Bank A/C No." button ---
-      if (lowerText === "send bank a/c no." || lowerText === "send bank a/c no") {
-        console.log(`"Send Bank A/C No." from ${phone} (${contactName})`);
+      if (lowerText.includes("send bank") || lowerText.includes("bank a/c")) {
+        console.log(`"Send Bank A/C" from ${phone} (${contactName})`);
 
         const bankDetails = [
           "*बँक खाते तपशील:*",
