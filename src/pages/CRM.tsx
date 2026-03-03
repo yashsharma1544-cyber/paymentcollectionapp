@@ -409,30 +409,68 @@ const CRM = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {[...waReplies].reverse().slice(0, 50).map((reply, i) => (
-                    <Card key={i} className="border shadow-sm">
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold">{reply.contactName || reply.phone}</p>
-                            <p className="text-xs text-muted-foreground">{reply.phone}</p>
+                  {[...waReplies].reverse().slice(0, 50).map((reply, i) => {
+                    // Match phone to customer name via WhatsApp log
+                    const normalizedPhone = reply.phone.replace(/^91/, "");
+                    const matchedEntry = whatsAppLog.find(
+                      (e) => e.phone === normalizedPhone || e.phone === reply.phone
+                    );
+                    const customerName = matchedEntry?.customerName || reply.contactName || reply.phone;
+                    const amt = outstandingByCustomer.get(customerName) || 0;
+
+                    return (
+                      <Card key={i} className="border shadow-sm">
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <Link
+                                to={`/customer/${encodeURIComponent(customerName)}`}
+                                className="text-sm font-semibold text-primary hover:underline"
+                              >
+                                {customerName}
+                              </Link>
+                              <p className="text-xs text-muted-foreground">{reply.phone}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {amt > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-7 px-2"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setPaymentCustomer(customerName);
+                                  }}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  Pay
+                                </Button>
+                              )}
+                              <div className="flex flex-col items-end gap-0.5">
+                                {amt > 0 ? (
+                                  <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                                ) : matchedEntry ? (
+                                  <span className="text-xs font-medium text-success">Cleared</span>
+                                ) : null}
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                  <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
+                                    reply.direction === "incoming" 
+                                      ? "bg-primary/10 text-primary" 
+                                      : "bg-green-100 text-green-700"
+                                  }`}>
+                                    {reply.direction === "incoming" ? "↓ IN" : "↑ OUT"}
+                                  </span>
+                                  <Clock className="h-3 w-3" />
+                                  {reply.timestamp}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground shrink-0">
-                            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${
-                              reply.direction === "incoming" 
-                                ? "bg-primary/10 text-primary" 
-                                : "bg-green-100 text-green-700"
-                            }`}>
-                              {reply.direction === "incoming" ? "↓ IN" : "↑ OUT"}
-                            </span>
-                            <Clock className="h-3 w-3" />
-                            {reply.timestamp}
-                          </div>
-                        </div>
-                        <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{reply.messageText}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{reply.messageText}</p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
