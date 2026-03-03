@@ -112,6 +112,32 @@ async function updateSheetCell(accessToken: string, range: string, value: string
   return data;
 }
 
+/** Auto-close all pending follow-ups for a customer when payment is recorded */
+async function autoClosePendingFollowUps(accessToken: string, customerName: string) {
+  const data = await fetchSheet(accessToken, "Follow Ups!A:H");
+  const rows = data.values || [];
+  const updates: { range: string; values: string[][] }[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i][0] === customerName && (rows[i][5] || "Pending") === "Pending") {
+      updates.push({
+        range: `Follow Ups!F${i + 1}`,
+        values: [["Done"]],
+      });
+    }
+  }
+
+  if (updates.length > 0) {
+    const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchUpdate`;
+    await fetch(batchUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ valueInputOption: "USER_ENTERED", data: updates }),
+    });
+    console.log(`Auto-closed ${updates.length} pending follow-ups for ${customerName}`);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -142,6 +168,14 @@ serve(async (req) => {
         throw new Error("Missing required fields: billNo, customerName, paidAmount");
       }
       const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0, notes || "", collectedBy || ""]]);
+
+      // Auto-close pending follow-ups for this customer
+      try {
+        await autoClosePendingFollowUps(accessToken, customerName);
+      } catch (e) {
+        console.error("Auto-close follow-ups error:", e);
+      }
+
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -156,6 +190,17 @@ serve(async (req) => {
         a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", idx === 0 ? (discount || 0) : 0, idx === 0 ? (notes || "") : "", collectedBy || "",
       ]);
       const data = await appendToSheet(accessToken, "Record Payments", values);
+
+      // Auto-close pending follow-ups for all unique customers in the batch
+      const uniqueCustomers = [...new Set(allocations.map((a: { customerName: string }) => a.customerName))];
+      for (const cust of uniqueCustomers) {
+        try {
+          await autoClosePendingFollowUps(accessToken, cust as string);
+        } catch (e) {
+          console.error(`Auto-close error for ${cust}:`, e);
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, data }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
