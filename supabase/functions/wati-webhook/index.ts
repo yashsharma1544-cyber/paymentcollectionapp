@@ -135,7 +135,8 @@ async function lookupCustomerName(phone: string): Promise<string | null> {
   return null;
 }
 
-
+/** Parse a date string like DD/MM/YYYY */
+function parseDateText(text: string): string | null {
   const match = text.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (match) {
     const [, d, m, y] = match;
