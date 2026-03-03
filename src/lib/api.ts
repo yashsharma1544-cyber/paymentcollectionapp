@@ -186,6 +186,16 @@ export async function editFollowUp(params: {
   if (!response.ok) throw new Error(`Failed to edit follow-up: ${await response.text()}`);
 }
 
+export async function deleteFollowUp(customerName: string, createdAt: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=delete-followup`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, createdAt }),
+  });
+  if (!response.ok) throw new Error(`Failed to delete follow-up: ${await response.text()}`);
+}
+
 // ---- WhatsApp Log API ----
 
 export interface WhatsAppLogEntry {
