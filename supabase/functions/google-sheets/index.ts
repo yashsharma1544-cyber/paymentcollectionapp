@@ -446,6 +446,43 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "delete-followup") {
+      const body = await req.json();
+      const { customerName, createdAt } = body;
+      if (!customerName || !createdAt) throw new Error("Missing customerName or createdAt");
+
+      const data = await fetchSheet(accessToken, "Follow Ups!A:I");
+      const rows = data.values || [];
+      let targetRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === customerName && rows[i][6] === createdAt) {
+          targetRow = i;
+          break;
+        }
+      }
+      if (targetRow === -1) throw new Error("Follow-up not found");
+
+      const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets(properties)`;
+      const metaRes = await fetch(metaUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+      const metaData = await metaRes.json();
+      const sheet = metaData.sheets?.find((s: any) => s.properties.title === "Follow Ups");
+      if (!sheet) throw new Error("Follow Ups sheet not found");
+      const sheetId = sheet.properties.sheetId;
+
+      const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`;
+      const batchRes = await fetch(batchUrl, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: targetRow, endIndex: targetRow + 1 } } }],
+        }),
+      });
+      const batchResult = await batchRes.json();
+      if (!batchRes.ok) throw new Error(`Sheets API error: ${JSON.stringify(batchResult)}`);
+      return new Response(JSON.stringify({ success: true, data: batchResult }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else if (action === "update-payment-headers") {
       const range = encodeURIComponent("Record Payments!A1:I1");
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;

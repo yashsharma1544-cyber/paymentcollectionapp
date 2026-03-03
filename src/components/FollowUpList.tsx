@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import type { FollowUp } from "@/lib/api";
-import { updateFollowUpStatus, editFollowUp, fetchInvoices } from "@/lib/api";
+import { updateFollowUpStatus, editFollowUp, deleteFollowUp, fetchInvoices } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { sendManualReminder } from "@/lib/reminder";
@@ -24,6 +24,7 @@ interface FollowUpListProps {
 export function FollowUpList({ followUps, showCustomerName = false }: FollowUpListProps) {
   const [markingDone, setMarkingDone] = useState<string | null>(null);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [deletingFollowUp, setDeletingFollowUp] = useState<string | null>(null);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
   const [editRemarks, setEditRemarks] = useState("");
   const [editNextDate, setEditNextDate] = useState("");
@@ -173,6 +174,28 @@ export function FollowUpList({ followUps, showCustomerName = false }: FollowUpLi
                       >
                         <Pencil className="h-3 w-3" />
                         Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1 text-destructive"
+                        disabled={deletingFollowUp === key}
+                        onClick={async () => {
+                          if (!confirm(`Delete follow-up for ${f.customerName}?`)) return;
+                          setDeletingFollowUp(key);
+                          try {
+                            await deleteFollowUp(f.customerName, f.createdAt);
+                            toast.success("Follow-up deleted");
+                            queryClient.invalidateQueries({ queryKey: ["followups"] });
+                          } catch {
+                            toast.error("Failed to delete");
+                          } finally {
+                            setDeletingFollowUp(null);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {deletingFollowUp === key ? "..." : "Del"}
                       </Button>
                       {f.status === "Pending" && (
                         <Button
