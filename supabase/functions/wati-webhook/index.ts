@@ -112,7 +112,41 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
   }
 }
 
-function parseDateText(text: string): string | null {
+/** Look up business customer name by phone number from Outstanding sheet */
+async function lookupCustomerName(phone: string): Promise<string | null> {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+
+  try {
+    const gsUrl = `${SUPABASE_URL}/functions/v1/google-sheets?action=fetch`;
+    const gsResponse = await fetch(gsUrl, {
+      headers: {
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+    });
+    if (!gsResponse.ok) return null;
+    const data = await gsResponse.json();
+    const rows = data?.values || [];
+    
+    // Phone is in column C (index 2), Customer Name in column B (index 1)
+    // Normalize phone for matching: strip leading 91, spaces, dashes
+    const normalizedPhone = phone.replace(/[\s\-()]/g, "").replace(/^91/, "");
+    
+    for (let i = 1; i < rows.length; i++) {
+      const rowPhone = (rows[i][2] || "").toString().replace(/[\s\-()]/g, "").replace(/^91/, "");
+      if (rowPhone === normalizedPhone && rows[i][1]) {
+        return rows[i][1]; // Customer Name
+      }
+    }
+  } catch (err) {
+    console.error("Customer lookup error:", err);
+  }
+  return null;
+}
+
+
   const match = text.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (match) {
     const [, d, m, y] = match;
@@ -156,17 +190,20 @@ serve(async (req) => {
     // Only process incoming messages
     if (direction === "incoming" && messageText) {
       const lowerText = messageText.toLowerCase();
+      
+      // Look up the business customer name by phone (fallback to WhatsApp contact name)
+      const customerName = await lookupCustomerName(phone) || contactName;
 
       // --- Handle "Will Pay Later" button ---
       if (lowerText === "will pay later") {
-        console.log(`"Will Pay Later" from ${phone} (${contactName})`);
+        console.log(`"Will Pay Later" from ${phone} (${customerName})`);
 
         const tomorrow = getFutureDate(1);
         const nextWeek = getFutureDate(7);
         const endOfMonth = getEndOfMonth();
 
         const datePrompt = [
-          `*${contactName}, कृपया पेमेंट तारीख सांगा:*`,
+          `*${customerName}, कृपया पेमेंट तारीख सांगा:*`,
           "",
           `1️⃣ उद्या (${tomorrow})`,
           `2️⃣ पुढील आठवडा (${nextWeek})`,
@@ -180,7 +217,7 @@ serve(async (req) => {
         // Log the button click
         await logToSheets({
           phone,
-          contactName,
+          contactName: customerName,
           messageText,
           messageType: "button_reply",
           direction,
@@ -211,13 +248,13 @@ serve(async (req) => {
       if (paymentDate) {
         console.log(`Payment promise from ${phone}: will pay on ${paymentDate}`);
 
-        const confirmMsg = `✅ धन्यवाद ${contactName}! आम्ही ${paymentDate} रोजी पेमेंटची अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
+        const confirmMsg = `✅ धन्यवाद ${customerName}! आम्ही ${paymentDate} रोजी पेमेंटची अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
         await sendSessionMessage(phone, confirmMsg);
 
         // Log payment promise with date
         await logToSheets({
           phone,
-          contactName,
+          contactName: customerName,
           messageText: `PAYMENT PROMISE: Will pay on ${paymentDate}`,
           messageType: "payment_promise",
           direction,
@@ -226,7 +263,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for the promised date
-        await createFollowUp(contactName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
+        await createFollowUp(customerName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
 
         return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -235,15 +272,15 @@ serve(async (req) => {
 
       // --- Handle "Will Pay Today" button ---
       if (lowerText === "will pay today") {
-        console.log(`"Will Pay Today" from ${phone} (${contactName})`);
+        console.log(`"Will Pay Today" from ${phone} (${customerName})`);
         const today = getFutureDate(0);
 
-        const confirmMsg = `✅ धन्यवाद ${contactName}! आज पेमेंट मिळेल अशी अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
+        const confirmMsg = `✅ धन्यवाद ${customerName}! आज पेमेंट मिळेल अशी अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
         await sendSessionMessage(phone, confirmMsg);
 
         await logToSheets({
           phone,
-          contactName,
+          contactName: customerName,
           messageText: `PAYMENT PROMISE: Will pay today (${today})`,
           messageType: "payment_promise",
           direction,
@@ -252,7 +289,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for today
-        await createFollowUp(contactName, "WhatsApp: Will pay today", today);
+        await createFollowUp(customerName, "WhatsApp: Will pay today", today);
 
         return new Response(JSON.stringify({ success: true, action: "will_pay_today_logged" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -261,7 +298,7 @@ serve(async (req) => {
 
       // --- Handle "Send Bank A/C No." button ---
       if (lowerText.includes("send bank") || lowerText.includes("bank a/c")) {
-        console.log(`"Send Bank A/C" from ${phone} (${contactName})`);
+        console.log(`"Send Bank A/C" from ${phone} (${customerName})`);
 
         const bankDetails = [
           "*बँक खाते तपशील:*",
@@ -282,7 +319,7 @@ serve(async (req) => {
 
         await logToSheets({
           phone,
-          contactName,
+          contactName: customerName,
           messageText: "REQUEST: Bank A/C details sent",
           messageType: "bank_details_request",
           direction,
@@ -297,11 +334,11 @@ serve(async (req) => {
 
       // --- Handle "4" or "statement" reply ---
       if (messageText === "4" || lowerText.includes("statement")) {
-        console.log(`Statement request from ${phone} (${contactName})`);
+        console.log(`Statement request from ${phone} (${customerName})`);
 
         await logToSheets({
           phone,
-          contactName,
+          contactName: customerName,
           messageText: "REQUEST: Statement requested",
           messageType: "statement_request",
           direction,
@@ -310,7 +347,7 @@ serve(async (req) => {
         });
 
         // For now, log the request — statement PDF sending can be added later
-        const ackMsg = `📄 ${contactName}, आपला Statement तयार केला जात आहे. लवकरच पाठवला जाईल.\n\n- *SUSHIL AGENCIES, JALNA*`;
+        const ackMsg = `📄 ${customerName}, आपला Statement तयार केला जात आहे. लवकरच पाठवला जाईल.\n\n- *SUSHIL AGENCIES, JALNA*`;
         await sendSessionMessage(phone, ackMsg);
 
         return new Response(JSON.stringify({ success: true, action: "statement_requested" }), {
