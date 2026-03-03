@@ -287,6 +287,28 @@ serve(async (req) => {
         });
       }
 
+    } else if (action === "lookup-customer") {
+      // Lightweight lookup: fetch only columns B (Customer Name) and C (Mobile) to find customer by phone
+      const phone = url.searchParams.get("phone");
+      if (!phone) throw new Error("Missing phone parameter");
+      
+      const data = await fetchSheet(accessToken, "Outstanding!B1:C5000");
+      const rows = data?.values || [];
+      const normalizedPhone = phone.replace(/[\s\-()]/g, "").replace(/^91/, "");
+      
+      let customerName = null;
+      for (let i = 1; i < rows.length; i++) {
+        const rowPhone = (rows[i]?.[1] || "").toString().replace(/[\s\-()]/g, "").replace(/^91/, "");
+        if (rowPhone === normalizedPhone && rows[i]?.[0]) {
+          customerName = rows[i][0];
+          break;
+        }
+      }
+      
+      return new Response(JSON.stringify({ customerName }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else if (action === "edit-payment") {
       // Find row by billNo + timestamp (or billNo + customerName if timestamp is empty)
       const body = await req.json();
