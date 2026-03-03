@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard, BellRing,
 } from "lucide-react";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -259,6 +259,10 @@ const CRM = () => {
               <TabsTrigger value="replies" className="flex-1 text-xs">
                 Replies
               </TabsTrigger>
+              <TabsTrigger value="auto-reminders" className="flex-1 text-xs">
+                <BellRing className="h-3 w-3 mr-1" />
+                Auto
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="today" className="mt-3">
@@ -473,6 +477,73 @@ const CRM = () => {
                   })}
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="auto-reminders" className="mt-3">
+              {repliesLoading ? (
+                <Skeleton className="h-32 rounded-xl" />
+              ) : (() => {
+                const autoReminders = waReplies.filter(
+                  (r) => r.messageType === "auto_reminder" || r.messageType === "auto_escalation" || r.messageType === "auto_final"
+                );
+                if (autoReminders.length === 0) {
+                  return (
+                    <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                      No auto-reminders sent yet. The cron runs daily at 9 AM IST.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    <Card className="border-0 shadow-sm bg-primary/10">
+                      <CardContent className="p-3 flex items-center gap-2">
+                        <BellRing className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="text-sm font-semibold">{autoReminders.length} auto-reminders sent</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Set(autoReminders.map((r) => r.contactName)).size} unique customers
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {[...autoReminders].reverse().slice(0, 100).map((r, i) => {
+                      const typeLabel = r.messageType === "auto_reminder" ? "🔔 Due Today"
+                        : r.messageType === "auto_escalation" ? "⚠️ Overdue D+1"
+                        : "🚨 Final D+3";
+                      const typeColor = r.messageType === "auto_reminder" ? "bg-primary/10 text-primary"
+                        : r.messageType === "auto_escalation" ? "bg-yellow-100 text-yellow-700"
+                        : "bg-destructive/10 text-destructive";
+                      return (
+                        <Card key={i} className="border shadow-sm">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <Link
+                                  to={`/customer/${encodeURIComponent(r.contactName)}`}
+                                  className="text-sm font-semibold text-primary hover:underline"
+                                >
+                                  {r.contactName}
+                                </Link>
+                                <p className="text-xs text-muted-foreground">{r.phone}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${typeColor}`}>
+                                  {typeLabel}
+                                </span>
+                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {r.timestamp}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{r.messageText}</p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         )}
