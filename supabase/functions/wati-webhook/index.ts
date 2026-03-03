@@ -134,9 +134,7 @@ function getEndOfMonth(): string {
   return `${String(lastDay.getDate()).padStart(2, "0")}/${String(lastDay.getMonth() + 1).padStart(2, "0")}/${lastDay.getFullYear()}`;
 }
 
-// In-memory map to track customers awaiting date input (phone -> timestamp)
-// Note: This resets on function cold start, but covers the typical quick-reply flow
-const awaitingDateReply = new Map<string, number>();
+// No in-memory state needed — date replies are detected by pattern matching
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -162,9 +160,6 @@ serve(async (req) => {
       // --- Handle "Will Pay Later" button ---
       if (lowerText === "will pay later") {
         console.log(`"Will Pay Later" from ${phone} (${contactName})`);
-
-        // Mark this phone as awaiting date reply
-        awaitingDateReply.set(phone, Date.now());
 
         const tomorrow = getFutureDate(1);
         const nextWeek = getFutureDate(7);
@@ -198,49 +193,44 @@ serve(async (req) => {
         });
       }
 
-      // --- Handle date reply (after "Will Pay Later") ---
-      const isAwaitingDate = awaitingDateReply.has(phone);
+      // --- Handle date reply (works without in-memory state) ---
+      // Try to detect date patterns: "1", "2", "3", or DD/MM/YYYY format
       let paymentDate: string | null = null;
 
-      if (isAwaitingDate) {
-        // Check for numbered options
-        if (messageText === "1" || lowerText.includes("उद्या")) {
-          paymentDate = getFutureDate(1);
-        } else if (messageText === "2" || lowerText.includes("आठवडा")) {
-          paymentDate = getFutureDate(7);
-        } else if (messageText === "3" || lowerText.includes("शेवटी") || lowerText.includes("महिन्या")) {
-          paymentDate = getEndOfMonth();
-        } else {
-          // Try to parse typed date
-          paymentDate = parseDateText(messageText);
-        }
+      if (messageText === "1") {
+        paymentDate = getFutureDate(1);
+      } else if (messageText === "2") {
+        paymentDate = getFutureDate(7);
+      } else if (messageText === "3") {
+        paymentDate = getEndOfMonth();
+      } else {
+        // Try to parse typed date like "15/03/2026"
+        paymentDate = parseDateText(messageText);
+      }
 
-        if (paymentDate) {
-          awaitingDateReply.delete(phone);
-          console.log(`Payment promise from ${phone}: will pay on ${paymentDate}`);
+      if (paymentDate) {
+        console.log(`Payment promise from ${phone}: will pay on ${paymentDate}`);
 
-          const confirmMsg = `✅ धन्यवाद ${contactName}! आम्ही ${paymentDate} रोजी पेमेंटची अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
-          await sendSessionMessage(phone, confirmMsg);
+        const confirmMsg = `✅ धन्यवाद ${contactName}! आम्ही ${paymentDate} रोजी पेमेंटची अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
+        await sendSessionMessage(phone, confirmMsg);
 
-          // Log payment promise with date
-          await logToSheets({
-            phone,
-            contactName,
-            messageText: `PAYMENT PROMISE: Will pay on ${paymentDate}`,
-            messageType: "payment_promise",
-            direction,
-            timestamp,
-            waId,
-          });
+        // Log payment promise with date
+        await logToSheets({
+          phone,
+          contactName,
+          messageText: `PAYMENT PROMISE: Will pay on ${paymentDate}`,
+          messageType: "payment_promise",
+          direction,
+          timestamp,
+          waId,
+        });
 
-          // Auto-create follow-up for the promised date
-          await createFollowUp(contactName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
+        // Auto-create follow-up for the promised date
+        await createFollowUp(contactName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
 
-          return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        // If we couldn't parse the date, fall through to normal logging
+        return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // --- Handle "Will Pay Today" button ---
