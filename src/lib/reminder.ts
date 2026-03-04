@@ -1,5 +1,5 @@
 import { sendWatiSessionMessage } from "@/lib/wati";
-import { fetchInvoices } from "@/lib/api";
+import { fetchInvoices, logWhatsApp } from "@/lib/api";
 
 /**
  * Send a manual payment reminder to a customer via WhatsApp.
@@ -30,6 +30,14 @@ export async function sendManualReminder(
     ].join("\n");
 
     const result = await sendWatiSessionMessage(customerInv.mobileNo, msg);
+    if (result.success) {
+      // Log to WhatsApp Log so it shows in CRM
+      try {
+        await logWhatsApp(customerName, customerInv.mobileNo, "Manual Reminder");
+      } catch {
+        // Non-critical, don't fail the reminder
+      }
+    }
     return result;
   } catch (err) {
     return { success: false, error: String(err) };
