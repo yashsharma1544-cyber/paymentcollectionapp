@@ -330,6 +330,28 @@ serve(async (req) => {
         });
       }
 
+      // --- Handle "Complaint" reply ---
+      if (lowerText === "complaint" || lowerText.startsWith("complaint ") || lowerText.startsWith("complaint:")) {
+        console.log(`Complaint from ${phone} (${customerName}): ${messageText}`);
+
+        await logToSheets({
+          phone,
+          contactName: customerName,
+          messageText: `COMPLAINT: ${messageText}`,
+          messageType: "complaint",
+          direction,
+          timestamp,
+          waId,
+        });
+
+        const ackMsg = `🙏 ${customerName}, आपली तक्रार नोंदवली गेली आहे. आमचे प्रतिनिधी लवकरच आपल्याशी संपर्क साधतील.\n\n- *SUSHIL AGENCIES, JALNA*`;
+        await sendSessionMessage(phone, ackMsg);
+
+        return new Response(JSON.stringify({ success: true, action: "complaint_logged" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // --- Handle "4" or "statement" reply ---
       if (messageText === "4" || lowerText.includes("statement")) {
         console.log(`Statement request from ${phone} (${customerName})`);
