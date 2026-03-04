@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard, BellRing,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard, BellRing, Send, AlertTriangle,
 } from "lucide-react";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -243,7 +243,7 @@ const CRM = () => {
           </div>
         ) : (
           <Tabs defaultValue="today" className="w-full">
-            <TabsList className="w-full">
+            <TabsList className="w-full flex-wrap h-auto gap-0.5 p-1">
               <TabsTrigger value="today" className="flex-1 text-xs">
                 Today ({todayFollowUps.length})
               </TabsTrigger>
@@ -255,6 +255,14 @@ const CRM = () => {
               </TabsTrigger>
               <TabsTrigger value="whatsapp" className="flex-1 text-xs">
                 WhatsApp
+              </TabsTrigger>
+              <TabsTrigger value="sent-reminders" className="flex-1 text-xs">
+                <Send className="h-3 w-3 mr-1" />
+                Reminders
+              </TabsTrigger>
+              <TabsTrigger value="complaints" className="flex-1 text-xs">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Complaints
               </TabsTrigger>
               <TabsTrigger value="replies" className="flex-1 text-xs">
                 Replies
@@ -537,6 +545,168 @@ const CRM = () => {
                               </div>
                             </div>
                             <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{r.messageText}</p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </TabsContent>
+
+            {/* Sent Reminders Tab */}
+            <TabsContent value="sent-reminders" className="mt-3">
+              {waLoading ? (
+                <Skeleton className="h-32 rounded-xl" />
+              ) : (() => {
+                const manualReminders = whatsAppLog.filter((e) => e.sentBy === "Manual Reminder");
+                if (manualReminders.length === 0) {
+                  return (
+                    <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                      No manual reminders sent yet. Use the "Remind" button on follow-ups to send one.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    <Card className="border-0 shadow-sm bg-primary/10">
+                      <CardContent className="p-3 flex items-center gap-2">
+                        <Send className="h-4 w-4 text-primary" />
+                        <div>
+                          <p className="text-sm font-semibold">{manualReminders.length} manual reminders sent</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Set(manualReminders.map((r) => r.customerName)).size} unique customers
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {[...manualReminders].reverse().slice(0, 100).map((entry, i) => {
+                      const amt = outstandingByCustomer.get(entry.customerName) || 0;
+                      return (
+                        <Card key={i} className="border shadow-sm">
+                          <CardContent className="p-3 flex items-center justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <Link
+                                to={`/customer/${encodeURIComponent(entry.customerName)}`}
+                                className="text-sm font-semibold text-primary hover:underline"
+                              >
+                                {entry.customerName}
+                              </Link>
+                              <p className="text-xs text-muted-foreground">{entry.phone}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {amt > 0 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="gap-1 text-xs h-7 px-2"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setPaymentCustomer(entry.customerName);
+                                  }}
+                                >
+                                  <CreditCard className="h-3 w-3" />
+                                  Pay
+                                </Button>
+                              )}
+                              <div className="flex flex-col items-end gap-0.5">
+                                {amt > 0 ? (
+                                  <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                                ) : (
+                                  <span className="text-xs font-medium text-success">Cleared</span>
+                                )}
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {entry.timestamp}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </TabsContent>
+
+            {/* Complaints Tab */}
+            <TabsContent value="complaints" className="mt-3">
+              {repliesLoading ? (
+                <Skeleton className="h-32 rounded-xl" />
+              ) : (() => {
+                const complaints = waReplies.filter(
+                  (r) => r.messageText.toLowerCase().includes("complaint") || r.messageType === "complaint"
+                );
+                if (complaints.length === 0) {
+                  return (
+                    <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                      No complaints received yet.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-2">
+                    <Card className="border-0 shadow-sm bg-destructive/10">
+                      <CardContent className="p-3 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                        <div>
+                          <p className="text-sm font-semibold text-destructive">{complaints.length} complaint{complaints.length !== 1 ? "s" : ""}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Set(complaints.map((r) => r.contactName || r.phone)).size} unique customers
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {[...complaints].reverse().slice(0, 100).map((reply, i) => {
+                      const normalizedPhone = reply.phone.replace(/^91/, "");
+                      const matchedEntry = whatsAppLog.find(
+                        (e) => e.phone === normalizedPhone || e.phone === reply.phone
+                      );
+                      const customerName = matchedEntry?.customerName || reply.contactName || reply.phone;
+                      const amt = outstandingByCustomer.get(customerName) || 0;
+                      return (
+                        <Card key={i} className="border shadow-sm border-destructive/20">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <Link
+                                  to={`/customer/${encodeURIComponent(customerName)}`}
+                                  className="text-sm font-semibold text-primary hover:underline"
+                                >
+                                  {customerName}
+                                </Link>
+                                <p className="text-xs text-muted-foreground">{reply.phone}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {amt > 0 && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1 text-xs h-7 px-2"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setPaymentCustomer(customerName);
+                                    }}
+                                  >
+                                    <CreditCard className="h-3 w-3" />
+                                    Pay
+                                  </Button>
+                                )}
+                                <div className="flex flex-col items-end gap-0.5">
+                                  {amt > 0 ? (
+                                    <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                                  ) : matchedEntry ? (
+                                    <span className="text-xs font-medium text-success">Cleared</span>
+                                  ) : null}
+                                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    {reply.timestamp}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs mt-1.5 bg-destructive/5 rounded p-2 text-destructive">{reply.messageText}</p>
                           </CardContent>
                         </Card>
                       );
