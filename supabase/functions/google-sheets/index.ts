@@ -540,6 +540,57 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "fetch-stopped-reminders") {
+      try {
+        const data = await fetchSheet(accessToken, "Stopped Reminders!A:C");
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch {
+        // Tab may not exist yet
+        return new Response(JSON.stringify({ values: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+    } else if (action === "stop-reminders") {
+      const body = await req.json();
+      const { customerName, stoppedBy } = body;
+      if (!customerName) throw new Error("Missing customerName");
+      const values = [[customerName, timestamp, stoppedBy || ""]];
+      const data = await appendToSheet(accessToken, "Stopped Reminders", values);
+      return new Response(JSON.stringify({ success: true, data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
+    } else if (action === "resume-reminders") {
+      const body = await req.json();
+      const { customerName } = body;
+      if (!customerName) throw new Error("Missing customerName");
+      // Find and delete the row for this customer
+      const data = await fetchSheet(accessToken, "Stopped Reminders!A:C");
+      const rows = data.values || [];
+      let deletedRow = -1;
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i][0] === customerName) {
+          deletedRow = i;
+          break;
+        }
+      }
+      if (deletedRow >= 0) {
+        // Clear the row
+        const range = encodeURIComponent(`Stopped Reminders!A${deletedRow + 1}:C${deletedRow + 1}`);
+        const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
+        await fetch(sheetsUrl, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ values: [["", "", ""]] }),
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }

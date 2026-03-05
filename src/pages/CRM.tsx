@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchFollowUps, fetchWhatsAppLog, fetchInvoices, fetchWAReplies, type FollowUp, type WhatsAppLogEntry, type WAReply } from "@/lib/api";
+import { fetchFollowUps, fetchWhatsAppLog, fetchInvoices, fetchWAReplies, fetchStoppedReminders, stopReminders, resumeReminders, type FollowUp, type WhatsAppLogEntry, type WAReply } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FollowUpList } from "@/components/FollowUpList";
 import { FollowUpDialog } from "@/components/FollowUpDialog";
 import {
-  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard, BellRing, Send, AlertTriangle,
+  RefreshCw, Search, CalendarClock, Users, MessageCircle, Clock, Plus, ArrowLeft, CalendarIcon, IndianRupee, CreditCard, BellRing, Send, AlertTriangle, BellOff, Bell,
 } from "lucide-react";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import { parseDateDMY, getOverdueDays } from "@/lib/date-utils";
 import { USERS } from "@/contexts/UserContext";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -36,6 +37,10 @@ const CRM = () => {
   const { data: waReplies = [], isLoading: repliesLoading } = useQuery({
     queryKey: ["wa-replies"],
     queryFn: fetchWAReplies,
+  });
+  const { data: stoppedCustomers = [], refetch: refetchStopped } = useQuery({
+    queryKey: ["stopped-reminders"],
+    queryFn: fetchStoppedReminders,
   });
 
   const [search, setSearch] = useState("");
@@ -271,18 +276,22 @@ const CRM = () => {
                 <BellRing className="h-3 w-3 mr-1" />
                 Auto
               </TabsTrigger>
+              <TabsTrigger value="stopped" className="flex-1 text-xs">
+                <BellOff className="h-3 w-3 mr-1" />
+                Stopped ({stoppedCustomers.length})
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="today" className="mt-3">
-              <FollowUpList followUps={todayFollowUps} showCustomerName />
+              <FollowUpList followUps={todayFollowUps} showCustomerName stoppedCustomers={stoppedCustomers} onStopToggle={refetchStopped} />
             </TabsContent>
 
             <TabsContent value="upcoming" className="mt-3">
-              <FollowUpList followUps={upcomingFollowUps} showCustomerName />
+              <FollowUpList followUps={upcomingFollowUps} showCustomerName stoppedCustomers={stoppedCustomers} onStopToggle={refetchStopped} />
             </TabsContent>
 
             <TabsContent value="all" className="mt-3">
-              <FollowUpList followUps={[...allFollowUps].reverse()} showCustomerName />
+              <FollowUpList followUps={[...allFollowUps].reverse()} showCustomerName stoppedCustomers={stoppedCustomers} onStopToggle={refetchStopped} />
             </TabsContent>
 
             <TabsContent value="whatsapp" className="mt-3">
@@ -552,6 +561,53 @@ const CRM = () => {
                   </div>
                 );
               })()}
+            </TabsContent>
+
+            {/* Stopped Reminders Tab */}
+            <TabsContent value="stopped" className="mt-3">
+              {stoppedCustomers.length === 0 ? (
+                <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground text-sm">
+                  No customers have reminders stopped. Use the "Stop" button on follow-up cards to pause auto-reminders.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Card className="border-0 shadow-sm bg-warning/10">
+                    <CardContent className="p-3 flex items-center gap-2">
+                      <BellOff className="h-4 w-4 text-warning" />
+                      <p className="text-sm font-semibold">{stoppedCustomers.length} customer{stoppedCustomers.length !== 1 ? "s" : ""} with reminders stopped</p>
+                    </CardContent>
+                  </Card>
+                  {stoppedCustomers.map((name, i) => (
+                    <Card key={i} className="border shadow-sm">
+                      <CardContent className="p-3 flex items-center justify-between gap-2">
+                        <Link
+                          to={`/customer/${encodeURIComponent(name)}`}
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          {name}
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 text-xs h-7 text-success border-success hover:bg-success/10"
+                          onClick={async () => {
+                            try {
+                              await resumeReminders(name);
+                              toast.success(`Reminders resumed for ${name}`);
+                              refetchStopped();
+                            } catch {
+                              toast.error("Failed to resume reminders");
+                            }
+                          }}
+                        >
+                          <Bell className="h-3 w-3" />
+                          Resume
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Sent Reminders Tab */}

@@ -257,3 +257,34 @@ export async function fetchWAReplies(): Promise<WAReply[]> {
     waId: row[6] || "",
   })).filter((r: WAReply) => r.phone || r.contactName);
 }
+
+// ---- Stopped Reminders API ----
+
+export async function fetchStoppedReminders(): Promise<string[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-stopped-reminders`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch stopped reminders: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length === 0) return [];
+  return data.values.map((row: string[]) => row[0]).filter(Boolean);
+}
+
+export async function stopReminders(customerName: string, stoppedBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=stop-reminders`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, stoppedBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to stop reminders: ${await response.text()}`);
+}
+
+export async function resumeReminders(customerName: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=resume-reminders`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName }),
+  });
+  if (!response.ok) throw new Error(`Failed to resume reminders: ${await response.text()}`);
+}
