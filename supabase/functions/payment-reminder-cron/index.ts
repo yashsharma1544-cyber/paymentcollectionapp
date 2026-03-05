@@ -132,6 +132,16 @@ serve(async (req) => {
       }
     }
 
+    // 3. Fetch stopped reminders list
+    const stoppedData = await callSheets("fetch-stopped-reminders");
+    const stoppedCustomers = new Set<string>();
+    if (stoppedData?.values) {
+      for (const row of stoppedData.values) {
+        if (row[0]) stoppedCustomers.add(row[0]);
+      }
+    }
+    console.log(`Stopped reminders for ${stoppedCustomers.size} customers`);
+
     let reminded = 0;
     let escalated = 0;
     const processed: string[] = [];
@@ -145,6 +155,12 @@ serve(async (req) => {
 
       // Skip non-pending
       if (status !== "Pending" || !nextFollowUpDate || !customerName) continue;
+
+      // Skip stopped customers
+      if (stoppedCustomers.has(customerName)) {
+        processed.push(`⏸️ Skipped (stopped): ${customerName}`);
+        continue;
+      }
 
       const phone = customerPhoneMap[customerName];
       if (!phone) {
