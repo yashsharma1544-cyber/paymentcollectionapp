@@ -69,6 +69,26 @@ async function getAccessToken(serviceAccountKey: Record<string, string>): Promis
   return tokenData.access_token;
 }
 
+async function ensureSheetTab(accessToken: string, tabName: string) {
+  // Check if tab exists
+  const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`;
+  const metaRes = await fetch(metaUrl, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const metaData = await metaRes.json();
+  const exists = metaData.sheets?.some((s: any) => s.properties.title === tabName);
+  if (!exists) {
+    const batchUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`;
+    await fetch(batchUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{ addSheet: { properties: { title: tabName } } }],
+      }),
+    });
+  }
+}
+
 async function appendToSheet(accessToken: string, sheetTab: string, values: string[][]) {
   const range = encodeURIComponent(`${sheetTab}!A:Z`);
   const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED`;
@@ -557,6 +577,7 @@ serve(async (req) => {
       const body = await req.json();
       const { customerName, stoppedBy } = body;
       if (!customerName) throw new Error("Missing customerName");
+      await ensureSheetTab(accessToken, "Stopped Reminders");
       const values = [[customerName, timestamp, stoppedBy || ""]];
       const data = await appendToSheet(accessToken, "Stopped Reminders", values);
       return new Response(JSON.stringify({ success: true, data }), {
@@ -567,6 +588,7 @@ serve(async (req) => {
       const body = await req.json();
       const { customerName } = body;
       if (!customerName) throw new Error("Missing customerName");
+      await ensureSheetTab(accessToken, "Stopped Reminders");
       // Find and delete the row for this customer
       const data = await fetchSheet(accessToken, "Stopped Reminders!A:C");
       const rows = data.values || [];
