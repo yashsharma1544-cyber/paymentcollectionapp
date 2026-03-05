@@ -266,11 +266,11 @@ const CustomerDetail = () => {
                   <p className="text-xs sm:text-xl font-black text-warning truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-sm bg-accent overflow-hidden">
+              <Card className="border-0 shadow-sm bg-orange-500/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-4 text-center">
-                  <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary mx-auto mb-0.5" />
+                  <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-orange-600 mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
-                  <p className="text-xs sm:text-xl font-black text-primary">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
+                  <p className="text-xs sm:text-xl font-black text-orange-600">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
                 </CardContent>
               </Card>
             </div>
