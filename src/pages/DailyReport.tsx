@@ -22,13 +22,14 @@ import { USERS } from "@/contexts/UserContext";
 
 function parseTimestamp(ts: string): Date | null {
   if (!ts) return null;
-  const d = new Date(ts);
-  if (!isNaN(d.getTime())) return d;
+  // Try DD/MM/YYYY first (Google Sheets format) to avoid JS Date parsing as MM/DD/YYYY
   const match = ts.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (match) {
     const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
     if (!isNaN(parsed.getTime())) return parsed;
   }
+  const d = new Date(ts);
+  if (!isNaN(d.getTime())) return d;
   return null;
 }
 
