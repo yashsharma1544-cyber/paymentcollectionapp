@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { ExportMenu } from "@/components/ExportMenu";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
@@ -26,6 +26,11 @@ const BeatDetail = () => {
   } = useQuery({
     queryKey: ["invoices"],
     queryFn: fetchInvoices,
+  });
+
+  const { data: allPayments = [] } = useQuery({
+    queryKey: ["recorded-payments"],
+    queryFn: fetchRecordedPayments,
   });
 
   const invoices = useMemo(() => {
@@ -68,7 +73,7 @@ const BeatDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <ExportMenu invoices={invoices} title={`Beat: ${decodedBeat}`} />
+            <ExportMenu invoices={invoices} title={`Beat: ${decodedBeat}`} payments={allPayments} />
             <Button variant="outline" size="icon" className="shrink-0 sm:hidden" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </Button>

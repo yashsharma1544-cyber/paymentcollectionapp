@@ -129,7 +129,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
             className="pl-9"
           />
         </div>
-        <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} />
+        <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} payments={allPayments} />
         <div className="ml-auto text-right">
           <p className="text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
