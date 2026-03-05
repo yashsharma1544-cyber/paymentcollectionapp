@@ -47,17 +47,43 @@ const Index = () => {
     );
   }, [invoices, globalSearch]);
 
+  // Compute slow payer customer names (avg > 30d)
+  const slowPayerCustomers = useMemo(() => {
+    const customerMap = new Map<string, { invoices: { billNo: string; billDate: string }[] }>();
+    for (const inv of invoices) {
+      if (!customerMap.has(inv.customerName)) customerMap.set(inv.customerName, { invoices: [] });
+      customerMap.get(inv.customerName)!.invoices.push({ billNo: inv.billNo, billDate: inv.billDate });
+    }
+    const slow = new Set<string>();
+    for (const [name, data] of customerMap) {
+      const custPayments = allPayments.filter(p => data.invoices.some(i => i.billNo === p.billNo));
+      const avg = calcAvgCollectionDays(data.invoices, custPayments);
+      if (avg !== null && avg > 30) slow.add(name);
+    }
+    return slow;
+  }, [invoices, allPayments]);
+
+  const kpiInvoices = useMemo(() => {
+    if (!showSlowPayers) return invoices;
+    return invoices.filter(i => slowPayerCustomers.has(i.customerName));
+  }, [invoices, showSlowPayers, slowPayerCustomers]);
+
+  const kpiPayments = useMemo(() => {
+    if (!showSlowPayers) return allPayments;
+    return allPayments.filter(p => slowPayerCustomers.has(p.customerName));
+  }, [allPayments, showSlowPayers, slowPayerCustomers]);
+
   const kpis = useMemo(() => {
-    const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
-    const customers = new Set(invoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const totalOutstanding = kpiInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
+    const totalBill = kpiInvoices.reduce((s, i) => s + i.billAmount, 0);
+    const totalPaid = kpiInvoices.reduce((s, i) => s + i.paidAmount, 0);
+    const customers = new Set(kpiInvoices.map((i) => i.customerName)).size;
+    const overdueOutstanding = kpiInvoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
-    const avgCollectionDays = calcAvgCollectionDays(invoices, allPayments);
+    const avgCollectionDays = calcAvgCollectionDays(kpiInvoices, kpiPayments);
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollectionDays };
-  }, [invoices, allPayments]);
+  }, [kpiInvoices, kpiPayments]);
 
   return (
     <div className="min-h-screen bg-background">
