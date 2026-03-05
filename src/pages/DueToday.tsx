@@ -110,7 +110,7 @@ function groupByBeat(invoices: Invoice[]): BeatGroup[] {
       totalOutstanding: invs.reduce((s, i) => s + i.outstandingAmount, 0),
       customers: new Set(invs.map((i) => i.customerName)).size,
     }))
-    .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+    .sort((a, b) => a.beat.localeCompare(b.beat));
 }
 
 const BEAT_COLORS = [

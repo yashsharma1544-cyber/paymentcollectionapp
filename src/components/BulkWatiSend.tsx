@@ -53,7 +53,7 @@ export function BulkWatiSend({ invoices }: BulkWatiSendProps) {
         invoices: invs,
       }))
       .filter((c) => c.mobileNo && !c.mobileNo.startsWith("1111"))
-      .sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+      .sort((a, b) => a.customerName.localeCompare(b.customerName));
   }, [invoices]);
 
   const [entries, setEntries] = useState<BulkEntry[]>([]);
