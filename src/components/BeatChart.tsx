@@ -56,12 +56,19 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
       {beats.map((b, i) => {
         const color = BEAT_COLORS[i % BEAT_COLORS.length];
+        const isSlow = b.avgCollectionDays !== null && b.avgCollectionDays > 30;
         return (
           <Link
             key={b.beat}
             to={`/beat/${encodeURIComponent(b.beat)}`}
-            className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block`}
+            className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block relative overflow-hidden ${isSlow ? "ring-2 ring-destructive/50" : ""}`}
           >
+            {isSlow && (
+              <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+              </span>
+            )}
             <div className="flex items-center justify-center gap-1 mb-1.5">
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-80 shrink-0" />
               <p className="text-xs sm:text-sm font-bold truncate">{b.beat}</p>
@@ -73,7 +80,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
               {b.customers} cust · {b.invoiceCount} bill{b.invoiceCount !== 1 ? "s" : ""}
             </p>
             {b.avgCollectionDays !== null && (
-              <p className="flex items-center justify-center gap-0.5 text-[10px] sm:text-[11px] font-semibold opacity-80 mt-1">
+              <p className={`flex items-center justify-center gap-0.5 text-[10px] sm:text-[11px] font-semibold mt-1 ${isSlow ? "text-destructive" : "opacity-80"}`}>
                 <Timer className="h-3 w-3" />
                 {b.avgCollectionDays}d avg
               </p>
