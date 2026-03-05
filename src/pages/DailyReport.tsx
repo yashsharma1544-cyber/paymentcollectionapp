@@ -106,7 +106,7 @@ const DailyReport = () => {
         totalCollected: d.totalCollected,
         invoiceCount: d.bills.size,
       }))
-      .sort((a, b) => b.totalCollected - a.totalCollected);
+      .sort((a, b) => a.customerName.localeCompare(b.customerName));
 
     const totalCollected = customers.reduce((s, c) => s + c.totalCollected, 0);
     const totalBills = customers.reduce((s, c) => s + c.invoiceCount, 0);

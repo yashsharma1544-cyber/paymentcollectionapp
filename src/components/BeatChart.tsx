@@ -47,7 +47,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
           avgCollectionDays: calcAvgCollectionDays(d.invoices, beatPayments),
         };
       })
-      .sort((a, b) => b.outstanding - a.outstanding);
+      .sort((a, b) => a.beat.localeCompare(b.beat));
   }, [invoices, payments]);
 
   if (beats.length === 0) return null;

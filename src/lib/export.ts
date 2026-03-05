@@ -40,12 +40,7 @@ function groupInvoicesByCustomer(invoices: Invoice[], payments: RecordedPaymentL
       };
     })
     .filter((g) => g.totalOutstanding > 0)
-    .sort((a, b) => {
-      const aAvg = a.avgCollectionDays ?? -1;
-      const bAvg = b.avgCollectionDays ?? -1;
-      if (aAvg !== bAvg) return bAvg - aAvg;
-      return a.customerName.localeCompare(b.customerName);
-    });
+    .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
 function buildRows(invoices: Invoice[], payments: RecordedPaymentLike[] = [], currencyPrefix = "Rs.") {

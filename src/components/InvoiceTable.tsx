@@ -53,13 +53,7 @@ function groupByCustomer(invoices: Invoice[], payments: RecordedPayment[]): Cust
         invoices: sortInvoicesUnpaidFirst(invs),
       };
     })
-    .sort((a, b) => {
-      // Sort by avg collection days descending (slow payers first), nulls last
-      const aAvg = a.avgCollectionDays ?? -1;
-      const bAvg = b.avgCollectionDays ?? -1;
-      if (aAvg !== bAvg) return bAvg - aAvg;
-      return a.customerName.localeCompare(b.customerName);
-    });
+    .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
 export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultSlowPayer = false }: InvoiceTableProps) {
