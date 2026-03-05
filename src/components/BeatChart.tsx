@@ -1,10 +1,13 @@
 import { useMemo } from "react";
-import { MapPin } from "lucide-react";
+import { MapPin, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
+import { calcAvgCollectionDays } from "@/lib/date-utils";
+import type { RecordedPayment } from "@/lib/api";
 
 interface BeatChartProps {
   invoices: Invoice[];
+  payments?: RecordedPayment[];
 }
 
 const BEAT_COLORS = [
@@ -22,20 +25,30 @@ const BEAT_COLORS = [
   { bg: "bg-[#EDE9FE]", text: "text-[#5b21b6]" },
 ];
 
-export function BeatChart({ invoices }: BeatChartProps) {
+export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
   const beats = useMemo(() => {
-    const map = new Map<string, { outstanding: number; customers: Set<string>; count: number }>();
+    const map = new Map<string, { outstanding: number; customers: Set<string>; count: number; invoices: Invoice[] }>();
     for (const inv of invoices) {
-      if (!map.has(inv.beat)) map.set(inv.beat, { outstanding: 0, customers: new Set(), count: 0 });
+      if (!map.has(inv.beat)) map.set(inv.beat, { outstanding: 0, customers: new Set(), count: 0, invoices: [] });
       const entry = map.get(inv.beat)!;
       entry.outstanding += inv.outstandingAmount;
       entry.customers.add(inv.customerName);
       entry.count++;
+      entry.invoices.push(inv);
     }
     return Array.from(map.entries())
-      .map(([beat, d]) => ({ beat, outstanding: d.outstanding, customers: d.customers.size, invoices: d.count }))
+      .map(([beat, d]) => {
+        const beatPayments = payments.filter(p => d.invoices.some(inv => inv.billNo === p.billNo));
+        return {
+          beat,
+          outstanding: d.outstanding,
+          customers: d.customers.size,
+          invoiceCount: d.count,
+          avgCollectionDays: calcAvgCollectionDays(d.invoices, beatPayments),
+        };
+      })
       .sort((a, b) => b.outstanding - a.outstanding);
-  }, [invoices]);
+  }, [invoices, payments]);
 
   if (beats.length === 0) return null;
 
@@ -57,8 +70,14 @@ export function BeatChart({ invoices }: BeatChartProps) {
               ₹{b.outstanding.toLocaleString("en-IN")}
             </p>
             <p className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">
-              {b.customers} cust · {b.invoices} bill{b.invoices !== 1 ? "s" : ""}
+              {b.customers} cust · {b.invoiceCount} bill{b.invoiceCount !== 1 ? "s" : ""}
             </p>
+            {b.avgCollectionDays !== null && (
+              <p className="flex items-center justify-center gap-0.5 text-[10px] sm:text-[11px] font-semibold opacity-80 mt-1">
+                <Timer className="h-3 w-3" />
+                {b.avgCollectionDays}d avg
+              </p>
+            )}
           </Link>
         );
       })}
