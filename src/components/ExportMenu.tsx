@@ -8,15 +8,17 @@ import {
 import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
 import { exportToPDF, exportToExcel } from "@/lib/export";
+import type { RecordedPayment } from "@/lib/api";
 
 interface ExportMenuProps {
   invoices: Invoice[];
   title: string;
+  payments?: RecordedPayment[];
   variant?: "outline" | "ghost" | "default";
   size?: "sm" | "icon" | "default";
 }
 
-export function ExportMenu({ invoices, title, variant = "outline", size = "sm" }: ExportMenuProps) {
+export function ExportMenu({ invoices, title, payments = [], variant = "outline", size = "sm" }: ExportMenuProps) {
   const pendingInvoices = invoices.filter((i) => i.outstandingAmount > 0);
 
   if (pendingInvoices.length === 0) return null;
@@ -30,11 +32,11 @@ export function ExportMenu({ invoices, title, variant = "outline", size = "sm" }
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => exportToPDF(invoices, title)} className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={() => exportToPDF(invoices, title, payments)} className="gap-2 cursor-pointer">
           <FileText className="h-4 w-4 text-destructive" />
           Export as PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportToExcel(invoices, title)} className="gap-2 cursor-pointer">
+        <DropdownMenuItem onClick={() => exportToExcel(invoices, title, payments)} className="gap-2 cursor-pointer">
           <FileSpreadsheet className="h-4 w-4 text-success" />
           Export as Excel
         </DropdownMenuItem>
