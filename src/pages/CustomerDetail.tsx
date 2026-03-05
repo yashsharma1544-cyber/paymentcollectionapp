@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, fetchStoppedReminders, type RecordedPayment, type FollowUp } from "@/lib/api";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,8 +17,9 @@ import { WhatsAppInvoiceSelector } from "@/components/WhatsAppInvoiceSelector";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
@@ -47,6 +48,11 @@ const CustomerDetail = () => {
   const { data: whatsAppLog = [] } = useQuery({
     queryKey: ["whatsapp-log"], queryFn: fetchWhatsAppLog,
   });
+  const { data: stoppedCustomers = [], refetch: refetchStopped } = useQuery({
+    queryKey: ["stopped-reminders"],
+    queryFn: fetchStoppedReminders,
+  });
+  const isReminderStopped = stoppedCustomers.includes(decoded);
 
   const invoices = useMemo(() => {
     const filtered = allInvoices.filter((inv) => inv.customerName === decoded);
@@ -157,7 +163,15 @@ const CustomerDetail = () => {
               <IndianRupee className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
+                {isReminderStopped && (
+                  <Badge variant="destructive" className="text-[10px] gap-1 shrink-0">
+                    <BellOff className="h-3 w-3" />
+                    Reminders Off
+                  </Badge>
+                )}
+              </div>
               {info && (
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                   {info.mobileNo && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{info.mobileNo}</span>}
@@ -286,7 +300,7 @@ const CustomerDetail = () => {
                 {followUpsLoading ? (
                   <Skeleton className="h-32 rounded-xl" />
                 ) : (
-                  <FollowUpList followUps={[...followUps].reverse()} />
+                  <FollowUpList followUps={[...followUps].reverse()} stoppedCustomers={stoppedCustomers} onStopToggle={() => refetchStopped()} />
                 )}
               </div>
             )}
