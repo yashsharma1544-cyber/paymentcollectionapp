@@ -83,7 +83,7 @@ const Index = () => {
               Refresh
             </Button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link to="/due-today" className="flex-1 sm:flex-none">
               <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
                 <CalendarClock className="h-3.5 w-3.5" />
