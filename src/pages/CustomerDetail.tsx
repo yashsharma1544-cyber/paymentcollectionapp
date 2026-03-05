@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
-import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
+import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
@@ -117,7 +117,8 @@ const CustomerDetail = () => {
     const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
-    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments };
+    const avgCollectionDays = calcAvgCollectionDays(invoices, payments);
+    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays };
   }, [invoices, payments]);
 
   const info = invoices[0];
@@ -229,7 +230,7 @@ const CustomerDetail = () => {
         ) : (
           <>
             {/* KPIs */}
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-4 text-center">
                   <IndianRupee className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-destructive mx-auto mb-0.5" />
@@ -263,6 +264,13 @@ const CustomerDetail = () => {
                   <AlertTriangle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-warning mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
                   <p className="text-xs sm:text-xl font-black text-warning truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm bg-accent overflow-hidden">
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
+                  <p className="text-xs sm:text-xl font-black text-primary">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
                 </CardContent>
               </Card>
             </div>

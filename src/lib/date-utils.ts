@@ -44,3 +44,30 @@ export function isTodayOrBefore(dateStr: string): boolean {
   d.setHours(0, 0, 0, 0);
   return d <= now;
 }
+
+/** Calculate average collection days from bill date to payment date */
+export function calcAvgCollectionDays(
+  invoices: { billNo: string; billDate: string }[],
+  payments: { billNo: string; paymentDate: string }[]
+): number | null {
+  const billDateMap = new Map<string, Date>();
+  for (const inv of invoices) {
+    const d = parseDateDMY(inv.billDate);
+    if (d) billDateMap.set(inv.billNo, d);
+  }
+
+  const daysArr: number[] = [];
+  for (const p of payments) {
+    const billDate = billDateMap.get(p.billNo);
+    const payDate = parseDateDMY(p.paymentDate);
+    if (billDate && payDate) {
+      billDate.setHours(0, 0, 0, 0);
+      payDate.setHours(0, 0, 0, 0);
+      const diff = Math.max(0, Math.floor((payDate.getTime() - billDate.getTime()) / (1000 * 60 * 60 * 24)));
+      daysArr.push(diff);
+    }
+  }
+
+  if (daysArr.length === 0) return null;
+  return Math.round(daysArr.reduce((s, d) => s + d, 0) / daysArr.length);
+}

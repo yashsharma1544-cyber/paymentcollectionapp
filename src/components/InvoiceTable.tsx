@@ -6,10 +6,10 @@ import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
-import { getOverdueDays, formatOverdue } from "@/lib/date-utils";
+import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
-import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, type WhatsAppLogEntry, type FollowUp } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download } from "lucide-react";
+import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, fetchRecordedPayments, type WhatsAppLogEntry, type FollowUp, type RecordedPayment } from "@/lib/api";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -27,26 +27,31 @@ interface CustomerGroup {
   totalPaid: number;
   invoiceCount: number;
   maxOverdueDays: number;
+  avgCollectionDays: number | null;
   invoices: Invoice[];
 }
 
-function groupByCustomer(invoices: Invoice[]): CustomerGroup[] {
+function groupByCustomer(invoices: Invoice[], payments: RecordedPayment[]): CustomerGroup[] {
   const map = new Map<string, Invoice[]>();
   for (const inv of invoices) {
     if (!map.has(inv.customerName)) map.set(inv.customerName, []);
     map.get(inv.customerName)!.push(inv);
   }
   return Array.from(map.entries())
-    .map(([customerName, invs]) => ({
-      customerName,
-      mobileNo: invs[0].mobileNo,
-      totalOutstanding: invs.reduce((s, i) => s + i.outstandingAmount, 0),
-      totalBill: invs.reduce((s, i) => s + i.billAmount, 0),
-      totalPaid: invs.reduce((s, i) => s + i.paidAmount, 0),
-      invoiceCount: invs.length,
-      maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.billDate)), 0),
-      invoices: sortInvoicesUnpaidFirst(invs),
-    }))
+    .map(([customerName, invs]) => {
+      const custPayments = payments.filter(p => p.customerName === customerName);
+      return {
+        customerName,
+        mobileNo: invs[0].mobileNo,
+        totalOutstanding: invs.reduce((s, i) => s + i.outstandingAmount, 0),
+        totalBill: invs.reduce((s, i) => s + i.billAmount, 0),
+        totalPaid: invs.reduce((s, i) => s + i.paidAmount, 0),
+        invoiceCount: invs.length,
+        maxOverdueDays: Math.max(...invs.filter(i => i.outstandingAmount > 0).map(i => getOverdueDays(i.billDate)), 0),
+        avgCollectionDays: calcAvgCollectionDays(invs, custPayments),
+        invoices: sortInvoicesUnpaidFirst(invs),
+      };
+    })
     .sort((a, b) => a.customerName.localeCompare(b.customerName));
 }
 
@@ -65,6 +70,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
   const { data: allFollowUps = [] } = useQuery({
     queryKey: ["followups"],
     queryFn: fetchFollowUps,
+  });
+
+  const { data: allPayments = [] } = useQuery({
+    queryKey: ["recorded-payments"],
+    queryFn: fetchRecordedPayments,
   });
 
   const lastWhatsAppMap = useMemo(() => {
@@ -98,7 +108,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
     );
   }, [invoices, search]);
 
-  const customerGroups = useMemo(() => groupByCustomer(filtered), [filtered]);
+  const customerGroups = useMemo(() => groupByCustomer(filtered, allPayments), [filtered, allPayments]);
   const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
 
   return (
@@ -172,6 +182,12 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
                     {cg.maxOverdueDays > 0 && (
                       <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
                         {formatOverdue(cg.maxOverdueDays)} overdue
+                      </span>
+                    )}
+                    {cg.avgCollectionDays !== null && (
+                      <span className="flex items-center gap-0.5 text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                        <Timer className="h-3 w-3" />
+                        {cg.avgCollectionDays}d avg
                       </span>
                     )}
                     {lastWA ? (
