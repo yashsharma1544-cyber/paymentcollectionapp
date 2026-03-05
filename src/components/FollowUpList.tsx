@@ -11,6 +11,10 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
@@ -28,6 +32,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [togglingStop, setTogglingStop] = useState<string | null>(null);
   const [deletingFollowUp, setDeletingFollowUp] = useState<string | null>(null);
+  const [stopConfirm, setStopConfirm] = useState<{ customerName: string; isStopped: boolean } | null>(null);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
   const [editRemarks, setEditRemarks] = useState("");
   const [editNextDate, setEditNextDate] = useState("");
@@ -218,23 +223,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                         variant="ghost"
                         className={`h-7 text-xs gap-1 ${isStopped ? "text-success" : "text-warning"}`}
                         disabled={togglingStop === f.customerName}
-                        onClick={async () => {
-                          setTogglingStop(f.customerName);
-                          try {
-                            if (isStopped) {
-                              await resumeReminders(f.customerName);
-                              toast.success(`Reminders resumed for ${f.customerName}`);
-                            } else {
-                              await stopReminders(f.customerName);
-                              toast.success(`Reminders stopped for ${f.customerName}`);
-                            }
-                            onStopToggle?.();
-                          } catch {
-                            toast.error("Failed to update reminder status");
-                          } finally {
-                            setTogglingStop(null);
-                          }
-                        }}
+                        onClick={() => setStopConfirm({ customerName: f.customerName, isStopped })}
                       >
                         {isStopped ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
                         {togglingStop === f.customerName ? "..." : isStopped ? "Resume" : "Stop"}
@@ -301,6 +290,48 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Stop/Resume Confirmation Dialog */}
+      <AlertDialog open={!!stopConfirm} onOpenChange={(v) => !v && setStopConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {stopConfirm?.isStopped ? "Resume Reminders?" : "Stop Reminders?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {stopConfirm?.isStopped
+                ? `Are you sure you want to resume automated reminders for ${stopConfirm.customerName}?`
+                : `Are you sure you want to stop all automated reminders for ${stopConfirm?.customerName}? You can resume them later.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!stopConfirm) return;
+                setTogglingStop(stopConfirm.customerName);
+                try {
+                  if (stopConfirm.isStopped) {
+                    await resumeReminders(stopConfirm.customerName);
+                    toast.success(`Reminders resumed for ${stopConfirm.customerName}`);
+                  } else {
+                    await stopReminders(stopConfirm.customerName);
+                    toast.success(`Reminders stopped for ${stopConfirm.customerName}`);
+                  }
+                  onStopToggle?.();
+                } catch {
+                  toast.error("Failed to update reminder status");
+                } finally {
+                  setTogglingStop(null);
+                  setStopConfirm(null);
+                }
+              }}
+            >
+              {stopConfirm?.isStopped ? "Resume" : "Stop"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {paymentCustomer && (
         <LumpsumPaymentDialog
