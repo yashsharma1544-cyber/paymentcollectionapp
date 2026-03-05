@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -212,7 +212,16 @@ const Index = () => {
             {searchResults ? (
               <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
             ) : showSlowPayers ? (
-              <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowSlowPayers(false)} className="gap-1.5 text-xs">
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Back to Dashboard
+                  </Button>
+                  <h2 className="text-sm font-semibold text-muted-foreground">Slow Payers (Avg &gt; 30d)</h2>
+                </div>
+                <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
+              </div>
             ) : (
               <BeatChart invoices={invoices} payments={allPayments} />
             )}
