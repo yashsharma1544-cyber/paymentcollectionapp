@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,7 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
-import { getOverdueDays } from "@/lib/date-utils";
-
+import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 import { BulkWatiSend } from "@/components/BulkWatiSend";
 
 const Index = () => {
@@ -24,6 +23,11 @@ const Index = () => {
   } = useQuery({
     queryKey: ["invoices"],
     queryFn: fetchInvoices,
+  });
+
+  const { data: allPayments = [] } = useQuery({
+    queryKey: ["recorded-payments"],
+    queryFn: fetchRecordedPayments,
   });
 
 
@@ -50,8 +54,9 @@ const Index = () => {
     const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
-    return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };
-  }, [invoices]);
+    const avgCollectionDays = calcAvgCollectionDays(invoices, allPayments);
+    return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollectionDays };
+  }, [invoices, allPayments]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,7 +136,7 @@ const Index = () => {
         ) : (
           <>
             {/* KPI Summary */}
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-3 text-center">
                   <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive mx-auto mb-0.5" />
@@ -165,6 +170,13 @@ const Index = () => {
                   <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
                   <p className="text-xs sm:text-lg font-black text-warning leading-tight truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm bg-orange-500/10 overflow-hidden">
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <Timer className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600 mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
+                  <p className="text-xs sm:text-lg font-black text-orange-600 leading-tight">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
                 </CardContent>
               </Card>
             </div>

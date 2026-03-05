@@ -52,7 +52,13 @@ function groupByCustomer(invoices: Invoice[], payments: RecordedPayment[]): Cust
         invoices: sortInvoicesUnpaidFirst(invs),
       };
     })
-    .sort((a, b) => a.customerName.localeCompare(b.customerName));
+    .sort((a, b) => {
+      // Sort by avg collection days descending (slow payers first), nulls last
+      const aAvg = a.avgCollectionDays ?? -1;
+      const bAvg = b.avgCollectionDays ?? -1;
+      if (aAvg !== bAvg) return bAvg - aAvg;
+      return a.customerName.localeCompare(b.customerName);
+    });
 }
 
 export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: InvoiceTableProps) {
@@ -185,7 +191,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
                       </span>
                     )}
                     {cg.avgCollectionDays !== null && (
-                      <span className="flex items-center gap-0.5 text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                      <span className="flex items-center gap-0.5 text-[10px] font-medium text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full">
                         <Timer className="h-3 w-3" />
                         {cg.avgCollectionDays}d avg
                       </span>
