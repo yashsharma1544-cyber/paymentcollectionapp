@@ -6,9 +6,9 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react";
+import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp, Timer } from "lucide-react";
 import { useMemo } from "react";
-import { isTodayOrBefore, isToday, getOverdueDays } from "@/lib/date-utils";
+import { isTodayOrBefore, isToday, getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
@@ -51,8 +51,9 @@ const BeatDetail = () => {
     const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
     const remainingOutstanding = totalOutstanding - overdueOutstanding;
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
-    return { totalOutstanding, totalBill, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate };
-  }, [invoices]);
+    const avgCollection = calcAvgCollectionDays(invoices, allPayments);
+    return { totalOutstanding, totalBill, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollection };
+  }, [invoices, allPayments]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,7 +111,7 @@ const BeatDetail = () => {
           </div>
         ) : (
           <>
-             <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-3">
+             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
                 <CardContent className="p-2 sm:p-4 text-center">
                   <IndianRupee className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-destructive mx-auto mb-0.5" />
@@ -144,6 +145,15 @@ const BeatDetail = () => {
                   <AlertTriangle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-warning mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
                   <p className="text-xs sm:text-xl font-black text-warning leading-tight truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-sm bg-orange-500/10 overflow-hidden">
+                <CardContent className="p-2 sm:p-4 text-center">
+                  <Timer className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-orange-600 mx-auto mb-0.5" />
+                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
+                  <p className="text-xs sm:text-xl font-black text-orange-600 leading-tight">
+                    {kpis.avgCollection !== null ? `${kpis.avgCollection}d` : "-"}
+                  </p>
                 </CardContent>
               </Card>
             </div>
