@@ -9,7 +9,7 @@ import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, fetchRecordedPayments, type WhatsAppLogEntry, type FollowUp, type RecordedPayment } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -63,6 +63,7 @@ function groupByCustomer(invoices: Invoice[], payments: RecordedPayment[]): Cust
 
 export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: InvoiceTableProps) {
   const [search, setSearch] = useState("");
+  const [slowPayerFilter, setSlowPayerFilter] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sendingWati, setSendingWati] = useState<string | null>(null);
@@ -114,27 +115,48 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: Invoic
     );
   }, [invoices, search]);
 
-  const customerGroups = useMemo(() => groupByCustomer(filtered, allPayments), [filtered, allPayments]);
+  const customerGroups = useMemo(() => {
+    const groups = groupByCustomer(filtered, allPayments);
+    if (slowPayerFilter) return groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30);
+    return groups;
+  }, [filtered, allPayments, slowPayerFilter]);
   const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
+  const slowPayerCount = useMemo(() => {
+    const groups = groupByCustomer(filtered, allPayments);
+    return groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30).length;
+  }, [filtered, allPayments]);
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="relative flex-1 min-w-[180px] max-w-sm">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+        <div className="relative flex-1 min-w-[140px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search customer or bill no..."
+            placeholder="Search customer or bill..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9 text-sm"
           />
         </div>
+        {slowPayerCount > 0 && (
+          <Button
+            variant={slowPayerFilter ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSlowPayerFilter(!slowPayerFilter)}
+            className="gap-1 text-[11px] sm:text-xs h-9 px-2 sm:px-3 shrink-0"
+          >
+            <Timer className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Slow Payers</span>
+            <span className="sm:hidden">Slow</span>
+            <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded-full">{slowPayerCount}</span>
+          </Button>
+        )}
         <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} payments={allPayments} />
         <div className="ml-auto text-right">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
             {customerGroups.length} customer{customerGroups.length !== 1 ? "s" : ""} · {filtered.length} invoice{filtered.length !== 1 ? "s" : ""}
           </p>
-          <p className="text-sm font-bold text-destructive">
+          <p className="text-xs sm:text-sm font-bold text-destructive">
             Outstanding: ₹{totalOutstanding.toLocaleString("en-IN")}
           </p>
         </div>
