@@ -653,45 +653,61 @@ const CRM = () => {
                     </Card>
                     {[...manualReminders].reverse().slice(0, 100).map((entry, i) => {
                       const amt = outstandingByCustomer.get(entry.customerName) || 0;
+                      // Reconstruct the message that was sent
+                      const custInvoices = invoices.filter(
+                        (inv) => inv.customerName === entry.customerName && inv.outstandingAmount > 0
+                      );
+                      const invoiceLines = custInvoices.slice(0, 8).map(
+                        (inv) => `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")}`
+                      );
+                      const msgPreview = [
+                        `🔔 पेमेंट रिमाइंडर`,
+                        `नमस्कार ${entry.customerName},`,
+                        `कृपया आपले थकबाकी पेमेंट करा.`,
+                        ...(invoiceLines.length > 0 ? [``, ...invoiceLines, ``, `एकूण थकबाकी: ₹${amt.toLocaleString("en-IN")}`] : []),
+                      ].join("\n");
                       return (
                         <Card key={i} className="border shadow-sm">
-                          <CardContent className="p-3 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <Link
-                                to={`/customer/${encodeURIComponent(entry.customerName)}`}
-                                className="text-sm font-semibold text-primary hover:underline"
-                              >
-                                {entry.customerName}
-                              </Link>
-                              <p className="text-xs text-muted-foreground">{entry.phone}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {amt > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="gap-1 text-xs h-7 px-2"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    setPaymentCustomer(entry.customerName);
-                                  }}
+                          <CardContent className="p-3 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <Link
+                                  to={`/customer/${encodeURIComponent(entry.customerName)}`}
+                                  className="text-sm font-semibold text-primary hover:underline"
                                 >
-                                  <CreditCard className="h-3 w-3" />
-                                  Pay
-                                </Button>
-                              )}
-                              <div className="flex flex-col items-end gap-0.5">
-                                {amt > 0 ? (
-                                  <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
-                                ) : (
-                                  <span className="text-xs font-medium text-success">Cleared</span>
+                                  {entry.customerName}
+                                </Link>
+                                <p className="text-xs text-muted-foreground">{entry.phone}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {amt > 0 && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1 text-xs h-7 px-2"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setPaymentCustomer(entry.customerName);
+                                    }}
+                                  >
+                                    <CreditCard className="h-3 w-3" />
+                                    Pay
+                                  </Button>
                                 )}
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  {entry.timestamp}
+                                <div className="flex flex-col items-end gap-0.5">
+                                  {amt > 0 ? (
+                                    <span className="text-sm font-bold text-destructive">₹{amt.toLocaleString("en-IN")}</span>
+                                  ) : (
+                                    <span className="text-xs font-medium text-success">Cleared</span>
+                                  )}
+                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Clock className="h-3 w-3" />
+                                    {entry.timestamp}
+                                  </div>
                                 </div>
                               </div>
                             </div>
+                            <p className="text-xs bg-muted/30 rounded p-2 whitespace-pre-line">{msgPreview}</p>
                           </CardContent>
                         </Card>
                       );
