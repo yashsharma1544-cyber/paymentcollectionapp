@@ -33,6 +33,7 @@ const Index = () => {
 
 
   const [globalSearch, setGlobalSearch] = useState("");
+  const [showSlowPayers, setShowSlowPayers] = useState(false);
   const { currentUser, clearUser } = useUser();
 
   const searchResults = useMemo(() => {
@@ -107,6 +108,16 @@ const Index = () => {
                 CRM
               </Button>
             </Link>
+            <Button
+              variant={showSlowPayers ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setShowSlowPayers(!showSlowPayers); setGlobalSearch(""); }}
+              className="gap-1 text-xs flex-1 sm:flex-none"
+            >
+              <Timer className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Slow Payers</span>
+              <span className="sm:hidden">Slow</span>
+            </Button>
             <BulkWatiSend invoices={invoices} />
             <Link to="/install" className="sm:flex-none">
               <Button variant="outline" size="icon" className="text-xs">
@@ -200,8 +211,10 @@ const Index = () => {
 
             {searchResults ? (
               <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
+            ) : showSlowPayers ? (
+              <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
             ) : (
-              <BeatChart invoices={invoices} />
+              <BeatChart invoices={invoices} payments={allPayments} />
             )}
           </>
         )}

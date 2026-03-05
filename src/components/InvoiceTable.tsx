@@ -17,6 +17,7 @@ interface InvoiceTableProps {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
   exportTitle?: string;
+  defaultSlowPayer?: boolean;
 }
 
 interface CustomerGroup {
@@ -61,9 +62,9 @@ function groupByCustomer(invoices: Invoice[], payments: RecordedPayment[]): Cust
     });
 }
 
-export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle }: InvoiceTableProps) {
+export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultSlowPayer = false }: InvoiceTableProps) {
   const [search, setSearch] = useState("");
-  const [slowPayerFilter, setSlowPayerFilter] = useState(false);
+  const [slowPayerFilter, setSlowPayerFilter] = useState(defaultSlowPayer);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sendingWati, setSendingWati] = useState<string | null>(null);
