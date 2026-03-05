@@ -122,13 +122,25 @@ serve(async (req) => {
     const outstandingData = await callSheets("fetch");
     const outstandingRows = outstandingData?.values || [];
     
-    // Build customer → phone map (Column B = name, Column C = phone)
+    // Build customer → phone map AND customer → unpaid invoices
     const customerPhoneMap: Record<string, string> = {};
+    const customerInvoices: Record<string, { billNo: string; billDate: string; outstanding: number }[]> = {};
+    const customerTotalOutstanding: Record<string, number> = {};
+
     for (let i = 1; i < outstandingRows.length; i++) {
       const name = outstandingRows[i]?.[1] || "";
       const phone = outstandingRows[i]?.[2] || "";
+      const billNo = outstandingRows[i]?.[0] || "";
+      const billDate = outstandingRows[i]?.[4] || "";
+      const outstanding = parseFloat(outstandingRows[i]?.[7] || "0") || 0;
+
       if (name && phone) {
         customerPhoneMap[name] = phone.toString().replace(/[\s\-()]/g, "");
+      }
+      if (name && outstanding > 0) {
+        if (!customerInvoices[name]) customerInvoices[name] = [];
+        customerInvoices[name].push({ billNo, billDate, outstanding });
+        customerTotalOutstanding[name] = (customerTotalOutstanding[name] || 0) + outstanding;
       }
     }
 
@@ -172,13 +184,23 @@ serve(async (req) => {
 
       // Due today → send morning reminder
       if (daysOverdue === 0) {
+        const invoices = customerInvoices[customerName] || [];
+        const total = customerTotalOutstanding[customerName] || 0;
+        const invoiceLines = invoices.slice(0, 8).map(
+          (inv) => `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstanding.toLocaleString("en-IN")}`
+        );
+
         const msg = [
           `🔔 *पेमेंट रिमाइंडर*`,
           ``,
           `नमस्कार ${customerName},`,
           `आज आपल्या पेमेंटची तारीख आहे.`,
-          `कृपया आजच पेमेंट करा.`,
           ``,
+          ...invoiceLines,
+          ``,
+          `*एकूण थकबाकी: ₹${total.toLocaleString("en-IN")}*`,
+          ``,
+          `कृपया आजच पेमेंट करा.`,
           `बँक डिटेल्ससाठी "Send Bank A/C No." पाठवा.`,
           ``,
           `- *SUSHIL AGENCIES, JALNA*`,
@@ -206,10 +228,14 @@ serve(async (req) => {
 
       // 1 day overdue → escalation reminder
       else if (daysOverdue === 1) {
+        const total = customerTotalOutstanding[customerName] || 0;
         const msg = [
           `⚠️ *पेमेंट ओव्हरड्यू*`,
           ``,
           `${customerName}, काल पेमेंटची तारीख होती पण अजून पेमेंट आलेले नाही.`,
+          ``,
+          `*एकूण थकबाकी: ₹${total.toLocaleString("en-IN")}*`,
+          ``,
           `कृपया आज पेमेंट करा.`,
           ``,
           `- *SUSHIL AGENCIES, JALNA*`,
@@ -234,10 +260,14 @@ serve(async (req) => {
 
       // 3 days overdue → final reminder, then mark as Done (stop bothering)
       else if (daysOverdue === 3) {
+        const total = customerTotalOutstanding[customerName] || 0;
         const msg = [
           `🚨 *तिसरा व शेवटचा रिमाइंडर*`,
           ``,
           `${customerName}, ${nextFollowUpDate} रोजी पेमेंट देण्याचे वचन दिले होते.`,
+          ``,
+          `*एकूण थकबाकी: ₹${total.toLocaleString("en-IN")}*`,
+          ``,
           `कृपया तात्काळ पेमेंट करा किंवा नवीन तारीख सांगा.`,
           ``,
           `- *SUSHIL AGENCIES, JALNA*`,
