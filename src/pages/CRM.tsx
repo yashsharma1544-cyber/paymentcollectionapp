@@ -533,6 +533,38 @@ const CRM = () => {
                       const typeColor = r.messageType === "auto_reminder" ? "bg-primary/10 text-primary"
                         : r.messageType === "auto_escalation" ? "bg-yellow-100 text-yellow-700"
                         : "bg-destructive/10 text-destructive";
+
+                      // Reconstruct full message preview
+                      const custInvoices = invoices.filter(
+                        (inv) => inv.customerName === r.contactName && inv.outstandingAmount > 0
+                      );
+                      const amt = custInvoices.reduce((s, inv) => s + inv.outstandingAmount, 0);
+                      const invoiceLines = custInvoices.slice(0, 8).map(
+                        (inv) => `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")}`
+                      );
+
+                      let msgPreview = "";
+                      if (r.messageType === "auto_reminder") {
+                        msgPreview = [
+                          `🔔 पेमेंट रिमाइंडर`,
+                          `नमस्कार ${r.contactName},`,
+                          `आज आपल्या पेमेंटची तारीख आहे.`,
+                          ...(invoiceLines.length > 0 ? [``, ...invoiceLines, ``, `एकूण थकबाकी: ₹${amt.toLocaleString("en-IN")}`] : []),
+                        ].join("\n");
+                      } else if (r.messageType === "auto_escalation") {
+                        msgPreview = [
+                          `⚠️ पेमेंट ओव्हरड्यू`,
+                          `${r.contactName}, काल पेमेंटची तारीख होती पण अजून पेमेंट आलेले नाही.`,
+                          `एकूण थकबाकी: ₹${amt.toLocaleString("en-IN")}`,
+                        ].join("\n");
+                      } else {
+                        msgPreview = [
+                          `🚨 तिसरा व शेवटचा रिमाइंडर`,
+                          `${r.contactName}, पेमेंट देण्याचे वचन दिले होते.`,
+                          `एकूण थकबाकी: ₹${amt.toLocaleString("en-IN")}`,
+                        ].join("\n");
+                      }
+
                       return (
                         <Card key={i} className={`border shadow-sm ${stoppedCustomers.includes(r.contactName) ? "opacity-60 border-dashed" : ""}`}>
                           <CardContent className="p-3">
@@ -556,7 +588,7 @@ const CRM = () => {
                                 </div>
                               </div>
                             </div>
-                            <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{r.messageText}</p>
+                            <p className="text-xs mt-1.5 bg-muted/30 rounded p-2 whitespace-pre-line">{msgPreview}</p>
                             <div className="flex justify-end mt-2">
                               <Button
                                 size="sm"
