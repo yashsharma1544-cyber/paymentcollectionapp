@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { fetchFollowUps, fetchWhatsAppLog, fetchInvoices, fetchWAReplies, fetchStoppedReminders, stopReminders, resumeReminders, type FollowUp, type WhatsAppLogEntry, type WAReply } from "@/lib/api";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,8 @@ const CRM = () => {
   const [userFilter, setUserFilter] = useState<string>("all");
   const [waDateFilter, setWaDateFilter] = useState<Date | undefined>(undefined);
   const [paymentCustomer, setPaymentCustomer] = useState<string | null>(null);
+  const [stopConfirm, setStopConfirm] = useState<{ name: string; isStopped: boolean } | null>(null);
+  const [togglingStop, setTogglingStop] = useState<string | null>(null);
 
   // Last WhatsApp per customer
   const lastWhatsApp = useMemo(() => {
@@ -531,7 +534,7 @@ const CRM = () => {
                         : r.messageType === "auto_escalation" ? "bg-yellow-100 text-yellow-700"
                         : "bg-destructive/10 text-destructive";
                       return (
-                        <Card key={i} className="border shadow-sm">
+                        <Card key={i} className={`border shadow-sm ${stoppedCustomers.includes(r.contactName) ? "opacity-60 border-dashed" : ""}`}>
                           <CardContent className="p-3">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
@@ -554,6 +557,18 @@ const CRM = () => {
                               </div>
                             </div>
                             <p className="text-xs mt-1.5 bg-muted/30 rounded p-2">{r.messageText}</p>
+                            <div className="flex justify-end mt-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={`h-7 text-xs gap-1 ${stoppedCustomers.includes(r.contactName) ? "text-success" : "text-warning"}`}
+                                disabled={togglingStop === r.contactName}
+                                onClick={() => setStopConfirm({ name: r.contactName, isStopped: stoppedCustomers.includes(r.contactName) })}
+                              >
+                                {stoppedCustomers.includes(r.contactName) ? <Bell className="h-3 w-3" /> : <BellOff className="h-3 w-3" />}
+                                {togglingStop === r.contactName ? "..." : stoppedCustomers.includes(r.contactName) ? "Resume" : "Stop"}
+                              </Button>
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -794,6 +809,48 @@ const CRM = () => {
             }}
           />
         )}
+
+        {/* Stop/Resume Confirmation Dialog */}
+        <AlertDialog open={!!stopConfirm} onOpenChange={(v) => !v && setStopConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {stopConfirm?.isStopped ? "Resume Reminders?" : "Stop Reminders?"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {stopConfirm?.isStopped
+                  ? `Resume automated reminders for ${stopConfirm.name}?`
+                  : `Stop all automated reminders for ${stopConfirm?.name}? You can resume later.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (!stopConfirm) return;
+                  setTogglingStop(stopConfirm.name);
+                  try {
+                    if (stopConfirm.isStopped) {
+                      await resumeReminders(stopConfirm.name);
+                      toast.success(`Reminders resumed for ${stopConfirm.name}`);
+                    } else {
+                      await stopReminders(stopConfirm.name);
+                      toast.success(`Reminders stopped for ${stopConfirm.name}`);
+                    }
+                    refetchStopped();
+                  } catch {
+                    toast.error("Failed to update reminder status");
+                  } finally {
+                    setTogglingStop(null);
+                    setStopConfirm(null);
+                  }
+                }}
+              >
+                {stopConfirm?.isStopped ? "Resume" : "Stop"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
