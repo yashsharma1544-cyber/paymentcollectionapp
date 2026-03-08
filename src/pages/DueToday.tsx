@@ -199,7 +199,7 @@ function InvoiceList({
           return (
             <Link
               key={bg.beat}
-              to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
+              to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}${dateFrom ? `&from=${dateFrom}` : ""}${dateTo ? `&to=${dateTo}` : ""}`}
               className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
             >
               <div className="flex items-center justify-center gap-1 mb-1.5">
