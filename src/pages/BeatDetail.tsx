@@ -82,7 +82,7 @@ const BeatDetail = () => {
             <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight truncate">{decodedBeat}</h1>
               <p className="text-[11px] text-muted-foreground">
-                {filterType === "due-today" ? "Due Today" : filterType === "pending" ? "Due & Overdue" : "Beat Details"}
+                {filterType === "due-today" ? "Due Today" : filterType === "pending" ? "Due & Overdue" : filterType === "custom" && dateFromParam ? (dateFromParam === dateToParam ? `Due ${dateFromParam}` : `Due ${dateFromParam} to ${dateToParam}`) : "Beat Details"}
               </p>
             </div>
           </div>
