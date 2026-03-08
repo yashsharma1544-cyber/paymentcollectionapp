@@ -222,6 +222,14 @@ const DueToday = () => {
     queryFn: fetchInvoices,
   });
 
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+
+  const isDateMatch = (dueDateStr: string, target: Date): boolean => {
+    const d = parseDateDMY(dueDateStr);
+    if (!d) return false;
+    return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
+  };
+
   const dueToday = useMemo(
     () => invoices.filter((inv) => isToday(inv.dueDate) && inv.outstandingAmount > 0),
     [invoices]
@@ -230,6 +238,11 @@ const DueToday = () => {
   const pending = useMemo(
     () => invoices.filter((inv) => isTodayOrBefore(inv.dueDate) && inv.outstandingAmount > 0),
     [invoices]
+  );
+
+  const dueOnDate = useMemo(
+    () => selectedDate ? invoices.filter((inv) => isDateMatch(inv.dueDate, selectedDate) && inv.outstandingAmount > 0) : [],
+    [invoices, selectedDate]
   );
 
   return (
@@ -264,16 +277,23 @@ const DueToday = () => {
           </div>
         ) : (
           <Tabs defaultValue="due-today">
-            <TabsList className="mb-4 w-full sm:w-auto">
-              <TabsTrigger value="due-today" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
-                <CalendarClock className="h-3.5 w-3.5 shrink-0" />
-                Due Today ({dueToday.length})
-              </TabsTrigger>
-              <TabsTrigger value="pending" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                Pending ({pending.length})
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="due-today" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+                  Due Today ({dueToday.length})
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Pending ({pending.length})
+                </TabsTrigger>
+                <TabsTrigger value="custom" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  {selectedDate ? format(selectedDate, "dd MMM") : "Pick Date"}
+                  {selectedDate ? ` (${dueOnDate.length})` : ""}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="due-today" className="space-y-4">
               <KPICards invoices={dueToday} />
@@ -283,6 +303,42 @@ const DueToday = () => {
             <TabsContent value="pending" className="space-y-4">
               <KPICards invoices={pending} />
               <InvoiceList invoices={pending} onPaymentSuccess={() => refetch()} filterParam="pending" />
+            </TabsContent>
+
+            <TabsContent value="custom" className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Select a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {selectedDate && (
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)} className="text-xs text-muted-foreground">
+                    Clear
+                  </Button>
+                )}
+              </div>
+              {selectedDate ? (
+                <>
+                  <KPICards invoices={dueOnDate} />
+                  <InvoiceList invoices={dueOnDate} onPaymentSuccess={() => refetch()} filterParam="custom" />
+                </>
+              ) : (
+                <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+                  Select a date to view invoices due on that day
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}
