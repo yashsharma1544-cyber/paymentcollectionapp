@@ -8,14 +8,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp, Timer } from "lucide-react";
 import { useMemo } from "react";
-import { isTodayOrBefore, isToday, getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
+import { isTodayOrBefore, isToday, getOverdueDays, calcAvgCollectionDays, parseDateDMY } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
   const decodedBeat = decodeURIComponent(beatName || "");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const filterType = searchParams.get("filter"); // "due-today" or "pending"
+  const filterType = searchParams.get("filter"); // "due-today", "pending", or "custom"
+  const dateFromParam = searchParams.get("from");
+  const dateToParam = searchParams.get("to");
 
   const {
     data: allInvoices = [],
@@ -39,9 +41,20 @@ const BeatDetail = () => {
       filtered = filtered.filter((inv) => isToday(inv.dueDate) && inv.outstandingAmount > 0);
     } else if (filterType === "pending") {
       filtered = filtered.filter((inv) => isTodayOrBefore(inv.dueDate) && inv.outstandingAmount > 0);
+    } else if (filterType === "custom" && dateFromParam && dateToParam) {
+      const from = new Date(dateFromParam);
+      const to = new Date(dateToParam);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(0, 0, 0, 0);
+      filtered = filtered.filter((inv) => {
+        const d = parseDateDMY(inv.dueDate);
+        if (!d) return false;
+        d.setHours(0, 0, 0, 0);
+        return d >= from && d <= to && inv.outstandingAmount > 0;
+      });
     }
     return filtered;
-  }, [allInvoices, decodedBeat, filterType]);
+  }, [allInvoices, decodedBeat, filterType, dateFromParam, dateToParam]);
 
   const kpis = useMemo(() => {
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
@@ -69,7 +82,7 @@ const BeatDetail = () => {
             <div className="min-w-0">
               <h1 className="text-lg font-bold tracking-tight truncate">{decodedBeat}</h1>
               <p className="text-[11px] text-muted-foreground">
-                {filterType === "due-today" ? "Due Today" : filterType === "pending" ? "Due & Overdue" : "Beat Details"}
+                {filterType === "due-today" ? "Due Today" : filterType === "pending" ? "Due & Overdue" : filterType === "custom" && dateFromParam ? (dateFromParam === dateToParam ? `Due ${dateFromParam}` : `Due ${dateFromParam} to ${dateToParam}`) : "Beat Details"}
               </p>
             </div>
           </div>

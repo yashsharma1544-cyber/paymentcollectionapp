@@ -133,10 +133,14 @@ function InvoiceList({
   invoices,
   onPaymentSuccess,
   filterParam = "due-today",
+  dateFrom,
+  dateTo,
 }: {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
   filterParam?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const beatGroups = useMemo(() => groupByBeat(sortInvoicesUnpaidFirst(invoices)), [invoices]);
 
@@ -195,7 +199,7 @@ function InvoiceList({
           return (
             <Link
               key={bg.beat}
-              to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}`}
+              to={`/beat/${encodeURIComponent(bg.beat)}?filter=${filterParam}${dateFrom ? `&from=${dateFrom}` : ""}${dateTo ? `&to=${dateTo}` : ""}`}
               className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block w-full`}
             >
               <div className="flex items-center justify-center gap-1 mb-1.5">
@@ -380,7 +384,13 @@ const DueToday = () => {
               {customFiltered.length > 0 ? (
                 <>
                   <KPICards invoices={customFiltered} />
-                  <InvoiceList invoices={customFiltered} onPaymentSuccess={() => refetch()} filterParam="custom" />
+                  <InvoiceList
+                    invoices={customFiltered}
+                    onPaymentSuccess={() => refetch()}
+                    filterParam="custom"
+                    dateFrom={dateRange ? format(dateRange.from, "yyyy-MM-dd") : selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+                    dateTo={dateRange ? format(dateRange.to, "yyyy-MM-dd") : selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+                  />
                 </>
               ) : (selectedDate || dateRange) ? (
                 <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
