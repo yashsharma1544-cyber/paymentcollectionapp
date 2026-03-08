@@ -133,10 +133,14 @@ function InvoiceList({
   invoices,
   onPaymentSuccess,
   filterParam = "due-today",
+  dateFrom,
+  dateTo,
 }: {
   invoices: Invoice[];
   onPaymentSuccess: () => void;
   filterParam?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const beatGroups = useMemo(() => groupByBeat(sortInvoicesUnpaidFirst(invoices)), [invoices]);
 
