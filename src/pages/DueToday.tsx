@@ -8,10 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, IndianRupee, TrendingUp, Users, FileText, AlertTriangle,
-  CalendarClock, MapPin, MessageCircle,
+  CalendarClock, MapPin, MessageCircle, Calendar,
 } from "lucide-react";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
-import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore } from "@/lib/date-utils";
+import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore, parseDateDMY } from "@/lib/date-utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
