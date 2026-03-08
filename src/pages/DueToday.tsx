@@ -223,12 +223,42 @@ const DueToday = () => {
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const [rangeLabel, setRangeLabel] = useState("");
 
   const isDateMatch = (dueDateStr: string, target: Date): boolean => {
     const d = parseDateDMY(dueDateStr);
     if (!d) return false;
     return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
   };
+
+  const isInRange = (dueDateStr: string, from: Date, to: Date): boolean => {
+    const d = parseDateDMY(dueDateStr);
+    if (!d) return false;
+    d.setHours(0, 0, 0, 0);
+    return d >= from && d <= to;
+  };
+
+  const handleQuickDate = (label: string, from: Date, to: Date) => {
+    from.setHours(0, 0, 0, 0);
+    to.setHours(0, 0, 0, 0);
+    setDateRange({ from, to });
+    setRangeLabel(label);
+    setSelectedDate(undefined);
+  };
+
+  const handlePickDate = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setDateRange(null);
+    setRangeLabel("");
+  };
+
+  const today = startOfDay(new Date());
+  const quickDates = useMemo(() => [
+    { label: "Tomorrow", from: addDays(today, 1), to: addDays(today, 1) },
+    { label: "This Week", from: startOfWeek(today, { weekStartsOn: 1 }), to: endOfWeek(today, { weekStartsOn: 1 }) },
+    { label: "Next Week", from: startOfWeek(addDays(today, 7), { weekStartsOn: 1 }), to: endOfWeek(addDays(today, 7), { weekStartsOn: 1 }) },
+  ], []);
 
   const dueToday = useMemo(
     () => invoices.filter((inv) => isToday(inv.dueDate) && inv.outstandingAmount > 0),
@@ -240,10 +270,17 @@ const DueToday = () => {
     [invoices]
   );
 
-  const dueOnDate = useMemo(
-    () => selectedDate ? invoices.filter((inv) => isDateMatch(inv.dueDate, selectedDate) && inv.outstandingAmount > 0) : [],
-    [invoices, selectedDate]
-  );
+  const customFiltered = useMemo(() => {
+    if (dateRange) {
+      return invoices.filter((inv) => isInRange(inv.dueDate, dateRange.from, dateRange.to) && inv.outstandingAmount > 0);
+    }
+    if (selectedDate) {
+      return invoices.filter((inv) => isDateMatch(inv.dueDate, selectedDate) && inv.outstandingAmount > 0);
+    }
+    return [];
+  }, [invoices, selectedDate, dateRange]);
+
+  const customLabel = rangeLabel || (selectedDate ? format(selectedDate, "dd MMM") : "Pick Date");
 
   return (
     <div className="min-h-screen bg-background">
