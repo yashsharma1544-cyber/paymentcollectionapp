@@ -384,7 +384,13 @@ const DueToday = () => {
               {customFiltered.length > 0 ? (
                 <>
                   <KPICards invoices={customFiltered} />
-                  <InvoiceList invoices={customFiltered} onPaymentSuccess={() => refetch()} filterParam="custom" />
+                  <InvoiceList
+                    invoices={customFiltered}
+                    onPaymentSuccess={() => refetch()}
+                    filterParam="custom"
+                    dateFrom={dateRange ? format(dateRange.from, "yyyy-MM-dd") : selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+                    dateTo={dateRange ? format(dateRange.to, "yyyy-MM-dd") : selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined}
+                  />
                 </>
               ) : (selectedDate || dateRange) ? (
                 <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">

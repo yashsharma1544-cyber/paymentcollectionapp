@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, RefreshCw, IndianRupee, Users, FileText, AlertTriangle, CheckCircle, TrendingUp, Timer } from "lucide-react";
 import { useMemo } from "react";
-import { isTodayOrBefore, isToday, getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
+import { isTodayOrBefore, isToday, getOverdueDays, calcAvgCollectionDays, parseDateDMY } from "@/lib/date-utils";
 
 const BeatDetail = () => {
   const { beatName } = useParams<{ beatName: string }>();
