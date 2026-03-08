@@ -326,8 +326,8 @@ const DueToday = () => {
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
                   <Calendar className="h-3.5 w-3.5 shrink-0" />
-                  {selectedDate ? format(selectedDate, "dd MMM") : "Pick Date"}
-                  {selectedDate ? ` (${dueOnDate.length})` : ""}
+                  {customLabel}
+                  {(selectedDate || dateRange) ? ` (${customFiltered.length})` : ""}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -343,37 +343,52 @@ const DueToday = () => {
             </TabsContent>
 
             <TabsContent value="custom" className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {quickDates.map((qd) => (
+                  <Button
+                    key={qd.label}
+                    size="sm"
+                    variant={rangeLabel === qd.label ? "default" : "outline"}
+                    onClick={() => handleQuickDate(qd.label, qd.from, qd.to)}
+                    className="text-xs"
+                  >
+                    {qd.label}
+                  </Button>
+                ))}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Select a date"}
+                    <Button variant={selectedDate ? "default" : "outline"} size="sm" className="gap-2 text-xs">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Pick Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={handlePickDate}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
-                {selectedDate && (
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)} className="text-xs text-muted-foreground">
+                {(selectedDate || dateRange) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedDate(undefined); setDateRange(null); setRangeLabel(""); }} className="text-xs text-muted-foreground">
                     Clear
                   </Button>
                 )}
               </div>
-              {selectedDate ? (
+              {customFiltered.length > 0 ? (
                 <>
-                  <KPICards invoices={dueOnDate} />
-                  <InvoiceList invoices={dueOnDate} onPaymentSuccess={() => refetch()} filterParam="custom" />
+                  <KPICards invoices={customFiltered} />
+                  <InvoiceList invoices={customFiltered} onPaymentSuccess={() => refetch()} filterParam="custom" />
                 </>
+              ) : (selectedDate || dateRange) ? (
+                <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+                  No unpaid invoices due for {customLabel}
+                </div>
               ) : (
                 <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
-                  Select a date to view invoices due on that day
+                  Select a date or quick range to view invoices
                 </div>
               )}
             </TabsContent>
