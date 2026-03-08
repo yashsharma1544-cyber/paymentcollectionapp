@@ -14,7 +14,7 @@ import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore, parseDateDMY } from "@/lib/date-utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
