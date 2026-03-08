@@ -14,7 +14,7 @@ import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, isToday, isTodayOrBefore, parseDateDMY } from "@/lib/date-utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, startOfDay } from "date-fns";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
@@ -223,12 +223,42 @@ const DueToday = () => {
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const [rangeLabel, setRangeLabel] = useState("");
 
   const isDateMatch = (dueDateStr: string, target: Date): boolean => {
     const d = parseDateDMY(dueDateStr);
     if (!d) return false;
     return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
   };
+
+  const isInRange = (dueDateStr: string, from: Date, to: Date): boolean => {
+    const d = parseDateDMY(dueDateStr);
+    if (!d) return false;
+    d.setHours(0, 0, 0, 0);
+    return d >= from && d <= to;
+  };
+
+  const handleQuickDate = (label: string, from: Date, to: Date) => {
+    from.setHours(0, 0, 0, 0);
+    to.setHours(0, 0, 0, 0);
+    setDateRange({ from, to });
+    setRangeLabel(label);
+    setSelectedDate(undefined);
+  };
+
+  const handlePickDate = (date: Date | undefined) => {
+    setSelectedDate(date);
+    setDateRange(null);
+    setRangeLabel("");
+  };
+
+  const today = startOfDay(new Date());
+  const quickDates = useMemo(() => [
+    { label: "Tomorrow", from: addDays(today, 1), to: addDays(today, 1) },
+    { label: "This Week", from: startOfWeek(today, { weekStartsOn: 1 }), to: endOfWeek(today, { weekStartsOn: 1 }) },
+    { label: "Next Week", from: startOfWeek(addDays(today, 7), { weekStartsOn: 1 }), to: endOfWeek(addDays(today, 7), { weekStartsOn: 1 }) },
+  ], []);
 
   const dueToday = useMemo(
     () => invoices.filter((inv) => isToday(inv.dueDate) && inv.outstandingAmount > 0),
@@ -240,10 +270,17 @@ const DueToday = () => {
     [invoices]
   );
 
-  const dueOnDate = useMemo(
-    () => selectedDate ? invoices.filter((inv) => isDateMatch(inv.dueDate, selectedDate) && inv.outstandingAmount > 0) : [],
-    [invoices, selectedDate]
-  );
+  const customFiltered = useMemo(() => {
+    if (dateRange) {
+      return invoices.filter((inv) => isInRange(inv.dueDate, dateRange.from, dateRange.to) && inv.outstandingAmount > 0);
+    }
+    if (selectedDate) {
+      return invoices.filter((inv) => isDateMatch(inv.dueDate, selectedDate) && inv.outstandingAmount > 0);
+    }
+    return [];
+  }, [invoices, selectedDate, dateRange]);
+
+  const customLabel = rangeLabel || (selectedDate ? format(selectedDate, "dd MMM") : "Pick Date");
 
   return (
     <div className="min-h-screen bg-background">
@@ -289,8 +326,8 @@ const DueToday = () => {
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 sm:flex-none">
                   <Calendar className="h-3.5 w-3.5 shrink-0" />
-                  {selectedDate ? format(selectedDate, "dd MMM") : "Pick Date"}
-                  {selectedDate ? ` (${dueOnDate.length})` : ""}
+                  {customLabel}
+                  {(selectedDate || dateRange) ? ` (${customFiltered.length})` : ""}
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -306,37 +343,52 @@ const DueToday = () => {
             </TabsContent>
 
             <TabsContent value="custom" className="space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {quickDates.map((qd) => (
+                  <Button
+                    key={qd.label}
+                    size="sm"
+                    variant={rangeLabel === qd.label ? "default" : "outline"}
+                    onClick={() => handleQuickDate(qd.label, qd.from, qd.to)}
+                    className="text-xs"
+                  >
+                    {qd.label}
+                  </Button>
+                ))}
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Select a date"}
+                    <Button variant={selectedDate ? "default" : "outline"} size="sm" className="gap-2 text-xs">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Pick Date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
                       selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      onSelect={handlePickDate}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
-                {selectedDate && (
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)} className="text-xs text-muted-foreground">
+                {(selectedDate || dateRange) && (
+                  <Button variant="ghost" size="sm" onClick={() => { setSelectedDate(undefined); setDateRange(null); setRangeLabel(""); }} className="text-xs text-muted-foreground">
                     Clear
                   </Button>
                 )}
               </div>
-              {selectedDate ? (
+              {customFiltered.length > 0 ? (
                 <>
-                  <KPICards invoices={dueOnDate} />
-                  <InvoiceList invoices={dueOnDate} onPaymentSuccess={() => refetch()} filterParam="custom" />
+                  <KPICards invoices={customFiltered} />
+                  <InvoiceList invoices={customFiltered} onPaymentSuccess={() => refetch()} filterParam="custom" />
                 </>
+              ) : (selectedDate || dateRange) ? (
+                <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
+                  No unpaid invoices due for {customLabel}
+                </div>
               ) : (
                 <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
-                  Select a date to view invoices due on that day
+                  Select a date or quick range to view invoices
                 </div>
               )}
             </TabsContent>
