@@ -390,9 +390,16 @@ const CustomerDetail = () => {
                               </TableCell>
                               <TableCell className="text-center">
                                 {daysToClear !== null ? (
-                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
-                                    {daysToClear}d
-                                  </span>
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
+                                      {daysToClear}d
+                                    </span>
+                                    {kpis.avgCollectionDays !== null && (
+                                      <span className={`text-[9px] font-medium ${daysToClear <= kpis.avgCollectionDays ? "text-success" : "text-destructive"}`}>
+                                        {daysToClear <= kpis.avgCollectionDays ? "▼" : "▲"} {Math.abs(daysToClear - kpis.avgCollectionDays)}d
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">—</span>
                                 )}
