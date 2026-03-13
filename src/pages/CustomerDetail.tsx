@@ -320,6 +320,8 @@ const CustomerDetail = () => {
                         <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Outstanding</TableHead>
                         <TableHead className="text-xs font-semibold whitespace-nowrap">Due</TableHead>
                         <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Overdue</TableHead>
+                        <TableHead className="text-xs font-semibold whitespace-nowrap">Collected</TableHead>
+                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Days</TableHead>
                         <TableHead className="text-xs font-semibold whitespace-nowrap">Status</TableHead>
                         <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Action</TableHead>
                       </TableRow>
