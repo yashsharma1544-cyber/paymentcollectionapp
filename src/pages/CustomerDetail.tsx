@@ -305,6 +305,82 @@ const CustomerDetail = () => {
               </div>
             )}
 
+            {/* Collection Speed Trend */}
+            {(() => {
+              const trendData = invoices
+                .map((inv) => {
+                  const bp = paymentsByBill.get(inv.billNo) || [];
+                  if (bp.length === 0) return null;
+                  const lastP = bp[bp.length - 1];
+                  const pd = lastP?.paymentDate || lastP?.timestamp?.split(" ")[0] || "";
+                  const bd = parseDateDMY(inv.billDate);
+                  const lpd = pd ? parseDateDMY(pd) : null;
+                  if (!bd || !lpd) return null;
+                  bd.setHours(0, 0, 0, 0);
+                  lpd.setHours(0, 0, 0, 0);
+                  const days = Math.max(0, Math.floor((lpd.getTime() - bd.getTime()) / (1000 * 60 * 60 * 24)));
+                  return { billNo: inv.billNo, days, date: inv.billDate };
+                })
+                .filter(Boolean) as { billNo: string; days: number; date: string }[];
+
+              if (trendData.length < 2) return null;
+
+              const maxDays = Math.max(...trendData.map(d => d.days));
+              const avg = kpis.avgCollectionDays;
+
+              return (
+                <Card className="border shadow-sm overflow-hidden">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4" />
+                        Collection Speed Trend
+                      </h2>
+                      {avg !== null && (
+                        <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600">
+                          <Clock className="h-3.5 w-3.5" />
+                          Avg: {avg}d
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      {/* Average line */}
+                      {avg !== null && maxDays > 0 && (
+                        <div
+                          className="absolute left-0 right-0 border-t-2 border-dashed border-orange-400 z-10 pointer-events-none"
+                          style={{ bottom: `${(avg / maxDays) * 100}%` }}
+                        >
+                          <span className="absolute -top-3.5 right-0 text-[9px] font-semibold text-orange-500 bg-card px-1 rounded">
+                            avg {avg}d
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-end gap-1 h-28 sm:h-36">
+                        {trendData.map((d, i) => {
+                          const heightPct = maxDays > 0 ? Math.max(4, (d.days / maxDays) * 100) : 4;
+                          const isAboveAvg = avg !== null && d.days > avg;
+                          return (
+                            <div key={d.billNo} className="flex-1 flex flex-col items-center gap-0.5 group relative min-w-0">
+                              <div className="absolute -top-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-popover border border-border text-popover-foreground text-[9px] font-medium px-1.5 py-0.5 rounded shadow-md whitespace-nowrap z-20 pointer-events-none">
+                                {d.billNo}: {d.days}d
+                              </div>
+                              <div
+                                className={`w-full rounded-t-sm transition-all ${isAboveAvg ? "bg-destructive/70" : "bg-success/70"}`}
+                                style={{ height: `${heightPct}%` }}
+                              />
+                              <span className="text-[8px] text-muted-foreground truncate w-full text-center leading-tight">
+                                {d.days}d
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
             {/* Invoices Table */}
             <div>
               <div className="flex items-center justify-between mb-3">
