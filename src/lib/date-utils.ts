@@ -45,7 +45,7 @@ export function isTodayOrBefore(dateStr: string): boolean {
   return d <= now;
 }
 
-/** Calculate average collection days from bill date to payment date */
+/** Calculate average collection days from bill date to last payment date per bill */
 export function calcAvgCollectionDays(
   invoices: { billNo: string; billDate: string }[],
   payments: { billNo: string; paymentDate: string }[]
@@ -56,15 +56,24 @@ export function calcAvgCollectionDays(
     if (d) billDateMap.set(inv.billNo, d);
   }
 
-  const daysArr: number[] = [];
+  // Group payments by billNo and find the latest payment date per bill
+  const lastPayDateMap = new Map<string, Date>();
   for (const p of payments) {
-    const billDate = billDateMap.get(p.billNo);
     const payDate = parseDateDMY(p.paymentDate);
-    if (billDate && payDate) {
-      billDate.setHours(0, 0, 0, 0);
-      payDate.setHours(0, 0, 0, 0);
-      const diff = Math.max(0, Math.floor((payDate.getTime() - billDate.getTime()) / (1000 * 60 * 60 * 24)));
-      daysArr.push(diff);
+    if (!payDate) continue;
+    const existing = lastPayDateMap.get(p.billNo);
+    if (!existing || payDate.getTime() > existing.getTime()) {
+      lastPayDateMap.set(p.billNo, payDate);
+    }
+  }
+
+  const daysArr: number[] = [];
+  for (const [billNo, lastPayDate] of lastPayDateMap) {
+    const billDate = billDateMap.get(billNo);
+    if (billDate) {
+      const b = new Date(billDate); b.setHours(0, 0, 0, 0);
+      const p = new Date(lastPayDate); p.setHours(0, 0, 0, 0);
+      daysArr.push(Math.max(0, Math.floor((p.getTime() - b.getTime()) / (1000 * 60 * 60 * 24))));
     }
   }
 
