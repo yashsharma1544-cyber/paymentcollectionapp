@@ -334,6 +334,18 @@ const CustomerDetail = () => {
                         const isExpanded = expandedBills.has(inv.billNo);
                         const isClickable = hasPayments;
 
+                        // Last payment date and days to clear
+                        const lastPayment = hasPayments ? billPayments[billPayments.length - 1] : null;
+                        const collectedDate = lastPayment?.paymentDate || lastPayment?.timestamp?.split(" ")[0] || "";
+                        const billDate = parseDateDMY(inv.billDate);
+                        const paidDate = collectedDate ? parseDateDMY(collectedDate) : null;
+                        let daysToClear: number | null = null;
+                        if (billDate && paidDate) {
+                          billDate.setHours(0, 0, 0, 0);
+                          paidDate.setHours(0, 0, 0, 0);
+                          daysToClear = Math.max(0, Math.floor((paidDate.getTime() - billDate.getTime()) / (1000 * 60 * 60 * 24)));
+                        }
+
                         return (
                           <>
                             <TableRow
@@ -360,6 +372,22 @@ const CustomerDetail = () => {
                                     {formatOverdue(getOverdueDays(inv.billDate))}
                                   </span>
                                 ) : <span className="text-xs text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell className="text-xs whitespace-nowrap">
+                                {collectedDate ? (
+                                  <span className="text-success font-medium">{collectedDate}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {daysToClear !== null ? (
+                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
+                                    {daysToClear}d
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
                               </TableCell>
                               <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
                               <TableCell className="text-center">
