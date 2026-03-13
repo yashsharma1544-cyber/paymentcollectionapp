@@ -307,7 +307,15 @@ const CustomerDetail = () => {
 
             {/* Invoices Table */}
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Invoices</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Invoices</h2>
+                {kpis.avgCollectionDays !== null && (
+                  <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600">
+                    <Clock className="h-3.5 w-3.5" />
+                    Avg: {kpis.avgCollectionDays}d
+                  </span>
+                )}
+              </div>
               <div className="rounded-xl border bg-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <Table>
@@ -382,9 +390,16 @@ const CustomerDetail = () => {
                               </TableCell>
                               <TableCell className="text-center">
                                 {daysToClear !== null ? (
-                                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
-                                    {daysToClear}d
-                                  </span>
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
+                                      {daysToClear}d
+                                    </span>
+                                    {kpis.avgCollectionDays !== null && (
+                                      <span className={`text-[9px] font-medium ${daysToClear <= kpis.avgCollectionDays ? "text-success" : "text-destructive"}`}>
+                                        {daysToClear <= kpis.avgCollectionDays ? "▼" : "▲"} {Math.abs(daysToClear - kpis.avgCollectionDays)}d
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">—</span>
                                 )}
