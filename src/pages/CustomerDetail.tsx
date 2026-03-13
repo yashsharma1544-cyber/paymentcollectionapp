@@ -124,7 +124,39 @@ const CustomerDetail = () => {
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
     const avgCollectionDays = calcAvgCollectionDays(invoices, payments);
-    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays };
+
+    // Trend: compare older-half avg vs newer-half avg of cleared invoices
+    let collectionTrend: { direction: "improving" | "worsening" | "stable"; pctChange: number } | null = null;
+    const clearedDays: { billDate: Date; days: number }[] = [];
+    const lastPayMap = new Map<string, Date>();
+    for (const p of payments) {
+      const pd = parseDateDMY(p.paymentDate);
+      if (!pd) continue;
+      const existing = lastPayMap.get(p.billNo);
+      if (!existing || pd.getTime() > existing.getTime()) lastPayMap.set(p.billNo, pd);
+    }
+    for (const inv of invoices) {
+      const bd = parseDateDMY(inv.billDate);
+      const lpd = lastPayMap.get(inv.billNo);
+      if (bd && lpd) {
+        const b = new Date(bd); b.setHours(0, 0, 0, 0);
+        const p = new Date(lpd); p.setHours(0, 0, 0, 0);
+        clearedDays.push({ billDate: b, days: Math.max(0, Math.floor((p.getTime() - b.getTime()) / (1000 * 60 * 60 * 24))) });
+      }
+    }
+    if (clearedDays.length >= 4) {
+      clearedDays.sort((a, b) => a.billDate.getTime() - b.billDate.getTime());
+      const mid = Math.floor(clearedDays.length / 2);
+      const olderAvg = clearedDays.slice(0, mid).reduce((s, d) => s + d.days, 0) / mid;
+      const newerAvg = clearedDays.slice(mid).reduce((s, d) => s + d.days, 0) / (clearedDays.length - mid);
+      const pctChange = olderAvg > 0 ? Math.round(((newerAvg - olderAvg) / olderAvg) * 100) : 0;
+      collectionTrend = {
+        direction: pctChange < -5 ? "improving" : pctChange > 5 ? "worsening" : "stable",
+        pctChange: Math.abs(pctChange),
+      };
+    }
+
+    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays, collectionTrend };
   }, [invoices, payments]);
 
   const info = invoices[0];
@@ -285,6 +317,17 @@ const CustomerDetail = () => {
                   <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-orange-600 mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
                   <p className="text-xs sm:text-xl font-black text-orange-600">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
+                  {kpis.collectionTrend && kpis.collectionTrend.direction !== "stable" && (
+                    <p className={`text-[9px] sm:text-xs font-semibold flex items-center justify-center gap-0.5 mt-0.5 ${kpis.collectionTrend.direction === "improving" ? "text-success" : "text-destructive"}`}>
+                      {kpis.collectionTrend.direction === "improving" ? "▼" : "▲"} {kpis.collectionTrend.pctChange}%
+                      <span className="font-normal text-muted-foreground hidden sm:inline ml-0.5">
+                        {kpis.collectionTrend.direction === "improving" ? "faster" : "slower"}
+                      </span>
+                    </p>
+                  )}
+                  {kpis.collectionTrend && kpis.collectionTrend.direction === "stable" && (
+                    <p className="text-[9px] sm:text-xs font-medium text-muted-foreground mt-0.5">— stable</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
