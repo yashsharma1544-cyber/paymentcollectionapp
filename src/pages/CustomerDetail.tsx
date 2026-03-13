@@ -24,7 +24,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
-import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
+import { getOverdueDays, formatOverdue, calcAvgCollectionDays, parseDateDMY } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
