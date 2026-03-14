@@ -184,6 +184,10 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                     <p className="text-base font-semibold group-hover:text-primary transition-colors leading-snug break-words">
                       {cg.customerName}
                     </p>
+                    {(() => {
+                      const health = calculateHealthScore(cg.customerName, invoices, allPayments);
+                      return <HealthBadge status={health.status} size="sm" showLabel={false} />;
+                    })()}
                   </div>
                   <div className="text-right shrink-0 -ml-2">
                     <p className="text-lg font-extrabold text-destructive">

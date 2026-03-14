@@ -170,6 +170,7 @@ const CustomerDetail = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
+                <HealthBadge status={health.status} score={health.score} size="sm" />
                 {isReminderStopped && (
                   <Badge variant="destructive" className="text-[10px] gap-1 shrink-0">
                     <BellOff className="h-3 w-3" />
