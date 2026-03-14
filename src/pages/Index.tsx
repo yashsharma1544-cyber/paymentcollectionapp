@@ -12,6 +12,8 @@ import { useMemo, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 import { BulkWatiSend } from "@/components/BulkWatiSend";
+import { DailyTarget } from "@/components/DailyTarget";
+import { calculateAllHealthScores } from "@/lib/health-score";
 
 const Index = () => {
   const {
