@@ -87,6 +87,34 @@ const Index = () => {
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollectionDays };
   }, [kpiInvoices, kpiPayments]);
 
+  // Health scores
+  const healthSummary = useMemo(() => {
+    const scores = calculateAllHealthScores(invoices, allPayments);
+    let good = 0, avg = 0, risky = 0;
+    for (const h of scores.values()) {
+      if (h.status === "Good") good++;
+      else if (h.status === "Average") avg++;
+      else risky++;
+    }
+    return { good, avg, risky };
+  }, [invoices, allPayments]);
+
+  // Today's payments for daily target
+  const todayPayments = useMemo(() => {
+    const now = new Date();
+    return allPayments.filter(p => {
+      if (!p.timestamp) return false;
+      const match = p.timestamp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (match) {
+        const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+      }
+      const d = new Date(p.timestamp);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    });
+  }, [allPayments]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
