@@ -38,7 +38,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
       entry.invoices.push(inv);
       totalOutstanding += inv.outstandingAmount;
     }
-    const beats = Array.from(map.entries())
+    const beatsRaw = Array.from(map.entries())
       .map(([beat, d]) => {
         const beatPayments = payments.filter(p => d.invoices.some(inv => inv.billNo === p.billNo));
         return {
@@ -49,8 +49,19 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
           avgCollectionDays: calcAvgCollectionDays(d.invoices, beatPayments),
           pct: totalOutstanding > 0 ? Math.round((d.outstanding / totalOutstanding) * 100) : 0,
         };
-      })
-      .sort((a, b) => a.beat.localeCompare(b.beat));
+      });
+    // Determine top 5 by outstanding
+    const sortedByOutstanding = [...beatsRaw].sort((a, b) => b.outstanding - a.outstanding);
+    const top5Beats = new Set(sortedByOutstanding.slice(0, 5).map(b => b.beat));
+    const beats = beatsRaw
+      .map(b => ({ ...b, isTop5: top5Beats.has(b.beat), rank: sortedByOutstanding.findIndex(s => s.beat === b.beat) + 1 }))
+      .sort((a, b) => {
+        // Show top 5 first, then rest alphabetically
+        if (a.isTop5 && !b.isTop5) return -1;
+        if (!a.isTop5 && b.isTop5) return 1;
+        if (a.isTop5 && b.isTop5) return a.rank - b.rank;
+        return a.beat.localeCompare(b.beat);
+      });
     return { beats, totalOutstanding };
   }, [invoices, payments]);
 
