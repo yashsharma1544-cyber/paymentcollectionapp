@@ -26,8 +26,9 @@ const BEAT_COLORS = [
 ];
 
 export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
-  const beats = useMemo(() => {
+  const { beats, totalOutstanding } = useMemo(() => {
     const map = new Map<string, { outstanding: number; customers: Set<string>; count: number; invoices: Invoice[] }>();
+    let totalOutstanding = 0;
     for (const inv of invoices) {
       if (!map.has(inv.beat)) map.set(inv.beat, { outstanding: 0, customers: new Set(), count: 0, invoices: [] });
       const entry = map.get(inv.beat)!;
@@ -35,8 +36,9 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
       entry.customers.add(inv.customerName);
       entry.count++;
       entry.invoices.push(inv);
+      totalOutstanding += inv.outstandingAmount;
     }
-    return Array.from(map.entries())
+    const beats = Array.from(map.entries())
       .map(([beat, d]) => {
         const beatPayments = payments.filter(p => d.invoices.some(inv => inv.billNo === p.billNo));
         return {
@@ -45,9 +47,11 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
           customers: d.customers.size,
           invoiceCount: d.count,
           avgCollectionDays: calcAvgCollectionDays(d.invoices, beatPayments),
+          pct: totalOutstanding > 0 ? Math.round((d.outstanding / totalOutstanding) * 100) : 0,
         };
       })
       .sort((a, b) => a.beat.localeCompare(b.beat));
+    return { beats, totalOutstanding };
   }, [invoices, payments]);
 
   if (beats.length === 0) return null;
