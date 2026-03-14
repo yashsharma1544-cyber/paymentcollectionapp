@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
+import { calculateHealthScore } from "@/lib/health-score";
+import { HealthBadge } from "@/components/HealthBadge";
 import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
