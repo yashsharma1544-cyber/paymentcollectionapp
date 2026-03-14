@@ -223,6 +223,9 @@ const Index = () => {
           </div>
         ) : (
           <>
+            {/* Daily Target */}
+            <DailyTarget todayPayments={todayPayments} />
+
             {/* KPI Summary */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
