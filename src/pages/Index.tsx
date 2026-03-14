@@ -272,6 +272,20 @@ const Index = () => {
               </Card>
             </div>
 
+            {/* Health Score Summary */}
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Health:</span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                <ShieldCheck className="h-3 w-3" />{healthSummary.good}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+                <Shield className="h-3 w-3" />{healthSummary.avg}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                <ShieldAlert className="h-3 w-3" />{healthSummary.risky}
+              </span>
+            </div>
+
 
             {/* Global Search */}
             <div className="relative max-w-md mx-auto">
