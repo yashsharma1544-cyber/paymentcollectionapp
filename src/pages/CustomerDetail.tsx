@@ -130,6 +130,8 @@ const CustomerDetail = () => {
     return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays };
   }, [invoices, payments]);
 
+  const health = useMemo(() => calculateHealthScore(decoded, allInvoices, allPayments), [decoded, allInvoices, allPayments]);
+
   const info = invoices[0];
 
   const handleWhatsApp = async (selectedInvoices: Invoice[]) => {
