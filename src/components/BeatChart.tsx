@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MapPin, Timer } from "lucide-react";
+import { MapPin, Timer, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { calcAvgCollectionDays } from "@/lib/date-utils";
