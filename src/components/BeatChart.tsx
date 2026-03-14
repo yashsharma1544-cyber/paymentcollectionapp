@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MapPin, Timer } from "lucide-react";
+import { MapPin, Timer, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
 import { calcAvgCollectionDays } from "@/lib/date-utils";
@@ -38,7 +38,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
       entry.invoices.push(inv);
       totalOutstanding += inv.outstandingAmount;
     }
-    const beats = Array.from(map.entries())
+    const beatsRaw = Array.from(map.entries())
       .map(([beat, d]) => {
         const beatPayments = payments.filter(p => d.invoices.some(inv => inv.billNo === p.billNo));
         return {
@@ -49,8 +49,19 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
           avgCollectionDays: calcAvgCollectionDays(d.invoices, beatPayments),
           pct: totalOutstanding > 0 ? Math.round((d.outstanding / totalOutstanding) * 100) : 0,
         };
-      })
-      .sort((a, b) => a.beat.localeCompare(b.beat));
+      });
+    // Determine top 5 by outstanding
+    const sortedByOutstanding = [...beatsRaw].sort((a, b) => b.outstanding - a.outstanding);
+    const top5Beats = new Set(sortedByOutstanding.slice(0, 5).map(b => b.beat));
+    const beats = beatsRaw
+      .map(b => ({ ...b, isTop5: top5Beats.has(b.beat), rank: sortedByOutstanding.findIndex(s => s.beat === b.beat) + 1 }))
+      .sort((a, b) => {
+        // Show top 5 first, then rest alphabetically
+        if (a.isTop5 && !b.isTop5) return -1;
+        if (!a.isTop5 && b.isTop5) return 1;
+        if (a.isTop5 && b.isTop5) return a.rank - b.rank;
+        return a.beat.localeCompare(b.beat);
+      });
     return { beats, totalOutstanding };
   }, [invoices, payments]);
 
@@ -65,8 +76,13 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
           <Link
             key={b.beat}
             to={`/beat/${encodeURIComponent(b.beat)}`}
-            className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block relative overflow-hidden ${isSlow ? "ring-2 ring-destructive/50" : ""}`}
+            className={`rounded-xl p-3 sm:p-4 text-center transition-all hover:scale-[1.03] active:scale-[0.98] shadow-sm ${color.bg} ${color.text} block relative overflow-hidden ${isSlow ? "ring-2 ring-destructive/50" : ""} ${b.isTop5 ? "ring-2 ring-primary/60 shadow-md" : ""}`}
           >
+            {b.isTop5 && (
+              <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 bg-primary text-primary-foreground text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                <Trophy className="h-2.5 w-2.5" />#{b.rank}
+              </span>
+            )}
             {isSlow && (
               <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
