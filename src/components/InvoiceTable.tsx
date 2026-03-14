@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { PaymentDialog } from "@/components/PaymentDialog";
 import { Link } from "react-router-dom";
 import type { Invoice } from "@/lib/invoice";
+import { calculateHealthScore } from "@/lib/health-score";
+import { HealthBadge } from "@/components/HealthBadge";
 import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
@@ -182,6 +184,10 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                     <p className="text-base font-semibold group-hover:text-primary transition-colors leading-snug break-words">
                       {cg.customerName}
                     </p>
+                    {(() => {
+                      const health = calculateHealthScore(cg.customerName, invoices, allPayments);
+                      return <HealthBadge status={health.status} size="sm" showLabel={false} />;
+                    })()}
                   </div>
                   <div className="text-right shrink-0 -ml-2">
                     <p className="text-lg font-extrabold text-destructive">

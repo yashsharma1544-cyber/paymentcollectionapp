@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { useMemo, useState } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 import { BulkWatiSend } from "@/components/BulkWatiSend";
+import { DailyTarget } from "@/components/DailyTarget";
+import { calculateAllHealthScores } from "@/lib/health-score";
 
 const Index = () => {
   const {
@@ -85,6 +87,34 @@ const Index = () => {
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollectionDays };
   }, [kpiInvoices, kpiPayments]);
 
+  // Health scores
+  const healthSummary = useMemo(() => {
+    const scores = calculateAllHealthScores(invoices, allPayments);
+    let good = 0, avg = 0, risky = 0;
+    for (const h of scores.values()) {
+      if (h.status === "Good") good++;
+      else if (h.status === "Average") avg++;
+      else risky++;
+    }
+    return { good, avg, risky };
+  }, [invoices, allPayments]);
+
+  // Today's payments for daily target
+  const todayPayments = useMemo(() => {
+    const now = new Date();
+    return allPayments.filter(p => {
+      if (!p.timestamp) return false;
+      const match = p.timestamp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (match) {
+        const d = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+      }
+      const d = new Date(p.timestamp);
+      if (isNaN(d.getTime())) return false;
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    });
+  }, [allPayments]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -134,6 +164,27 @@ const Index = () => {
                 CRM
               </Button>
             </Link>
+            <Link to="/monthly-report" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <BarChart3 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Monthly Report</span>
+                <span className="sm:hidden">Monthly</span>
+              </Button>
+            </Link>
+            <Link to="/route-planner" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <Route className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Route Planner</span>
+                <span className="sm:hidden">Route</span>
+              </Button>
+            </Link>
+            <Link to="/predictions" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <Brain className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Predictions</span>
+                <span className="sm:hidden">AI</span>
+              </Button>
+            </Link>
             <Button
               variant={showSlowPayers ? "default" : "outline"}
               size="sm"
@@ -172,6 +223,9 @@ const Index = () => {
           </div>
         ) : (
           <>
+            {/* Daily Target */}
+            <DailyTarget todayPayments={todayPayments} />
+
             {/* KPI Summary */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
@@ -216,6 +270,20 @@ const Index = () => {
                   <p className="text-xs sm:text-lg font-black text-orange-600 leading-tight">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Health Score Summary */}
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Health:</span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
+                <ShieldCheck className="h-3 w-3" />{healthSummary.good}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
+                <Shield className="h-3 w-3" />{healthSummary.avg}
+              </span>
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                <ShieldAlert className="h-3 w-3" />{healthSummary.risky}
+              </span>
             </div>
 
 

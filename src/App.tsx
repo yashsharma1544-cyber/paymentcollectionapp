@@ -14,6 +14,9 @@ import DueToday from "./pages/DueToday";
 import Install from "./pages/Install";
 import DailyReport from "./pages/DailyReport";
 import CRM from "./pages/CRM";
+import MonthlyReport from "./pages/MonthlyReport";
+import BeatRoutePlanner from "./pages/BeatRoutePlanner";
+import PaymentPredictions from "./pages/PaymentPredictions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ function AppRoutes() {
           <Route path="/due-today" element={<DueToday />} />
           <Route path="/daily-report" element={<DailyReport />} />
           <Route path="/crm" element={<CRM />} />
+          <Route path="/monthly-report" element={<MonthlyReport />} />
+          <Route path="/route-planner" element={<BeatRoutePlanner />} />
+          <Route path="/predictions" element={<PaymentPredictions />} />
           <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
