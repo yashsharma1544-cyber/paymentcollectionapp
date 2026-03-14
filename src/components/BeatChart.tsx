@@ -55,13 +55,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
     const top5Beats = new Set(sortedByOutstanding.slice(0, 5).map(b => b.beat));
     const beats = beatsRaw
       .map(b => ({ ...b, isTop5: top5Beats.has(b.beat), rank: sortedByOutstanding.findIndex(s => s.beat === b.beat) + 1 }))
-      .sort((a, b) => {
-        // Show top 5 first, then rest alphabetically
-        if (a.isTop5 && !b.isTop5) return -1;
-        if (!a.isTop5 && b.isTop5) return 1;
-        if (a.isTop5 && b.isTop5) return a.rank - b.rank;
-        return a.beat.localeCompare(b.beat);
-      });
+      .sort((a, b) => a.beat.localeCompare(b.beat));
     return { beats, totalOutstanding };
   }, [invoices, payments]);
 
