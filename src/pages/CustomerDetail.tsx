@@ -286,17 +286,6 @@ const CustomerDetail = () => {
                   <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-orange-600 mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
                   <p className="text-xs sm:text-xl font-black text-orange-600">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
-                  {kpis.collectionTrend && kpis.collectionTrend.direction !== "stable" && (
-                    <p className={`text-[9px] sm:text-xs font-semibold flex items-center justify-center gap-0.5 mt-0.5 ${kpis.collectionTrend.direction === "improving" ? "text-success" : "text-destructive"}`}>
-                      {kpis.collectionTrend.direction === "improving" ? "▼" : "▲"} {kpis.collectionTrend.pctChange}%
-                      <span className="font-normal text-muted-foreground hidden sm:inline ml-0.5">
-                        {kpis.collectionTrend.direction === "improving" ? "faster" : "slower"}
-                      </span>
-                    </p>
-                  )}
-                  {kpis.collectionTrend && kpis.collectionTrend.direction === "stable" && (
-                    <p className="text-[9px] sm:text-xs font-medium text-muted-foreground mt-0.5">— stable</p>
-                  )}
                 </CardContent>
               </Card>
             </div>
