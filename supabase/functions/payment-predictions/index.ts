@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -102,6 +103,30 @@ IMPORTANT: Always include the customer's beat field exactly as provided in the i
     if (!toolCall) throw new Error("No predictions returned");
 
     const predictions = JSON.parse(toolCall.function.arguments);
+    const preds = predictions.predictions || [];
+
+    // Save snapshot to database
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const sb = createClient(supabaseUrl, supabaseKey);
+
+      const highCount = preds.filter((p: any) => p.likelihood === "High").length;
+      const mediumCount = preds.filter((p: any) => p.likelihood === "Medium").length;
+      const lowCount = preds.filter((p: any) => p.likelihood === "Low").length;
+      const totalPredicted = preds.reduce((s: number, p: any) => s + (p.estimatedAmount || 0), 0);
+
+      await sb.from("prediction_snapshots").insert({
+        predictions: preds,
+        total_predicted: totalPredicted,
+        high_count: highCount,
+        medium_count: mediumCount,
+        low_count: lowCount,
+      });
+    } catch (saveErr) {
+      console.error("Failed to save snapshot:", saveErr);
+      // Don't fail the whole request if saving fails
+    }
 
     return new Response(JSON.stringify(predictions), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

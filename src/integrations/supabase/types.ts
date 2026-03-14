@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      prediction_snapshots: {
+        Row: {
+          created_at: string
+          high_count: number
+          id: string
+          low_count: number
+          medium_count: number
+          predictions: Json
+          run_date: string
+          total_predicted: number
+        }
+        Insert: {
+          created_at?: string
+          high_count?: number
+          id?: string
+          low_count?: number
+          medium_count?: number
+          predictions: Json
+          run_date?: string
+          total_predicted?: number
+        }
+        Update: {
+          created_at?: string
+          high_count?: number
+          id?: string
+          low_count?: number
+          medium_count?: number
+          predictions?: Json
+          run_date?: string
+          total_predicted?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

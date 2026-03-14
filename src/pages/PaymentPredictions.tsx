@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Brain, Filter, IndianRupee, Loader2, MapPin, RefreshCw, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowLeft, Brain, CheckCircle2, Filter, MapPin, Loader2, RefreshCw, Sparkles, TrendingUp, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { getOverdueDays } from "@/lib/date-utils";
@@ -23,6 +23,17 @@ interface Prediction {
   beat: string;
 }
 
+interface Snapshot {
+  id: string;
+  run_date: string;
+  predictions: Prediction[];
+  total_predicted: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  created_at: string;
+}
+
 const PaymentPredictions = () => {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,6 +46,20 @@ const PaymentPredictions = () => {
   });
   const { data: payments = [] } = useQuery({
     queryKey: ["recorded-payments"], queryFn: fetchRecordedPayments,
+  });
+
+  // Fetch past prediction snapshots
+  const { data: snapshots = [], refetch: refetchSnapshots } = useQuery({
+    queryKey: ["prediction-snapshots"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("prediction_snapshots")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data || []) as unknown as Snapshot[];
+    },
   });
 
   // Build summary data for AI — include beat info
@@ -86,6 +111,7 @@ const PaymentPredictions = () => {
       if (error) throw error;
       setPredictions(data.predictions || []);
       setHasRun(true);
+      refetchSnapshots();
     } catch (e) {
       toast({ title: "Prediction failed", description: (e as Error).message, variant: "destructive" });
     } finally {
@@ -108,7 +134,6 @@ const PaymentPredictions = () => {
     const mediumAmount = filteredPredictions.filter(p => p.likelihood === "Medium").reduce((s, p) => s + p.estimatedAmount, 0);
     const lowCount = filteredPredictions.filter(p => p.likelihood === "Low").length;
     const lowAmount = filteredPredictions.filter(p => p.likelihood === "Low").reduce((s, p) => s + p.estimatedAmount, 0);
-
     return { totalPredicted, highCount, highAmount, mediumCount, mediumAmount, lowCount, lowAmount };
   }, [filteredPredictions]);
 
@@ -130,6 +155,49 @@ const PaymentPredictions = () => {
       .sort((a, b) => b.total - a.total);
   }, [predictions]);
 
+  // Predicted vs Actual comparison using past snapshots + recorded payments
+  const comparisonData = useMemo(() => {
+    if (snapshots.length === 0) return [];
+
+    // Build a map of actual collections per customer per week
+    const paymentsByCustomer = new Map<string, number>();
+    for (const p of payments) {
+      paymentsByCustomer.set(p.customerName, (paymentsByCustomer.get(p.customerName) || 0) + p.paidAmount);
+    }
+
+    return snapshots.slice(0, 5).map((snap) => {
+      const preds = snap.predictions || [];
+      const predictedTotal = preds.reduce((s: number, p: Prediction) => s + (p.estimatedAmount || 0), 0);
+
+      // Check which predicted customers actually paid (from recorded payments)
+      let actualFromPredicted = 0;
+      let customersWhoPaid = 0;
+      for (const pred of preds) {
+        const actualPaid = paymentsByCustomer.get(pred.customerName) || 0;
+        if (actualPaid > 0) {
+          actualFromPredicted += Math.min(actualPaid, pred.estimatedAmount);
+          customersWhoPaid++;
+        }
+      }
+
+      const accuracy = predictedTotal > 0 ? Math.round((actualFromPredicted / predictedTotal) * 100) : 0;
+
+      return {
+        id: snap.id,
+        date: snap.run_date,
+        createdAt: snap.created_at,
+        predicted: predictedTotal,
+        actual: actualFromPredicted,
+        accuracy: Math.min(accuracy, 100),
+        totalCustomers: preds.length,
+        customersPaid: customersWhoPaid,
+        highCount: snap.high_count,
+        mediumCount: snap.medium_count,
+        lowCount: snap.low_count,
+      };
+    });
+  }, [snapshots, payments]);
+
   const likelihoodColor = (l: string) => {
     if (l === "High") return "text-success bg-success/10";
     if (l === "Medium") return "text-warning bg-warning/10";
@@ -137,6 +205,14 @@ const PaymentPredictions = () => {
   };
 
   const fmt = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,6 +251,64 @@ const PaymentPredictions = () => {
                   <p className="text-xs text-muted-foreground max-w-md mx-auto">
                     Click "Run Predictions" to analyze customer payment patterns and predict who is most likely to pay this week based on their history, overdue status, and collection patterns.
                   </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Predicted vs Actual Comparison — show even before running new predictions */}
+            {comparisonData.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                    <BarChart3 className="h-3.5 w-3.5 text-primary" /> Predicted vs Actual — Past Runs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="space-y-3">
+                    {comparisonData.map((row) => {
+                      const maxVal = Math.max(row.predicted, row.actual, 1);
+                      const predPct = Math.round((row.predicted / maxVal) * 100);
+                      const actPct = Math.round((row.actual / maxVal) * 100);
+                      return (
+                        <div key={row.id} className="space-y-1.5 p-3 rounded-lg bg-muted/30 border">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">{formatDate(row.date)}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[9px] h-4 px-1.5">
+                                {row.customersPaid}/{row.totalCustomers} paid
+                              </Badge>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                row.accuracy >= 60 ? "text-success bg-success/10" :
+                                row.accuracy >= 30 ? "text-warning bg-warning/10" :
+                                "text-destructive bg-destructive/10"
+                              }`}>
+                                {row.accuracy}% accuracy
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-0.5">Predicted</p>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-primary/60 rounded-full" style={{ width: `${predPct}%` }} />
+                              </div>
+                              <p className="text-[10px] font-semibold mt-0.5">{fmt(row.predicted)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground mb-0.5">Actual Collected</p>
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-success rounded-full" style={{ width: `${actPct}%` }} />
+                              </div>
+                              <p className="text-[10px] font-semibold text-success mt-0.5">{fmt(row.actual)}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 text-[9px] text-muted-foreground">
+                            <span>{row.highCount}H · {row.mediumCount}M · {row.lowCount}L</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             )}
