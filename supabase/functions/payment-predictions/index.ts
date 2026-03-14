@@ -23,6 +23,7 @@ For each customer, consider:
 - Their collection percentage (how much of total billing they've paid)
 - Number of past payments (indicates payment willingness)
 - Their health status (Good/Average/Risky)
+- Their beat (route/area)
 
 Return predictions using the suggest_payments tool. Focus on the top 15 most actionable customers.
 Prioritize customers who:
@@ -30,7 +31,8 @@ Prioritize customers who:
 2. Have moderate overdue (15-45 days) — too fresh won't pay yet, too old may be harder
 3. Have decent collection percentages — they DO pay, just slowly
 
-For reasoning, use brief business language. For suggestedAction, give a specific next step (call, visit, send reminder, offer discount, etc).`;
+For reasoning, use brief business language. For suggestedAction, give a specific next step (call, visit, send reminder, offer discount, etc).
+IMPORTANT: Always include the customer's beat field exactly as provided in the input data.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -58,12 +60,13 @@ For reasoning, use brief business language. For suggestedAction, give a specific
                     type: "object",
                     properties: {
                       customerName: { type: "string" },
+                      beat: { type: "string", description: "The beat/route/area of the customer" },
                       likelihood: { type: "string", enum: ["High", "Medium", "Low"] },
                       reasoning: { type: "string" },
                       suggestedAction: { type: "string" },
                       estimatedAmount: { type: "number" },
                     },
-                    required: ["customerName", "likelihood", "reasoning", "suggestedAction", "estimatedAmount"],
+                    required: ["customerName", "beat", "likelihood", "reasoning", "suggestedAction", "estimatedAmount"],
                     additionalProperties: false,
                   },
                 },
