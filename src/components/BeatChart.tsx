@@ -81,7 +81,7 @@ export function BeatChart({ invoices, payments = [] }: BeatChartProps) {
               ₹{b.outstanding.toLocaleString("en-IN")}
             </p>
             <p className="text-[10px] sm:text-[11px] opacity-75 mt-0.5">
-              {b.customers} cust · {b.invoiceCount} bill{b.invoiceCount !== 1 ? "s" : ""}
+              {b.customers} cust · {b.invoiceCount} bill{b.invoiceCount !== 1 ? "s" : ""} · <span className="font-semibold">{b.pct}%</span>
             </p>
             {b.avgCollectionDays !== null && (
               <p className={`flex items-center justify-center gap-0.5 text-[10px] sm:text-[11px] font-semibold mt-1 ${isSlow ? "text-destructive" : "opacity-80"}`}>
