@@ -164,6 +164,27 @@ const Index = () => {
                 CRM
               </Button>
             </Link>
+            <Link to="/monthly-report" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <BarChart3 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Monthly Report</span>
+                <span className="sm:hidden">Monthly</span>
+              </Button>
+            </Link>
+            <Link to="/route-planner" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <Route className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Route Planner</span>
+                <span className="sm:hidden">Route</span>
+              </Button>
+            </Link>
+            <Link to="/predictions" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
+                <Brain className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Predictions</span>
+                <span className="sm:hidden">AI</span>
+              </Button>
+            </Link>
             <Button
               variant={showSlowPayers ? "default" : "outline"}
               size="sm"
