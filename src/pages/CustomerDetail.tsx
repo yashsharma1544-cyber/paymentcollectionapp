@@ -20,6 +20,8 @@ import {
   CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { HealthBadge } from "@/components/HealthBadge";
+import { calculateHealthScore } from "@/lib/health-score";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
