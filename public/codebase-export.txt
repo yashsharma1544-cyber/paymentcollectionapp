@@ -1,0 +1,973 @@
+============================================================
+PAYMENT COLLECTOR APP - COMPLETE CODEBASE EXPORT
+Generated: 2026-03-16
+============================================================
+
+This file contains the complete source code of the Payment Collector application.
+It is a React + TypeScript + Vite app with Supabase Edge Functions backend
+and Google Sheets as the primary data store.
+
+============================================================
+TABLE OF CONTENTS
+============================================================
+1. Configuration Files
+2. App Entry & Routing (src/App.tsx, src/main.tsx)
+3. Contexts (UserContext)
+4. Library Files (api, invoice, whatsapp, wati, date-utils, health-score, reminder, export)
+5. Pages (Index, CustomerDetail, BeatDetail, CRM, DueToday, DailyReport, MonthlyReport, RecordedPayments, PaymentPredictions, BeatRoutePlanner, UserSelect)
+6. Components (InvoiceTable, BeatChart, BottomNav, ExportMenu, PaymentDialog, LumpsumPaymentDialog, FollowUpDialog, FollowUpList, EditPaymentDialog, DailyTarget, BulkWatiSend, WhatsAppChatView, WhatsAppInvoiceSelector, HealthBadge, StatusBadge, StatsCards)
+7. Edge Functions (google-sheets, wati, payment-predictions, payment-reminder-cron, wati-webhook)
+8. Styles (index.css)
+
+============================================================
+1. CONFIGURATION FILES
+============================================================
+
+--- tailwind.config.ts ---
+(Standard shadcn/ui tailwind config with semantic color tokens)
+
+--- index.html ---
+(Standard Vite HTML entry point)
+
+============================================================
+2. APP ENTRY & ROUTING
+============================================================
+
+--- src/main.tsx ---
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+
+createRoot(document.getElementById("root")!).render(<App />);
+
+--- src/App.tsx ---
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BottomNav } from "@/components/BottomNav";
+import { UserProvider, useUser } from "@/contexts/UserContext";
+import UserSelect from "./pages/UserSelect";
+import Index from "./pages/Index";
+import RecordedPayments from "./pages/RecordedPayments";
+import BeatDetail from "./pages/BeatDetail";
+import CustomerDetail from "./pages/CustomerDetail";
+import DueToday from "./pages/DueToday";
+import Install from "./pages/Install";
+import DailyReport from "./pages/DailyReport";
+import CRM from "./pages/CRM";
+import MonthlyReport from "./pages/MonthlyReport";
+import BeatRoutePlanner from "./pages/BeatRoutePlanner";
+import PaymentPredictions from "./pages/PaymentPredictions";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+function AppRoutes() {
+  const { currentUser } = useUser();
+  if (!currentUser) return <UserSelect />;
+  return (
+    <BrowserRouter>
+      <div className="pb-14 sm:pb-0">
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/payments" element={<RecordedPayments />} />
+          <Route path="/beat/:beatName" element={<BeatDetail />} />
+          <Route path="/customer/:customerName" element={<CustomerDetail />} />
+          <Route path="/due-today" element={<DueToday />} />
+          <Route path="/daily-report" element={<DailyReport />} />
+          <Route path="/crm" element={<CRM />} />
+          <Route path="/monthly-report" element={<MonthlyReport />} />
+          <Route path="/route-planner" element={<BeatRoutePlanner />} />
+          <Route path="/predictions" element={<PaymentPredictions />} />
+          <Route path="/install" element={<Install />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
+      <BottomNav />
+    </BrowserRouter>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <UserProvider>
+        <AppRoutes />
+      </UserProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
+
+============================================================
+3. CONTEXTS
+============================================================
+
+--- src/contexts/UserContext.tsx ---
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+
+export const USERS = ["Yash Sharma", "Radhe Suram", "Sahil Tiwari"] as const;
+export type UserName = (typeof USERS)[number];
+
+interface UserContextType {
+  currentUser: UserName | null;
+  setCurrentUser: (name: UserName) => void;
+  clearUser: () => void;
+}
+
+const UserContext = createContext<UserContextType | undefined>(undefined);
+const STORAGE_KEY = "payment-collector-user";
+
+export function UserProvider({ children }: { children: ReactNode }) {
+  const [currentUser, setCurrentUserState] = useState<UserName | null>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored && USERS.includes(stored as UserName)) return stored as UserName;
+    return null;
+  });
+
+  const setCurrentUser = (name: UserName) => {
+    localStorage.setItem(STORAGE_KEY, name);
+    setCurrentUserState(name);
+  };
+
+  const clearUser = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setCurrentUserState(null);
+  };
+
+  return (
+    <UserContext.Provider value={{ currentUser, setCurrentUser, clearUser }}>
+      {children}
+    </UserContext.Provider>
+  );
+}
+
+export function useUser() {
+  const ctx = useContext(UserContext);
+  if (!ctx) throw new Error("useUser must be used within UserProvider");
+  return ctx;
+}
+
+============================================================
+4. LIBRARY FILES
+============================================================
+
+--- src/lib/invoice.ts ---
+import { getOverdueDays } from "@/lib/date-utils";
+
+export interface Invoice {
+  billNo: string;
+  customerName: string;
+  mobileNo: string;
+  billDate: string;
+  billAmount: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  dueDate: string;
+  daysOverdue: number;
+  reminderLevel: string;
+  beat: string;
+  paymentStatus: string;
+}
+
+export function sortInvoicesUnpaidFirst(invoices: Invoice[]): Invoice[] {
+  return [...invoices].sort((a, b) => {
+    const aPaid = a.outstandingAmount === 0 ? 1 : 0;
+    const bPaid = b.outstandingAmount === 0 ? 1 : 0;
+    if (aPaid !== bPaid) return aPaid - bPaid;
+    return getOverdueDays(b.billDate) - getOverdueDays(a.billDate);
+  });
+}
+
+export function parseSheetData(data: { values?: string[][] }): Invoice[] {
+  if (!data.values || data.values.length < 2) return [];
+  const rows = data.values.slice(1);
+  return rows
+    .map((row) => ({
+      billNo: row[0] || "",
+      customerName: row[1] || "",
+      mobileNo: row[2] || "",
+      billDate: row[4] || "",
+      billAmount: Math.round(parseFloat(row[5]?.replace(/[₹,]/g, "") || "0")),
+      paidAmount: Math.round(parseFloat(row[6]?.replace(/[₹,]/g, "") || "0")),
+      outstandingAmount: Math.round(parseFloat(row[7]?.replace(/[₹,]/g, "") || "0")),
+      dueDate: row[8] || "",
+      daysOverdue: parseInt(row[9] || "0", 10),
+      reminderLevel: row[9] || "",
+      paymentStatus: row[10] || "Pending",
+      beat: row[11] || "Unassigned",
+    }))
+    .filter((inv) => inv.billNo);
+}
+
+--- src/lib/date-utils.ts ---
+export function parseDateDMY(dateStr: string): Date | null {
+  if (!dateStr) return null;
+  const parts = dateStr.split(/[-\/]/);
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    if (!isNaN(date.getTime())) return date;
+  }
+  const fallback = new Date(dateStr);
+  return isNaN(fallback.getTime()) ? null : fallback;
+}
+
+export function getOverdueDays(dateStr: string): number {
+  const d = parseDateDMY(dateStr);
+  if (!d) return 0;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(0, diff);
+}
+
+export function formatOverdue(days: number): string {
+  if (days === 0) return "Today";
+  if (days < 30) return `${days}d`;
+  const months = Math.floor(days / 30);
+  const remainingDays = days % 30;
+  if (remainingDays === 0) return `${months}m`;
+  return `${months}m ${remainingDays}d`;
+}
+
+export function isToday(dateStr: string): boolean {
+  const d = parseDateDMY(dateStr);
+  if (!d) return false;
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+export function isTodayOrBefore(dateStr: string): boolean {
+  const d = parseDateDMY(dateStr);
+  if (!d) return false;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return d <= now;
+}
+
+export function calcAvgCollectionDays(
+  invoices: { billNo: string; billDate: string }[],
+  payments: { billNo: string; paymentDate: string }[]
+): number | null {
+  const billDateMap = new Map<string, Date>();
+  for (const inv of invoices) {
+    const d = parseDateDMY(inv.billDate);
+    if (d) billDateMap.set(inv.billNo, d);
+  }
+  const lastPayDateMap = new Map<string, Date>();
+  for (const p of payments) {
+    const payDate = parseDateDMY(p.paymentDate);
+    if (!payDate) continue;
+    const existing = lastPayDateMap.get(p.billNo);
+    if (!existing || payDate.getTime() > existing.getTime()) {
+      lastPayDateMap.set(p.billNo, payDate);
+    }
+  }
+  const daysArr: number[] = [];
+  for (const [billNo, lastPayDate] of lastPayDateMap) {
+    const billDate = billDateMap.get(billNo);
+    if (billDate) {
+      const b = new Date(billDate); b.setHours(0, 0, 0, 0);
+      const p = new Date(lastPayDate); p.setHours(0, 0, 0, 0);
+      daysArr.push(Math.max(0, Math.floor((p.getTime() - b.getTime()) / (1000 * 60 * 60 * 24))));
+    }
+  }
+  if (daysArr.length === 0) return null;
+  return Math.round(daysArr.reduce((s, d) => s + d, 0) / daysArr.length);
+}
+
+--- src/lib/api.ts ---
+import type { Invoice } from "@/lib/invoice";
+import { parseSheetData } from "@/lib/invoice";
+
+const FUNCTION_NAME = "google-sheets";
+
+function getApiBase() {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  return {
+    baseUrl: `https://${projectId}.supabase.co/functions/v1/${FUNCTION_NAME}`,
+    headers: {
+      Authorization: `Bearer ${anonKey}`,
+      apikey: anonKey,
+    },
+  };
+}
+
+export async function fetchInvoices(): Promise<Invoice[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch invoices: ${await response.text()}`);
+  return parseSheetData(await response.json());
+}
+
+export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=record`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to record payment: ${await response.text()}`);
+}
+
+export interface PaymentAllocation {
+  billNo: string;
+  customerName: string;
+  paidAmount: number;
+  paymentDate?: string;
+}
+
+export async function recordBatchPayments(allocations: PaymentAllocation[], paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=record-batch`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ allocations, paymentDate, paymentMode, discount, notes, collectedBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to record batch payments: ${await response.text()}`);
+}
+
+export interface RecordedPayment {
+  billNo: string;
+  customerName: string;
+  paidAmount: number;
+  timestamp: string;
+  paymentDate: string;
+  paymentMode: string;
+  discount: number;
+  notes: string;
+  collectedBy: string;
+}
+
+export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-payments`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch recorded payments: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((row: string[]) => ({
+    billNo: row[0] || "",
+    customerName: row[1] || "",
+    paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
+    timestamp: row[3] || "",
+    paymentDate: row[4] || "",
+    paymentMode: row[5] || "",
+    discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
+    notes: row[7] || "",
+    collectedBy: row[8] || "",
+  })).filter((p: RecordedPayment) => p.billNo);
+}
+
+export async function editPayment(params: {
+  billNo: string; originalTimestamp: string; customerName?: string;
+  paidAmount: number; paymentDate?: string; paymentMode?: string;
+  discount?: number; notes?: string; collectedBy?: string;
+}): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=edit-payment`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error(`Failed to edit payment: ${await response.text()}`);
+}
+
+export async function deletePayment(billNo: string, originalTimestamp: string, customerName?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=delete-payment`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ billNo, originalTimestamp: originalTimestamp || undefined, customerName }),
+  });
+  if (!response.ok) throw new Error(`Failed to delete payment: ${await response.text()}`);
+}
+
+export interface FollowUp {
+  customerName: string; followUpDate: string; followUpTime: string;
+  remarks: string; nextFollowUpDate: string; status: string;
+  createdAt: string; type: string; addedBy: string;
+}
+
+export async function addFollowUp(params: {
+  customerName: string; remarks: string; nextFollowUpDate: string;
+  type?: string; addedBy?: string;
+}): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=add-followup`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error(`Failed to add follow-up: ${await response.text()}`);
+}
+
+export async function fetchFollowUps(): Promise<FollowUp[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-followups`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch follow-ups: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 1) return [];
+  const startIdx = (data.values[0]?.[0] === "Customer Name" || data.values[0]?.[0] === "customerName") ? 1 : 0;
+  return data.values.slice(startIdx).map((row: string[]) => ({
+    customerName: row[0] || "", followUpDate: row[1] || "", followUpTime: row[2] || "",
+    remarks: row[3] || "", nextFollowUpDate: row[4] || "", status: row[5] || "Pending",
+    createdAt: row[6] || "", type: row[7] || "Manual", addedBy: row[8] || "",
+  })).filter((f: FollowUp) => f.customerName);
+}
+
+export async function updateFollowUpStatus(customerName: string, createdAt: string, status: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=update-followup-status`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, createdAt, status }),
+  });
+  if (!response.ok) throw new Error(`Failed to update follow-up status: ${await response.text()}`);
+}
+
+export async function editFollowUp(params: {
+  customerName: string; createdAt: string; remarks: string;
+  nextFollowUpDate: string; status: string;
+}): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=edit-followup`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!response.ok) throw new Error(`Failed to edit follow-up: ${await response.text()}`);
+}
+
+export async function deleteFollowUp(customerName: string, createdAt: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=delete-followup`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, createdAt }),
+  });
+  if (!response.ok) throw new Error(`Failed to delete follow-up: ${await response.text()}`);
+}
+
+export interface WhatsAppLogEntry {
+  customerName: string; phone: string; timestamp: string; sentBy: string;
+}
+
+export async function logWhatsApp(customerName: string, phone: string, sentBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=log-whatsapp`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, phone, sentBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to log WhatsApp: ${await response.text()}`);
+}
+
+export async function fetchWhatsAppLog(): Promise<WhatsAppLogEntry[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-whatsapp-log`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch WhatsApp log: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((row: string[]) => ({
+    customerName: row[0] || "", phone: row[1] || "",
+    timestamp: row[2] || "", sentBy: row[3] || "",
+  })).filter((e: WhatsAppLogEntry) => e.customerName);
+}
+
+export interface WAReply {
+  phone: string; contactName: string; messageText: string;
+  messageType: string; direction: string; timestamp: string; waId: string;
+}
+
+export async function fetchWAReplies(): Promise<WAReply[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-wa-replies`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch WA replies: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((row: string[]) => ({
+    phone: row[0] || "", contactName: row[1] || "", messageText: row[2] || "",
+    messageType: row[3] || "text", direction: row[4] || "incoming",
+    timestamp: row[5] || "", waId: row[6] || "",
+  })).filter((r: WAReply) => r.phone || r.contactName);
+}
+
+export async function fetchStoppedReminders(): Promise<string[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-stopped-reminders`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch stopped reminders: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length === 0) return [];
+  return data.values.map((row: string[]) => row[0]).filter(Boolean);
+}
+
+export async function stopReminders(customerName: string, stoppedBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=stop-reminders`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, stoppedBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to stop reminders: ${await response.text()}`);
+}
+
+export async function resumeReminders(customerName: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=resume-reminders`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName }),
+  });
+  if (!response.ok) throw new Error(`Failed to resume reminders: ${await response.text()}`);
+}
+
+--- src/lib/whatsapp.ts ---
+import type { Invoice } from "@/lib/invoice";
+import { getOverdueDays } from "@/lib/date-utils";
+import { sendWatiTemplateMessage } from "@/lib/wati";
+
+export function buildReminderMessage(customerName: string, invoices: Invoice[]): string {
+  const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
+  if (outstanding.length === 0) return "";
+  const lines: string[] = [];
+  lines.push(`*नमस्कार ${customerName}*`);
+  lines.push("");
+  lines.push("आपल्या खात्यात खालील बिलांची थकबाकी प्रलंबित आहे:");
+  lines.push("");
+  for (const inv of outstanding) {
+    const overdueDays = getOverdueDays(inv.billDate);
+    lines.push(`• बिल नं: ${inv.billNo} | दिनांक: ${inv.billDate} | थकबाकी: ₹${inv.outstandingAmount.toLocaleString("en-IN")} | थकीत दिवस: ${overdueDays}`);
+  }
+  const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+  lines.push("");
+  lines.push(`*एकूण थकबाकी: ₹${total.toLocaleString("en-IN")}*`);
+  lines.push("");
+  lines.push("कृपया लवकरात लवकर पेमेंट करून सहकार्य करावे.");
+  lines.push("");
+  lines.push("धन्यवाद,");
+  lines.push("");
+  lines.push("*SUSHIL AGENCIES, JALNA*");
+  return lines.join("\n");
+}
+
+export function openWhatsApp(phone: string, message: string): void {
+  let cleaned = phone.replace(/[\s\-()]/g, "");
+  if (cleaned.startsWith("+")) cleaned = cleaned.slice(1);
+  if (cleaned.startsWith("0")) cleaned = cleaned.slice(1);
+  if (!cleaned.startsWith("91") || cleaned.length <= 10) cleaned = "91" + cleaned;
+  const url = `https://wa.me/${cleaned}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank");
+}
+
+export async function sendViaWati(phone: string, customerName: string, invoices: Invoice[]): Promise<{ success: boolean; error?: string }> {
+  const outstanding = invoices.filter((i) => i.outstandingAmount > 0);
+  if (outstanding.length === 0) return { success: false, error: "No outstanding invoices" };
+  const total = outstanding.reduce((s, i) => s + i.outstandingAmount, 0);
+  const MAX_INVOICE_SLOTS = 8;
+  const invoiceParams: { name: string; value: string }[] = [];
+  for (let idx = 0; idx < MAX_INVOICE_SLOTS; idx++) {
+    const paramIndex = idx + 2;
+    if (idx < outstanding.length) {
+      const inv = outstanding[idx];
+      const overdueDays = getOverdueDays(inv.billDate);
+      invoiceParams.push({ name: String(paramIndex), value: `• ${inv.billNo} | ${inv.billDate} | ₹${inv.outstandingAmount.toLocaleString("en-IN")} | ${overdueDays} दिवस` });
+    } else {
+      invoiceParams.push({ name: String(paramIndex), value: "\u200B" });
+    }
+  }
+  const parameters = [
+    { name: "1", value: customerName },
+    ...invoiceParams,
+    { name: "10", value: total.toLocaleString("en-IN") },
+  ];
+  const result = await sendWatiTemplateMessage(phone, "payment_reminder_v4", parameters, "payment_reminder");
+  return { success: result.success, error: result.error };
+}
+
+--- src/lib/wati.ts ---
+const FUNCTION_NAME = "wati";
+
+function getApiBase() {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  return {
+    baseUrl: `https://${projectId}.supabase.co/functions/v1/${FUNCTION_NAME}`,
+    headers: { Authorization: `Bearer ${anonKey}`, apikey: anonKey },
+  };
+}
+
+export async function sendWatiSessionMessage(phone: string, message: string): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=send-session-message`, {
+    method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message }),
+  });
+  const data = await response.json();
+  if (!response.ok) return { success: false, error: data.error || "Failed to send message" };
+  return { success: true, data };
+}
+
+export async function sendWatiTemplateMessage(phone: string, templateName: string, parameters?: { name: string; value: string }[], broadcastName?: string): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=send-template-message`, {
+    method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, templateName, parameters, broadcastName }),
+  });
+  const data = await response.json();
+  if (!response.ok) return { success: false, error: data.error || "Failed to send template" };
+  return { success: true, data };
+}
+
+export async function sendWatiTextMessage(phone: string, message: string): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=send-text-message`, {
+    method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message }),
+  });
+  const data = await response.json();
+  if (!response.ok) return { success: false, error: data.error || "Failed to send message" };
+  return { success: true, data };
+}
+
+export interface WatiMessage {
+  id: string; text: string; type: string; time: string;
+  owner: boolean; statusString: string; failedDetail?: string;
+}
+
+export async function getWatiMessages(phone: string): Promise<WatiMessage[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=get-messages&phone=${encodeURIComponent(phone)}`, { headers });
+  if (!response.ok) throw new Error("Failed to fetch messages");
+  const data = await response.json();
+  const items = data.messages?.items || [];
+  return items
+    .filter((item: any) => item.eventType === "message" || item.eventType === "broadcastMessage")
+    .map((item: any) => ({
+      id: item.id, text: item.text || item.finalText || "",
+      type: item.type || item.eventType || "text",
+      time: item.created || "",
+      owner: item.owner ?? (item.eventType === "broadcastMessage"),
+      statusString: item.statusString || "",
+      failedDetail: item.failedDetail || "",
+    }));
+}
+
+--- src/lib/health-score.ts ---
+import type { Invoice } from "@/lib/invoice";
+import type { RecordedPayment } from "@/lib/api";
+import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
+
+export type HealthStatus = "Good" | "Average" | "Risky";
+
+export interface CustomerHealth {
+  customerName: string; status: HealthStatus; score: number; factors: string[];
+}
+
+export function calculateHealthScore(customerName: string, invoices: Invoice[], payments: RecordedPayment[]): CustomerHealth {
+  const custInvoices = invoices.filter(i => i.customerName === customerName);
+  const custPayments = payments.filter(p => p.customerName === customerName);
+  if (custInvoices.length === 0) return { customerName, status: "Good", score: 100, factors: ["No invoices"] };
+
+  const factors: string[] = [];
+  let score = 100;
+
+  // 1. Average collection days (40 points)
+  const avgDays = calcAvgCollectionDays(custInvoices, custPayments);
+  if (avgDays !== null) {
+    if (avgDays > 60) { score -= 40; factors.push(`Avg ${avgDays}d to pay`); }
+    else if (avgDays > 45) { score -= 30; factors.push(`Avg ${avgDays}d to pay`); }
+    else if (avgDays > 30) { score -= 20; factors.push(`Avg ${avgDays}d to pay`); }
+    else if (avgDays > 15) { score -= 10; factors.push(`Avg ${avgDays}d to pay`); }
+  }
+
+  // 2. Max overdue on outstanding (30 points)
+  const outstandingInvs = custInvoices.filter(i => i.outstandingAmount > 0);
+  const maxOverdue = outstandingInvs.length > 0 ? Math.max(...outstandingInvs.map(i => getOverdueDays(i.billDate))) : 0;
+  if (maxOverdue > 90) { score -= 30; factors.push(`${maxOverdue}d overdue`); }
+  else if (maxOverdue > 60) { score -= 22; factors.push(`${maxOverdue}d overdue`); }
+  else if (maxOverdue > 30) { score -= 15; factors.push(`${maxOverdue}d overdue`); }
+  else if (maxOverdue > 15) { score -= 8; factors.push(`${maxOverdue}d overdue`); }
+
+  // 3. Collection rate (30 points)
+  const totalBill = custInvoices.reduce((s, i) => s + i.billAmount, 0);
+  const totalPaid = custInvoices.reduce((s, i) => s + i.paidAmount, 0);
+  const collectionRate = totalBill > 0 ? (totalPaid / totalBill) * 100 : 100;
+  if (collectionRate < 30) { score -= 30; factors.push(`${Math.round(collectionRate)}% collected`); }
+  else if (collectionRate < 50) { score -= 20; factors.push(`${Math.round(collectionRate)}% collected`); }
+  else if (collectionRate < 70) { score -= 12; factors.push(`${Math.round(collectionRate)}% collected`); }
+  else if (collectionRate < 90) { score -= 5; }
+
+  score = Math.max(0, Math.min(100, score));
+  const status: HealthStatus = score >= 70 ? "Good" : score >= 40 ? "Average" : "Risky";
+  return { customerName, status, score, factors };
+}
+
+export function calculateAllHealthScores(invoices: Invoice[], payments: RecordedPayment[]): Map<string, CustomerHealth> {
+  const customers = new Set(invoices.map(i => i.customerName));
+  const map = new Map<string, CustomerHealth>();
+  for (const name of customers) map.set(name, calculateHealthScore(name, invoices, payments));
+  return map;
+}
+
+export function getHealthColor(status: HealthStatus) {
+  switch (status) {
+    case "Good": return { text: "text-success", bg: "bg-success/10", border: "border-success/30" };
+    case "Average": return { text: "text-warning", bg: "bg-warning/10", border: "border-warning/30" };
+    case "Risky": return { text: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/30" };
+  }
+}
+
+--- src/lib/reminder.ts ---
+import { sendWatiSessionMessage } from "@/lib/wati";
+import { fetchInvoices, logWhatsApp } from "@/lib/api";
+
+export async function sendManualReminder(customerName: string, dueDate?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const invoices = await fetchInvoices();
+    const customerInv = invoices.find((inv) => inv.customerName === customerName);
+    if (!customerInv?.mobileNo) return { success: false, error: `No phone number found for ${customerName}` };
+    const dueDateText = dueDate ? ` (${dueDate})` : "";
+    const msg = [
+      `🔔 *पेमेंट रिमाइंडर*`, ``,
+      `नमस्कार ${customerName},`,
+      `कृपया आपले थकबाकी पेमेंट करा${dueDateText}.`, ``,
+      `बँक डिटेल्ससाठी "Send Bank A/C No." पाठवा.`, ``,
+      `- *SUSHIL AGENCIES, JALNA*`,
+    ].join("\n");
+    const result = await sendWatiSessionMessage(customerInv.mobileNo, msg);
+    if (result.success) {
+      try { await logWhatsApp(customerName, customerInv.mobileNo, "Manual Reminder"); } catch {}
+    }
+    return result;
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+--- src/lib/export.ts ---
+(PDF and Excel export using jsPDF + autoTable and XLSX)
+- exportToPDF: Landscape PDF with customer groups, headers, invoice tables
+- exportToExcel: Excel workbook with customer data
+- exportToCSV: CSV with headers and quoted fields
+
+============================================================
+5. PAGES (Summary - full code available in source files)
+============================================================
+
+--- src/pages/Index.tsx ---
+Main dashboard with KPI cards, daily target, health scores, beat chart, slow payer filter, global search, and invoice table.
+
+--- src/pages/CustomerDetail.tsx ---
+Individual customer view with KPIs, invoice table with expandable payment history, follow-ups, WhatsApp chat, lumpsum payment, and export.
+
+--- src/pages/BeatDetail.tsx ---
+Beat-specific view with KPIs and filtered invoice table.
+
+--- src/pages/CRM.tsx ---
+CRM dashboard with 9 tabs: Today, Upcoming, All, WhatsApp, Reminders, Complaints, Replies, Auto, Stopped. Per-user KPI cards and filters.
+
+--- src/pages/DueToday.tsx ---
+Due today/pending view with beat-grouped cards, quick date filters, and bulk WhatsApp.
+
+--- src/pages/DailyReport.tsx ---
+Daily collection report with date picker, beat filter, per-user breakdown, and customer table.
+
+--- src/pages/MonthlyReport.tsx ---
+Monthly summary with collection KPIs, health scores, top defaulters, and beat-wise performance.
+
+--- src/pages/RecordedPayments.tsx ---
+Searchable, filterable payment log with edit/delete capabilities and user-based filtering.
+
+--- src/pages/PaymentPredictions.tsx ---
+AI-powered payment predictions with KPIs, beat-wise breakdown, beat filter, and predicted vs actual comparison from historical snapshots.
+
+--- src/pages/BeatRoutePlanner.tsx ---
+Route planner showing customers sorted by most overdue, with health badges.
+
+--- src/pages/UserSelect.tsx ---
+User selection screen (3 users: Yash Sharma, Radhe Suram, Sahil Tiwari).
+
+============================================================
+6. COMPONENTS (Summary)
+============================================================
+
+--- src/components/InvoiceTable.tsx ---
+Customer-grouped invoice list with search, slow payer filter, WhatsApp send, export, health badges, follow-up indicators.
+
+--- src/components/BeatChart.tsx ---
+Grid of beat cards showing outstanding amounts, customer counts, avg collection days, top 5 ranking.
+
+--- src/components/BottomNav.tsx ---
+Mobile bottom navigation (Home, Due Today, CRM, Payments, Report).
+
+--- src/components/ExportMenu.tsx ---
+Dropdown menu for PDF, Excel, and CSV export.
+
+--- src/components/PaymentDialog.tsx ---
+Single invoice payment recording with amount, discount, mode, date, notes.
+
+--- src/components/LumpsumPaymentDialog.tsx ---
+Multi-invoice lumpsum payment with auto-allocation.
+
+--- src/components/FollowUpDialog.tsx ---
+Create new follow-up with remarks, date, customer name.
+
+--- src/components/FollowUpList.tsx ---
+Follow-up cards with mark done, edit, delete, send reminder, stop/resume, and pay buttons.
+
+--- src/components/EditPaymentDialog.tsx ---
+Edit recorded payment fields.
+
+--- src/components/DailyTarget.tsx ---
+Daily collection target tracker with progress bar.
+
+--- src/components/BulkWatiSend.tsx ---
+Bulk WhatsApp send dialog with per-customer invoice selection.
+
+--- src/components/WhatsAppChatView.tsx ---
+Live WATI chat view with send message capability.
+
+--- src/components/WhatsAppInvoiceSelector.tsx ---
+Select invoices for WhatsApp reminder.
+
+--- src/components/HealthBadge.tsx ---
+Color-coded health status badge (Good/Average/Risky).
+
+--- src/components/StatusBadge.tsx ---
+Payment status badge (Paid/Pending).
+
+--- src/components/StatsCards.tsx ---
+KPI summary cards.
+
+============================================================
+7. EDGE FUNCTIONS
+============================================================
+
+--- supabase/functions/google-sheets/index.ts ---
+Main backend function that handles all Google Sheets operations:
+- fetch: Read Outstanding sheet (up to 5000 rows)
+- record: Record single payment
+- record-batch: Record batch payments (lumpsum)
+- fetch-payments: Read Record Payments sheet
+- edit-payment: Update payment record
+- delete-payment: Delete payment row
+- add-followup: Create follow-up entry
+- fetch-followups: Read Follow Ups sheet
+- update-followup-status: Update follow-up status
+- edit-followup: Edit follow-up details
+- delete-followup: Delete follow-up row
+- log-whatsapp: Log WhatsApp send
+- fetch-whatsapp-log: Read WhatsApp Log sheet
+- log-wa-reply: Log WA reply
+- fetch-wa-replies: Read WA Replies sheet
+- lookup-customer: Find customer by phone
+- fetch-stopped-reminders: Read Stopped Reminders
+- stop-reminders: Add to stopped list
+- resume-reminders: Remove from stopped list
+- backfill-timestamps: Fill missing timestamps
+
+Uses Google Service Account for authentication. Spreadsheet ID: 1IH-MYfQi324eMeiPXD5otZz_9trPlVUDBJViTgVWEuI
+
+--- supabase/functions/wati/index.ts ---
+WATI WhatsApp API proxy:
+- send-session-message: Send session message
+- send-template-message: Send template message
+- send-text-message: Send text via v2 API
+- get-messages: Get message history
+- get-contact: Get contact info
+
+--- supabase/functions/payment-predictions/index.ts ---
+AI-powered payment prediction using Lovable AI (google/gemini-3-flash-preview).
+Analyzes customer data and returns likelihood predictions. Saves snapshots to prediction_snapshots table.
+
+--- supabase/functions/payment-reminder-cron/index.ts ---
+Automated reminder cron job:
+- D (due today): Morning reminder in Marathi
+- D+1: Escalation reminder
+- D+3: Final reminder, then auto-close follow-up
+Respects stopped reminders list. Logs all sends to WA Replies.
+
+--- supabase/functions/wati-webhook/index.ts ---
+Incoming WATI webhook handler:
+- "Will Pay Today" → Confirm + create follow-up
+- "Will Pay Later" → Offer date options
+- Date reply (1/2/3 or DD/MM/YYYY) → Confirm + create follow-up
+- "Send Bank A/C No." → Send HDFC bank details
+- "Complaint" → Log + send Marathi acknowledgment
+- "4" or "statement" → Acknowledge statement request
+- All other messages → Log to WA Replies sheet
+
+============================================================
+8. STYLES
+============================================================
+
+--- src/index.css ---
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+
+CSS Variables (HSL):
+- --background: 220 20% 97%
+- --foreground: 220 25% 10%
+- --primary: 217 72% 48%
+- --secondary: 220 16% 93%
+- --accent: 152 55% 42%
+- --destructive: 0 72% 55%
+- --warning: 38 92% 50%
+- --success: 152 55% 42%
+
+Dark mode variants included.
+
+============================================================
+DATABASE SCHEMA
+============================================================
+
+Table: prediction_snapshots
+- id: uuid (PK, auto-generated)
+- run_date: date (default CURRENT_DATE)
+- predictions: jsonb (array of prediction objects)
+- total_predicted: numeric (default 0)
+- high_count: integer (default 0)
+- medium_count: integer (default 0)
+- low_count: integer (default 0)
+- created_at: timestamptz (default now())
+
+RLS: Allow all access for anon and authenticated users.
+
+============================================================
+DATA SOURCES
+============================================================
+
+Primary: Google Sheets (Spreadsheet ID: 1IH-MYfQi324eMeiPXD5otZz_9trPlVUDBJViTgVWEuI)
+Tabs:
+- Outstanding: Main invoice data (columns: Bill No, Customer Name, Mobile, [skip], Bill Date, Bill Amt, Paid Amt, Outstanding, Due Date, Days Overdue, Payment Status, Beat)
+- Record Payments: Payment log (Bill No, Customer Name, Paid Amount, Timestamp, Payment Date, Payment Mode, Discount, Notes, Collected By)
+- Follow Ups: Follow-up entries (Customer Name, Follow Up Date, Time, Remarks, Next Follow Up Date, Status, Created At, Type, Added By)
+- WhatsApp Log: WA send log (Customer Name, Phone, Timestamp, Sent By)
+- WA Replies: Incoming/outgoing messages (Phone, Contact Name, Message Text, Message Type, Direction, Timestamp, WA ID)
+- Stopped Reminders: Customers with paused auto-reminders (Customer Name, Timestamp, Stopped By)
+
+Secondary: Supabase (prediction_snapshots table for AI prediction history)
+
+============================================================
+EXTERNAL INTEGRATIONS
+============================================================
+
+1. Google Sheets API (via Service Account)
+2. WATI WhatsApp Business API (templates + session messages)
+3. Lovable AI Gateway (payment predictions using Gemini)
+
+============================================================
+END OF CODEBASE EXPORT
+============================================================
