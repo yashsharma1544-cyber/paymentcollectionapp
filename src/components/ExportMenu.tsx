@@ -40,6 +40,10 @@ export function ExportMenu({ invoices, title, payments = [], variant = "outline"
           <FileSpreadsheet className="h-4 w-4 text-success" />
           Export as Excel
         </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportToCSV(invoices, title, payments)} className="gap-2 cursor-pointer">
+          <FileDown className="h-4 w-4 text-primary" />
+          Export as CSV
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

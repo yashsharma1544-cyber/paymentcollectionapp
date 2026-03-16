@@ -192,3 +192,19 @@ export function exportToExcel(invoices: Invoice[], title: string, payments: Reco
   const safeName = title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
   XLSX.writeFile(wb, `${safeName}_Outstanding.xlsx`);
 }
+
+export function exportToCSV(invoices: Invoice[], title: string, payments: RecordedPaymentLike[] = []) {
+  const { rows } = buildRows(invoices, payments, "");
+  const headers = ["Customer", "Mobile", "Bill No", "Bill Date", "Due Date", "Bill Amt", "Paid", "Outstanding", "Beat", "Avg Collection Days"];
+  const csvRows = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","));
+  const csvString = csvRows.join("\n");
+
+  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const safeName = title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+  a.href = url;
+  a.download = `${safeName}_Outstanding.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
