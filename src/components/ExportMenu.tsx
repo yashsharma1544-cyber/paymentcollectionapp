@@ -5,9 +5,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, FileDown } from "lucide-react";
 import type { Invoice } from "@/lib/invoice";
-import { exportToPDF, exportToExcel } from "@/lib/export";
+import { exportToPDF, exportToExcel, exportToCSV } from "@/lib/export";
 import type { RecordedPayment } from "@/lib/api";
 
 interface ExportMenuProps {
