@@ -57,6 +57,22 @@ export function getTemplateName(level: EscalationLevel): string | null {
   }
 }
 
+/**
+ * Extract last escalation template sent per customer from WhatsApp log entries.
+ */
+export function getLastEscalationMap(whatsappLog: { customerName: string; sentBy?: string }[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const entry of whatsappLog) {
+    if (entry.sentBy?.startsWith("Escalation:")) {
+      const match = entry.sentBy.match(/^Escalation:\s*(.+?)(?:\s+by\s+.+)?$/);
+      if (match) {
+        map.set(entry.customerName, match[1].trim());
+      }
+    }
+  }
+  return map;
+}
+
 /** Get available approved templates for manual sending */
 export const APPROVED_TEMPLATES = [
   { name: "payment_alert", label: "⚠️ Payment Alert", description: "Firm payment reminder" },
