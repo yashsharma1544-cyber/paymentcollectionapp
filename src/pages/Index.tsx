@@ -331,9 +331,9 @@ const Index = () => {
               </div>
             ) : (
               <>
+                <BeatChart invoices={invoices} payments={allPayments} />
                 {/* Top Defaulters Summary */}
                 <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
-                <BeatChart invoices={invoices} payments={allPayments} />
               </>
             )}
           </>
