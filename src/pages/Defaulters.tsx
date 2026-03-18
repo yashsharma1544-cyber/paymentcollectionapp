@@ -25,8 +25,6 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   // Determine recommended template based on escalation level
   const recommendedTemplate = getTemplateName(d.escalationLevel);
   const recommendedLabel = APPROVED_TEMPLATES.find(t => t.name === recommendedTemplate)?.label || null;
-  const { currentUser } = useUser();
-  const { toast } = useToast();
 
   const handleSendTemplate = async (templateName: string, templateLabel: string) => {
     if (!d.mobileNo) {
