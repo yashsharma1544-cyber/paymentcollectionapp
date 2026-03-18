@@ -66,6 +66,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sendingWati, setSendingWati] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "outstanding">("name");
   const { toast } = useToast();
 
   const { data: whatsAppLog = [] } = useQuery({
