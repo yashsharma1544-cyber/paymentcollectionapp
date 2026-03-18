@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, MapPin, MessageSquare, IndianRupee, Eye, Users, Route, Clock, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,34 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const escalationColor = getEscalationColor(d.escalationLevel);
   const escalationLabel = getEscalationLabel(d.escalationLevel);
+  const [sending, setSending] = useState<string | null>(null);
+  const { currentUser } = useUser();
+  const { toast } = useToast();
+
+  const handleSendTemplate = async (templateName: string, templateLabel: string) => {
+    if (!d.mobileNo) {
+      toast({ title: "No phone number", description: `No mobile number found for ${d.customerName}`, variant: "destructive" });
+      return;
+    }
+    setSending(templateName);
+    try {
+      const params = [
+        { name: "1", value: d.customerName },
+        { name: "2", value: `₹${d.totalOutstanding.toLocaleString("en-IN")}` },
+      ];
+      const result = await sendWatiTemplateMessage(d.mobileNo, templateName, params, "escalation");
+      if (result.success) {
+        toast({ title: "Message sent ✅", description: `${templateLabel} sent to ${d.customerName}` });
+        try { await logWhatsApp(d.customerName, d.mobileNo, `Escalation: ${templateLabel} by ${currentUser}`); } catch {}
+      } else {
+        toast({ title: "Failed to send", description: result.error || "Unknown error", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: String(err), variant: "destructive" });
+    } finally {
+      setSending(null);
+    }
+  };
 
   return (
     <Card className={cn(
@@ -83,6 +111,32 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                 <Phone className="h-3 w-3" />Call
               </Button>
             </a>
+          )}
+          {d.mobileNo && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1 text-[10px] gap-1 h-7"
+                  disabled={!!sending}
+                >
+                  {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                  Escalate
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {APPROVED_TEMPLATES.map(t => (
+                  <DropdownMenuItem
+                    key={t.name}
+                    onClick={() => handleSendTemplate(t.name, t.label)}
+                    disabled={!!sending}
+                  >
+                    <span>{t.label}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </CardContent>
