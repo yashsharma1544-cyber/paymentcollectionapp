@@ -16,6 +16,7 @@ export interface DefaulterInfo {
   invoiceCount: number;
   lastReminderDate: string | null;
   hasPaymentInLast30Days: boolean;
+  lastEscalationSent: string | null; // e.g. "Payment Alert"
 }
 
 export function getEscalationLevel(reminderCount: number): EscalationLevel {
