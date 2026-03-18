@@ -20,6 +20,7 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const escalationColor = getEscalationColor(d.escalationLevel);
   const escalationLabel = getEscalationLabel(d.escalationLevel);
   const [sending, setSending] = useState<string | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<{ name: string; label: string } | null>(null);
   const { currentUser } = useUser();
   const { toast } = useToast();
 
@@ -27,11 +28,10 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const recommendedTemplate = getTemplateName(d.escalationLevel);
   const recommendedLabel = APPROVED_TEMPLATES.find(t => t.name === recommendedTemplate)?.label || null;
 
-  const handleSendTemplate = async (templateName: string, templateLabel: string) => {
-    if (!d.mobileNo) {
-      toast({ title: "No phone number", description: `No mobile number found for ${d.customerName}`, variant: "destructive" });
-      return;
-    }
+  const handleConfirmSend = async () => {
+    if (!pendingTemplate || !d.mobileNo) return;
+    const { name: templateName, label: templateLabel } = pendingTemplate;
+    setPendingTemplate(null);
     setSending(templateName);
     try {
       const params = [
