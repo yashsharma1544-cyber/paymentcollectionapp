@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
 import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -19,6 +20,7 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const escalationColor = getEscalationColor(d.escalationLevel);
   const escalationLabel = getEscalationLabel(d.escalationLevel);
   const [sending, setSending] = useState<string | null>(null);
+  const [pendingTemplate, setPendingTemplate] = useState<{ name: string; label: string } | null>(null);
   const { currentUser } = useUser();
   const { toast } = useToast();
 
@@ -26,11 +28,10 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const recommendedTemplate = getTemplateName(d.escalationLevel);
   const recommendedLabel = APPROVED_TEMPLATES.find(t => t.name === recommendedTemplate)?.label || null;
 
-  const handleSendTemplate = async (templateName: string, templateLabel: string) => {
-    if (!d.mobileNo) {
-      toast({ title: "No phone number", description: `No mobile number found for ${d.customerName}`, variant: "destructive" });
-      return;
-    }
+  const handleConfirmSend = async () => {
+    if (!pendingTemplate || !d.mobileNo) return;
+    const { name: templateName, label: templateLabel } = pendingTemplate;
+    setPendingTemplate(null);
     setSending(templateName);
     try {
       const params = [
@@ -144,7 +145,7 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                 {APPROVED_TEMPLATES.map(t => (
                   <DropdownMenuItem
                     key={t.name}
-                    onClick={() => handleSendTemplate(t.name, t.label)}
+                    onClick={() => setPendingTemplate({ name: t.name, label: t.label })}
                     disabled={!!sending}
                     className={cn(t.name === recommendedTemplate && "bg-primary/10 font-semibold")}
                   >
@@ -158,6 +159,25 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
             </DropdownMenu>
           )}
         </div>
+
+        <AlertDialog open={!!pendingTemplate} onOpenChange={(open) => !open && setPendingTemplate(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Escalation</AlertDialogTitle>
+              <AlertDialogDescription>
+                Send <strong>{pendingTemplate?.label}</strong> to <strong>{d.customerName}</strong> ({d.mobileNo})?
+                <br />
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  Outstanding: ₹{d.totalOutstanding.toLocaleString("en-IN")} · Overdue: {d.maxOverdueDays} days
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmSend}>Send Message</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
