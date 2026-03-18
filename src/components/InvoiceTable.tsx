@@ -173,6 +173,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             const lastWA = lastWhatsAppMap.get(cg.customerName);
             const followUp = latestFollowUpMap.get(cg.customerName);
+            const lastEscalation = lastEscalationMap.get(cg.customerName);
             return (
               <Link
                 key={cg.customerName}
