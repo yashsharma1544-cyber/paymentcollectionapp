@@ -17,6 +17,7 @@ import CRM from "./pages/CRM";
 import MonthlyReport from "./pages/MonthlyReport";
 import BeatRoutePlanner from "./pages/BeatRoutePlanner";
 import PaymentPredictions from "./pages/PaymentPredictions";
+import Defaulters from "./pages/Defaulters";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ function AppRoutes() {
           <Route path="/monthly-report" element={<MonthlyReport />} />
           <Route path="/route-planner" element={<BeatRoutePlanner />} />
           <Route path="/predictions" element={<PaymentPredictions />} />
+          <Route path="/defaulters" element={<Defaulters />} />
           <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

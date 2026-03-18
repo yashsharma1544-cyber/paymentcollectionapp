@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchWhatsAppLog } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert } from "lucide-react";
@@ -14,6 +14,7 @@ import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 import { BulkWatiSend } from "@/components/BulkWatiSend";
 import { DailyTarget } from "@/components/DailyTarget";
 import { calculateAllHealthScores } from "@/lib/health-score";
+import { TopDefaultersCard } from "@/components/TopDefaultersCard";
 
 const Index = () => {
   const {
@@ -30,6 +31,11 @@ const Index = () => {
   const { data: allPayments = [] } = useQuery({
     queryKey: ["recorded-payments"],
     queryFn: fetchRecordedPayments,
+  });
+
+  const { data: whatsappLog = [] } = useQuery({
+    queryKey: ["whatsapp-log"],
+    queryFn: fetchWhatsAppLog,
   });
 
 
@@ -185,6 +191,13 @@ const Index = () => {
                 <span className="sm:hidden">AI</span>
               </Button>
             </Link>
+            <Link to="/defaulters" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Defaulters</span>
+                <span className="sm:hidden">Default</span>
+              </Button>
+            </Link>
             <Button
               variant={showSlowPayers ? "default" : "outline"}
               size="sm"
@@ -317,7 +330,11 @@ const Index = () => {
                 <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
               </div>
             ) : (
-              <BeatChart invoices={invoices} payments={allPayments} />
+              <>
+                {/* Top Defaulters Summary */}
+                <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
+                <BeatChart invoices={invoices} payments={allPayments} />
+              </>
             )}
           </>
         )}
