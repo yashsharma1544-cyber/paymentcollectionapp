@@ -156,6 +156,16 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
             <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded-full">{slowPayerCount}</span>
           </Button>
         )}
+        <Button
+          variant={sortBy === "outstanding" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSortBy(sortBy === "name" ? "outstanding" : "name")}
+          className="gap-1 text-[11px] sm:text-xs h-9 px-2 sm:px-3 shrink-0"
+        >
+          {sortBy === "outstanding" ? <ArrowDownWideNarrow className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{sortBy === "outstanding" ? "By Amount" : "By Name"}</span>
+          <span className="sm:hidden">{sortBy === "outstanding" ? "Amt↓" : "A-Z"}</span>
+        </Button>
         <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} payments={allPayments} />
         <div className="ml-auto text-right">
           <p className="text-[10px] sm:text-xs text-muted-foreground">
