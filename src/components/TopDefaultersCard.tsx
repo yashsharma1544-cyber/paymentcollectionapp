@@ -61,6 +61,11 @@ export function TopDefaultersCard({ invoices, whatsappLog, payments }: TopDefaul
               <Badge className={cn("text-[8px] h-4", getEscalationColor(d.escalationLevel))}>
                 {getEscalationLabel(d.escalationLevel)}
               </Badge>
+              {d.lastEscalationSent && (
+                <Badge variant="outline" className="text-[8px] h-4 ml-1 border-orange-500/30 text-orange-600">
+                  📨 {d.lastEscalationSent}
+                </Badge>
+              )}
             </div>
           </Link>
         ))}
