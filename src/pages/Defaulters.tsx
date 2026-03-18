@@ -22,6 +22,12 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const { currentUser } = useUser();
   const { toast } = useToast();
 
+  // Determine recommended template based on escalation level
+  const recommendedTemplate = getTemplateName(d.escalationLevel);
+  const recommendedLabel = APPROVED_TEMPLATES.find(t => t.name === recommendedTemplate)?.label || null;
+  const { currentUser } = useUser();
+  const { toast } = useToast();
+
   const handleSendTemplate = async (templateName: string, templateLabel: string) => {
     if (!d.mobileNo) {
       toast({ title: "No phone number", description: `No mobile number found for ${d.customerName}`, variant: "destructive" });
