@@ -25,6 +25,7 @@ import { calculateHealthScore } from "@/lib/health-score";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
+import { getLastEscalationMap } from "@/lib/escalation";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays, parseDateDMY } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
