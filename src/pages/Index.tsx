@@ -191,6 +191,13 @@ const Index = () => {
                 <span className="sm:hidden">AI</span>
               </Button>
             </Link>
+            <Link to="/defaulters" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Defaulters</span>
+                <span className="sm:hidden">Default</span>
+              </Button>
+            </Link>
             <Button
               variant={showSlowPayers ? "default" : "outline"}
               size="sm"
