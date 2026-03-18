@@ -74,6 +74,11 @@ const CustomerDetail = () => {
     return entries.length > 0 ? entries[entries.length - 1] : null;
   }, [whatsAppLog, decoded]);
 
+  const lastEscalation = useMemo(() => {
+    const map = getLastEscalationMap(whatsAppLog);
+    return map.get(decoded) || null;
+  }, [whatsAppLog, decoded]);
+
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [lumpsumOpen, setLumpsumOpen] = useState(false);
