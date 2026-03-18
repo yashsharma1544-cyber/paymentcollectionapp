@@ -48,10 +48,10 @@ export function getEscalationColor(level: EscalationLevel): string {
 
 export function getTemplateName(level: EscalationLevel): string | null {
   switch (level) {
-    case "firm": return "payment_alert";
+    case "firm": return "payment_reminder_firm";
     case "visit": return "payment_warning_visit";
-    case "final": return "payment_warning_visit";
-    case "supply_stop": return "payment_alert";
+    case "final": return "payment_final_notice";
+    case "supply_stop": return "payment_supply_stop";
     default: return null;
   }
 }
