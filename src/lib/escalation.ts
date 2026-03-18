@@ -48,13 +48,19 @@ export function getEscalationColor(level: EscalationLevel): string {
 
 export function getTemplateName(level: EscalationLevel): string | null {
   switch (level) {
-    case "firm": return "payment_reminder_firm";
+    case "firm": return "payment_alert";
     case "visit": return "payment_warning_visit";
-    case "final": return "payment_final_notice";
-    case "supply_stop": return "payment_supply_stop";
+    case "final": return "payment_warning_visit";
+    case "supply_stop": return "payment_alert";
     default: return null;
   }
 }
+
+/** Get available approved templates for manual sending */
+export const APPROVED_TEMPLATES = [
+  { name: "payment_alert", label: "⚠️ Payment Alert", description: "Firm payment reminder" },
+  { name: "payment_warning_visit", label: "🏠 Visit Warning", description: "Warning about upcoming visit" },
+] as const;
 
 /**
  * Count how many reminders were sent to each customer from WhatsApp log.
