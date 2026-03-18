@@ -12,7 +12,7 @@ import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
 import { getLastEscalationMap } from "@/lib/escalation";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, fetchRecordedPayments, type WhatsAppLogEntry, type FollowUp, type RecordedPayment } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter, Send } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter, Send, ArrowDownWideNarrow, ArrowUpAZ } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
@@ -66,6 +66,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [sendingWati, setSendingWati] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"name" | "outstanding">("name");
   const { toast } = useToast();
 
   const { data: whatsAppLog = [] } = useQuery({
@@ -117,10 +118,13 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   }, [invoices, search]);
 
   const customerGroups = useMemo(() => {
-    const groups = groupByCustomer(filtered, allPayments);
-    if (slowPayerFilter) return groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30);
+    let groups = groupByCustomer(filtered, allPayments);
+    if (slowPayerFilter) groups = groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30);
+    if (sortBy === "outstanding") {
+      groups.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+    }
     return groups;
-  }, [filtered, allPayments, slowPayerFilter]);
+  }, [filtered, allPayments, slowPayerFilter, sortBy]);
   const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
   const slowPayerCount = useMemo(() => {
     const groups = groupByCustomer(filtered, allPayments);
@@ -152,6 +156,16 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
             <span className="bg-destructive/20 text-destructive text-[10px] font-bold px-1.5 py-0.5 rounded-full">{slowPayerCount}</span>
           </Button>
         )}
+        <Button
+          variant={sortBy === "outstanding" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSortBy(sortBy === "name" ? "outstanding" : "name")}
+          className="gap-1 text-[11px] sm:text-xs h-9 px-2 sm:px-3 shrink-0"
+        >
+          {sortBy === "outstanding" ? <ArrowDownWideNarrow className="h-3.5 w-3.5" /> : <ArrowUpAZ className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{sortBy === "outstanding" ? "By Amount" : "By Name"}</span>
+          <span className="sm:hidden">{sortBy === "outstanding" ? "Amt↓" : "A-Z"}</span>
+        </Button>
         <ExportMenu invoices={filtered} title={exportTitle || "All Customers"} payments={allPayments} />
         <div className="ml-auto text-right">
           <p className="text-[10px] sm:text-xs text-muted-foreground">
