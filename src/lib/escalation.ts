@@ -116,6 +116,17 @@ export function buildDefaulterList(
 ): DefaulterInfo[] {
   const reminderCounts = countReminders(whatsappLog);
 
+  // Extract last escalation template sent per customer from log entries
+  const lastEscalation = new Map<string, string>();
+  for (const entry of whatsappLog) {
+    if (entry.sentBy?.startsWith("Escalation:")) {
+      const match = entry.sentBy.match(/^Escalation:\s*(.+?)(?:\s+by\s+.+)?$/);
+      if (match) {
+        lastEscalation.set(entry.customerName, match[1].trim());
+      }
+    }
+  }
+
   // Group invoices by customer
   const customerMap = new Map<string, Invoice[]>();
   for (const inv of invoices) {
@@ -149,6 +160,7 @@ export function buildDefaulterList(
       invoiceCount: custInvoices.length,
       lastReminderDate: reminderInfo?.lastDate || null,
       hasPaymentInLast30Days: hasRecentPayment(customerName, payments),
+      lastEscalationSent: lastEscalation.get(customerName) || null,
     });
   }
 
