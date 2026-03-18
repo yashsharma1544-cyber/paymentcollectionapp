@@ -235,6 +235,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                         No WA
                       </span>
                     )}
+                    {lastEscalation && (
+                      <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-600 px-1.5 py-0">
+                        📨 {lastEscalation}
+                      </Badge>
+                    )}
                   </div>
 
                   {cg.totalOutstanding > 0 && cg.mobileNo && (

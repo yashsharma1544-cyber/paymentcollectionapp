@@ -183,6 +183,11 @@ const CustomerDetail = () => {
                     Reminders Off
                   </Badge>
                 )}
+                {lastEscalation && (
+                  <Badge variant="outline" className="text-[10px] gap-1 shrink-0 border-orange-500/30 text-orange-600">
+                    📨 {lastEscalation}
+                  </Badge>
+                )}
               </div>
               {info && (
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
