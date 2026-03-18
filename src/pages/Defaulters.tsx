@@ -145,7 +145,7 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                 {APPROVED_TEMPLATES.map(t => (
                   <DropdownMenuItem
                     key={t.name}
-                    onClick={() => handleSendTemplate(t.name, t.label)}
+                    onClick={() => setPendingTemplate({ name: t.name, label: t.label })}
                     disabled={!!sending}
                     className={cn(t.name === recommendedTemplate && "bg-primary/10 font-semibold")}
                   >
@@ -159,6 +159,25 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
             </DropdownMenu>
           )}
         </div>
+
+        <AlertDialog open={!!pendingTemplate} onOpenChange={(open) => !open && setPendingTemplate(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Escalation</AlertDialogTitle>
+              <AlertDialogDescription>
+                Send <strong>{pendingTemplate?.label}</strong> to <strong>{d.customerName}</strong> ({d.mobileNo})?
+                <br />
+                <span className="text-xs text-muted-foreground mt-1 block">
+                  Outstanding: ₹{d.totalOutstanding.toLocaleString("en-IN")} · Overdue: {d.maxOverdueDays} days
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmSend}>Send Message</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
