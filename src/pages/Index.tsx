@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchWhatsAppLog } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
 import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert } from "lucide-react";
