@@ -33,6 +33,11 @@ const Index = () => {
     queryFn: fetchRecordedPayments,
   });
 
+  const { data: whatsappLog = [] } = useQuery({
+    queryKey: ["whatsapp-log"],
+    queryFn: fetchWhatsAppLog,
+  });
+
 
 
   const [globalSearch, setGlobalSearch] = useState("");
