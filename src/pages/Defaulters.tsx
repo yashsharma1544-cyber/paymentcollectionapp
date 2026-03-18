@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchWhatsAppLog, fetchRecordedPayments, logWhatsApp } from "@/lib/api";
-import { buildDefaulterList, getEscalationLabel, getEscalationColor, APPROVED_TEMPLATES, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
+import { buildDefaulterList, getEscalationLabel, getEscalationColor, getTemplateName, APPROVED_TEMPLATES, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
 import { sendWatiTemplateMessage } from "@/lib/wati";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,10 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const [sending, setSending] = useState<string | null>(null);
   const { currentUser } = useUser();
   const { toast } = useToast();
+
+  // Determine recommended template based on escalation level
+  const recommendedTemplate = getTemplateName(d.escalationLevel);
+  const recommendedLabel = APPROVED_TEMPLATES.find(t => t.name === recommendedTemplate)?.label || null;
 
   const handleSendTemplate = async (templateName: string, templateLabel: string) => {
     if (!d.mobileNo) {
@@ -133,17 +137,21 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                   disabled={!!sending}
                 >
                   {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                  Escalate
+                  {recommendedLabel ? `Send ${recommendedLabel}` : "Escalate"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
                 {APPROVED_TEMPLATES.map(t => (
                   <DropdownMenuItem
                     key={t.name}
                     onClick={() => handleSendTemplate(t.name, t.label)}
                     disabled={!!sending}
+                    className={cn(t.name === recommendedTemplate && "bg-primary/10 font-semibold")}
                   >
                     <span>{t.label}</span>
+                    {t.name === recommendedTemplate && (
+                      <Badge variant="secondary" className="ml-auto text-[8px] h-4">Suggested</Badge>
+                    )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
