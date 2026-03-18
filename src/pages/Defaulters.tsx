@@ -137,17 +137,21 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                   disabled={!!sending}
                 >
                   {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                  Escalate
+                  {recommendedLabel ? `Send ${recommendedLabel}` : "Escalate"}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-52">
                 {APPROVED_TEMPLATES.map(t => (
                   <DropdownMenuItem
                     key={t.name}
                     onClick={() => handleSendTemplate(t.name, t.label)}
                     disabled={!!sending}
+                    className={cn(t.name === recommendedTemplate && "bg-primary/10 font-semibold")}
                   >
                     <span>{t.label}</span>
+                    {t.name === recommendedTemplate && (
+                      <Badge variant="secondary" className="ml-auto text-[8px] h-4">Suggested</Badge>
+                    )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
