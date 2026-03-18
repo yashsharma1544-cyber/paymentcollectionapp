@@ -91,6 +91,8 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
     return map;
   }, [whatsAppLog]);
 
+  const lastEscalationMap = useMemo(() => getLastEscalationMap(whatsAppLog), [whatsAppLog]);
+
   // Latest pending follow-up per customer
   const latestFollowUpMap = useMemo(() => {
     const map = new Map<string, FollowUp>();
