@@ -98,6 +98,11 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <Clock className="h-3 w-3" />
           {d.lastReminderDate ? `Last reminder: ${d.lastReminderDate}` : "No reminders sent"}
+          {d.lastEscalationSent && (
+            <Badge variant="outline" className="ml-1 text-[9px] border-orange-500/30 text-orange-600">
+              📨 {d.lastEscalationSent}
+            </Badge>
+          )}
           {d.hasPaymentInLast30Days && (
             <Badge variant="outline" className="ml-auto text-[9px] text-success border-success/30">
               Paid recently
