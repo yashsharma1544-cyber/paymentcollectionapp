@@ -68,6 +68,11 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
                 <MapPin className="h-3 w-3" />{d.beat}
               </span>
               <span className="text-xs text-muted-foreground">{d.invoiceCount} bills</span>
+              {d.mobileNo && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-3 w-3" />{d.mobileNo}
+                </span>
+              )}
             </div>
           </div>
           <Badge className={cn("text-[10px] shrink-0", escalationColor)}>
