@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchWhatsAppLog, fetchRecordedPayments, logWhatsApp } from "@/lib/api";
-import { buildDefaulterList, getEscalationLabel, getEscalationColor, APPROVED_TEMPLATES, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
+import { buildDefaulterList, getEscalationLabel, getEscalationColor, getTemplateName, APPROVED_TEMPLATES, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
 import { sendWatiTemplateMessage } from "@/lib/wati";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
