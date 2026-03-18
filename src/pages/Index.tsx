@@ -14,6 +14,7 @@ import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
 import { BulkWatiSend } from "@/components/BulkWatiSend";
 import { DailyTarget } from "@/components/DailyTarget";
 import { calculateAllHealthScores } from "@/lib/health-score";
+import { TopDefaultersCard } from "@/components/TopDefaultersCard";
 
 const Index = () => {
   const {
