@@ -48,18 +48,21 @@ export function getEscalationColor(level: EscalationLevel): string {
 
 export function getTemplateName(level: EscalationLevel): string | null {
   switch (level) {
-    case "firm": return "payment_alert";
+    case "firm": return "payment_reminder_firm";
     case "visit": return "payment_warning_visit";
-    case "final": return "payment_warning_visit";
-    case "supply_stop": return "payment_alert";
+    case "final": return "payment_final_notice";
+    case "supply_stop": return "payment_supply_stop";
     default: return null;
   }
 }
 
 /** Get available approved templates for manual sending */
 export const APPROVED_TEMPLATES = [
-  { name: "payment_alert", label: "⚠️ Payment Alert", description: "Firm payment reminder" },
+  { name: "payment_reminder_firm", label: "⚠️ Firm Reminder", description: "Firm payment reminder" },
+  { name: "payment_alert", label: "🚨 Payment Alert", description: "Urgent payment alert" },
   { name: "payment_warning_visit", label: "🏠 Visit Warning", description: "Warning about upcoming visit" },
+  { name: "payment_final_notice", label: "⛔ Final Notice", description: "Final notice before action" },
+  { name: "payment_supply_stop", label: "🚫 Supply Stop", description: "Supply suspension notice" },
 ] as const;
 
 /**
