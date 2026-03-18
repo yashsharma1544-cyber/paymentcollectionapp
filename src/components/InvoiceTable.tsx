@@ -118,10 +118,13 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   }, [invoices, search]);
 
   const customerGroups = useMemo(() => {
-    const groups = groupByCustomer(filtered, allPayments);
-    if (slowPayerFilter) return groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30);
+    let groups = groupByCustomer(filtered, allPayments);
+    if (slowPayerFilter) groups = groups.filter(g => g.avgCollectionDays !== null && g.avgCollectionDays > 30);
+    if (sortBy === "outstanding") {
+      groups.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+    }
     return groups;
-  }, [filtered, allPayments, slowPayerFilter]);
+  }, [filtered, allPayments, slowPayerFilter, sortBy]);
   const totalOutstanding = useMemo(() => filtered.reduce((s, i) => s + i.outstandingAmount, 0), [filtered]);
   const slowPayerCount = useMemo(() => {
     const groups = groupByCustomer(filtered, allPayments);
