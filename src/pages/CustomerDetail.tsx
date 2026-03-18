@@ -25,6 +25,7 @@ import { calculateHealthScore } from "@/lib/health-score";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EditPaymentDialog } from "@/components/EditPaymentDialog";
 import { useMemo, useState } from "react";
+import { getLastEscalationMap } from "@/lib/escalation";
 import { type Invoice, sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays, parseDateDMY } from "@/lib/date-utils";
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
@@ -71,6 +72,11 @@ const CustomerDetail = () => {
   const lastWA = useMemo(() => {
     const entries = whatsAppLog.filter((e) => e.customerName === decoded);
     return entries.length > 0 ? entries[entries.length - 1] : null;
+  }, [whatsAppLog, decoded]);
+
+  const lastEscalation = useMemo(() => {
+    const map = getLastEscalationMap(whatsAppLog);
+    return map.get(decoded) || null;
   }, [whatsAppLog, decoded]);
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -175,6 +181,11 @@ const CustomerDetail = () => {
                   <Badge variant="destructive" className="text-[10px] gap-1 shrink-0">
                     <BellOff className="h-3 w-3" />
                     Reminders Off
+                  </Badge>
+                )}
+                {lastEscalation && (
+                  <Badge variant="outline" className="text-[10px] gap-1 shrink-0 border-orange-500/30 text-orange-600">
+                    📨 {lastEscalation}
                   </Badge>
                 )}
               </div>

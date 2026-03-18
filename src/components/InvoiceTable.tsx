@@ -10,8 +10,10 @@ import { HealthBadge } from "@/components/HealthBadge";
 import { sortInvoicesUnpaidFirst } from "@/lib/invoice";
 import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date-utils";
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
+import { getLastEscalationMap } from "@/lib/escalation";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, fetchRecordedPayments, type WhatsAppLogEntry, type FollowUp, type RecordedPayment } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -88,6 +90,8 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
     }
     return map;
   }, [whatsAppLog]);
+
+  const lastEscalationMap = useMemo(() => getLastEscalationMap(whatsAppLog), [whatsAppLog]);
 
   // Latest pending follow-up per customer
   const latestFollowUpMap = useMemo(() => {
@@ -169,6 +173,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             const lastWA = lastWhatsAppMap.get(cg.customerName);
             const followUp = latestFollowUpMap.get(cg.customerName);
+            const lastEscalation = lastEscalationMap.get(cg.customerName);
             return (
               <Link
                 key={cg.customerName}
@@ -229,6 +234,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                         <MessageCircle className="h-3 w-3" />
                         No WA
                       </span>
+                    )}
+                    {lastEscalation && (
+                      <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-600 px-1.5 py-0">
+                        📨 {lastEscalation}
+                      </Badge>
                     )}
                   </div>
 
