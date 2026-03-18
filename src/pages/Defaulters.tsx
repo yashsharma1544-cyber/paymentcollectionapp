@@ -35,9 +35,9 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
     setSending(templateName);
     try {
       const params = [
-        { name: "1", value: d.customerName },
-        { name: "2", value: d.totalOutstanding.toLocaleString("en-IN") },
-        { name: "3", value: `${d.maxOverdueDays}` },
+        { name: "1", value: `*${d.customerName}*` },
+        { name: "2", value: `*${d.totalOutstanding.toLocaleString("en-IN")}*` },
+        { name: "3", value: `*${d.maxOverdueDays}*` },
       ];
       const result = await sendWatiTemplateMessage(d.mobileNo, templateName, params, "escalation");
       if (result.success) {
