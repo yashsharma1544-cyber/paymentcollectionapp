@@ -1,15 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchWhatsAppLog, fetchRecordedPayments } from "@/lib/api";
-import { buildDefaulterList, getEscalationLabel, getEscalationColor, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
+import { fetchInvoices, fetchWhatsAppLog, fetchRecordedPayments, logWhatsApp } from "@/lib/api";
+import { buildDefaulterList, getEscalationLabel, getEscalationColor, APPROVED_TEMPLATES, type DefaulterInfo, type EscalationLevel } from "@/lib/escalation";
+import { sendWatiTemplateMessage } from "@/lib/wati";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, MapPin, MessageSquare, IndianRupee, Eye, Users, Route, Clock } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Phone, MapPin, MessageSquare, IndianRupee, Eye, Users, Route, Clock, Send, Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const escalationColor = getEscalationColor(d.escalationLevel);
