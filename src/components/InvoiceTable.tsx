@@ -12,7 +12,8 @@ import { getOverdueDays, formatOverdue, calcAvgCollectionDays } from "@/lib/date
 import { buildReminderMessage, sendViaWati, openWhatsApp } from "@/lib/whatsapp";
 import { getLastEscalationMap } from "@/lib/escalation";
 import { logWhatsApp, fetchWhatsAppLog, fetchFollowUps, fetchRecordedPayments, type WhatsAppLogEntry, type FollowUp, type RecordedPayment } from "@/lib/api";
-import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter } from "lucide-react";
+import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, CalendarClock, Loader2, Download, Timer, Filter, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
 
