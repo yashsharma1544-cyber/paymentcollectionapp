@@ -330,7 +330,11 @@ const Index = () => {
                 <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
               </div>
             ) : (
-              <BeatChart invoices={invoices} payments={allPayments} />
+              <>
+                {/* Top Defaulters Summary */}
+                <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
+                <BeatChart invoices={invoices} payments={allPayments} />
+              </>
             )}
           </>
         )}
