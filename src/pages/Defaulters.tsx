@@ -252,11 +252,24 @@ const Defaulters = () => {
   const defaulters = useMemo(() => buildDefaulterList(invoices, whatsappLog, payments), [invoices, whatsappLog, payments]);
 
   const [filterLevel, setFilterLevel] = useState<EscalationLevel | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [beatFilter, setBeatFilter] = useState<string>("all");
+
+  const beats = useMemo(() => {
+    const set = new Set(defaulters.map(d => d.beat));
+    return Array.from(set).sort();
+  }, [defaulters]);
 
   const filtered = useMemo(() => {
-    if (filterLevel === "all") return defaulters;
-    return defaulters.filter(d => d.escalationLevel === filterLevel);
-  }, [defaulters, filterLevel]);
+    let list = defaulters;
+    if (filterLevel !== "all") list = list.filter(d => d.escalationLevel === filterLevel);
+    if (beatFilter !== "all") list = list.filter(d => d.beat === beatFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(d => d.customerName.toLowerCase().includes(q) || d.mobileNo?.includes(searchQuery));
+    }
+    return list;
+  }, [defaulters, filterLevel, beatFilter, searchQuery]);
 
   const stats = useMemo(() => {
     const total = defaulters.length;
