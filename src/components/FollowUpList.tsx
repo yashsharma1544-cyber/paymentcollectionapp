@@ -167,7 +167,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                         <Send className="h-3 w-3" />
                         {sendingReminder === key ? "..." : "Remind"}
                       </Button>
-                      {f.remarks?.toLowerCase().includes("no date given") && (
+                      {f.status === "Pending" && (
                         <Button
                           size="sm"
                           variant="ghost"
