@@ -10,7 +10,6 @@ export async function sendManualReminder(
   dueDate?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Get phone from invoices
     const invoices = await fetchInvoices();
     const customerInv = invoices.find((inv) => inv.customerName === customerName);
     if (!customerInv?.mobileNo) {
@@ -31,11 +30,51 @@ export async function sendManualReminder(
 
     const result = await sendWatiSessionMessage(customerInv.mobileNo, msg);
     if (result.success) {
-      // Log to WhatsApp Log so it shows in CRM
       try {
         await logWhatsApp(customerName, customerInv.mobileNo, "Manual Reminder");
       } catch {
-        // Non-critical, don't fail the reminder
+        // Non-critical
+      }
+    }
+    return result;
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+/**
+ * Send a nudge message asking the customer to provide a specific payment date.
+ */
+export async function sendDateNudge(
+  customerName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const invoices = await fetchInvoices();
+    const customerInv = invoices.find((inv) => inv.customerName === customerName);
+    if (!customerInv?.mobileNo) {
+      return { success: false, error: `No phone number found for ${customerName}` };
+    }
+
+    const msg = [
+      `📅 *${customerName}, कृपया पेमेंट तारीख सांगा:*`,
+      ``,
+      `आम्हाला आपल्या पेमेंटची तारीख कळवा जेणेकरून आम्ही फॉलो-अप करू शकू.`,
+      ``,
+      `1️⃣ उद्या`,
+      `2️⃣ पुढील आठवडा`,
+      `3️⃣ महिन्याच्या शेवटी`,
+      ``,
+      `किंवा तारीख टाइप करा (DD/MM/YYYY)`,
+      ``,
+      `- *SUSHIL AGENCIES, JALNA*`,
+    ].join("\n");
+
+    const result = await sendWatiSessionMessage(customerInv.mobileNo, msg);
+    if (result.success) {
+      try {
+        await logWhatsApp(customerName, customerInv.mobileNo, "Date Nudge");
+      } catch {
+        // Non-critical
       }
     }
     return result;

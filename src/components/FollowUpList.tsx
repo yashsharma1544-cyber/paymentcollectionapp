@@ -15,10 +15,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell, CalendarSearch } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
-import { sendManualReminder } from "@/lib/reminder";
+import { sendManualReminder, sendDateNudge } from "@/lib/reminder";
 
 interface FollowUpListProps {
   followUps: FollowUp[];
@@ -31,6 +31,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
   const [markingDone, setMarkingDone] = useState<string | null>(null);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [togglingStop, setTogglingStop] = useState<string | null>(null);
+  const [nudgingDate, setNudgingDate] = useState<string | null>(null);
   const [deletingFollowUp, setDeletingFollowUp] = useState<string | null>(null);
   const [stopConfirm, setStopConfirm] = useState<{ customerName: string; isStopped: boolean } | null>(null);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
@@ -166,6 +167,32 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                         <Send className="h-3 w-3" />
                         {sendingReminder === key ? "..." : "Remind"}
                       </Button>
+                      {f.remarks?.toLowerCase().includes("no date given") && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs gap-1 text-warning"
+                          disabled={nudgingDate === key}
+                          onClick={async () => {
+                            setNudgingDate(key);
+                            try {
+                              const result = await sendDateNudge(f.customerName);
+                              if (result.success) {
+                                toast.success(`Date nudge sent to ${f.customerName}`);
+                              } else {
+                                toast.error(result.error || "Failed to send nudge");
+                              }
+                            } catch {
+                              toast.error("Failed to send nudge");
+                            } finally {
+                              setNudgingDate(null);
+                            }
+                          }}
+                        >
+                          <CalendarSearch className="h-3 w-3" />
+                          {nudgingDate === key ? "..." : "Ask Date"}
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
