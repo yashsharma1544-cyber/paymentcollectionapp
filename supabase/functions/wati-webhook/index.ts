@@ -252,6 +252,14 @@ serve(async (req) => {
         const maxDate = new Date(today);
         maxDate.setDate(maxDate.getDate() + 30);
 
+        if (promisedDate < today) {
+          const rejectMsg = `⚠️ ${customerName}, कृपया भविष्यातील तारीख द्या. मागील तारीख स्वीकारली जात नाही.\n\nकृपया पुन्हा तारीख टाइप करा (DD/MM/YYYY).`;
+          await sendSessionMessage(phone, rejectMsg);
+          return new Response(JSON.stringify({ success: true, action: "date_rejected_past" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         if (promisedDate > maxDate) {
           const maxDateStr = `${String(maxDate.getDate()).padStart(2, "0")}/${String(maxDate.getMonth() + 1).padStart(2, "0")}/${maxDate.getFullYear()}`;
           const rejectMsg = `⚠️ ${customerName}, कृपया आजपासून 30 दिवसांच्या आत तारीख द्या (${maxDateStr} पर्यंत).\n\nकृपया पुन्हा तारीख टाइप करा (DD/MM/YYYY).`;
