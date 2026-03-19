@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -250,11 +252,24 @@ const Defaulters = () => {
   const defaulters = useMemo(() => buildDefaulterList(invoices, whatsappLog, payments), [invoices, whatsappLog, payments]);
 
   const [filterLevel, setFilterLevel] = useState<EscalationLevel | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [beatFilter, setBeatFilter] = useState<string>("all");
+
+  const beats = useMemo(() => {
+    const set = new Set(defaulters.map(d => d.beat));
+    return Array.from(set).sort();
+  }, [defaulters]);
 
   const filtered = useMemo(() => {
-    if (filterLevel === "all") return defaulters;
-    return defaulters.filter(d => d.escalationLevel === filterLevel);
-  }, [defaulters, filterLevel]);
+    let list = defaulters;
+    if (filterLevel !== "all") list = list.filter(d => d.escalationLevel === filterLevel);
+    if (beatFilter !== "all") list = list.filter(d => d.beat === beatFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(d => d.customerName.toLowerCase().includes(q) || d.mobileNo?.includes(searchQuery));
+    }
+    return list;
+  }, [defaulters, filterLevel, beatFilter, searchQuery]);
 
   const stats = useMemo(() => {
     const total = defaulters.length;
@@ -334,6 +349,36 @@ const Defaulters = () => {
               </TabsList>
 
               <TabsContent value="all" className="mt-3 space-y-3">
+                {/* Search & Beat Filter */}
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search customer or mobile..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-8 h-8 text-xs"
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  <Select value={beatFilter} onValueChange={setBeatFilter}>
+                    <SelectTrigger className="h-8 text-xs w-full sm:w-40">
+                      <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
+                      <SelectValue placeholder="All Beats" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Beats</SelectItem>
+                      {beats.map(b => (
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Filter chips */}
                 <div className="flex gap-1.5 flex-wrap">
                   {(["all", "firm", "visit", "final", "supply_stop"] as const).map(level => (
