@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell, CalendarSearch } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { sendManualReminder, sendDateNudge } from "@/lib/reminder";
