@@ -244,6 +244,23 @@ serve(async (req) => {
       }
 
       if (paymentDate) {
+        // Validate: manually typed dates must be within 30 days from today
+        const [dd, mm, yyyy] = paymentDate.split("/").map(Number);
+        const promisedDate = new Date(yyyy, mm - 1, dd);
+        const now = getNowIST();
+        const today = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+        const maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() + 30);
+
+        if (promisedDate > maxDate) {
+          const maxDateStr = `${String(maxDate.getDate()).padStart(2, "0")}/${String(maxDate.getMonth() + 1).padStart(2, "0")}/${maxDate.getFullYear()}`;
+          const rejectMsg = `⚠️ ${customerName}, कृपया आजपासून 30 दिवसांच्या आत तारीख द्या (${maxDateStr} पर्यंत).\n\nकृपया पुन्हा तारीख टाइप करा (DD/MM/YYYY).`;
+          await sendSessionMessage(phone, rejectMsg);
+          return new Response(JSON.stringify({ success: true, action: "date_rejected_too_far" }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
         console.log(`Payment promise from ${phone}: will pay on ${paymentDate}`);
 
         const confirmMsg = `✅ धन्यवाद ${customerName}! आम्ही ${paymentDate} रोजी पेमेंटची अपेक्षा करतो.\n\n- *SUSHIL AGENCIES, JALNA*`;
