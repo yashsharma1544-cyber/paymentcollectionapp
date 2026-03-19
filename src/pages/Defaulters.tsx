@@ -349,6 +349,36 @@ const Defaulters = () => {
               </TabsList>
 
               <TabsContent value="all" className="mt-3 space-y-3">
+                {/* Search & Beat Filter */}
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search customer or mobile..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-8 h-8 text-xs"
+                    />
+                    {searchQuery && (
+                      <button onClick={() => setSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                        <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                      </button>
+                    )}
+                  </div>
+                  <Select value={beatFilter} onValueChange={setBeatFilter}>
+                    <SelectTrigger className="h-8 text-xs w-full sm:w-40">
+                      <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
+                      <SelectValue placeholder="All Beats" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Beats</SelectItem>
+                      {beats.map(b => (
+                        <SelectItem key={b} value={b}>{b}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Filter chips */}
                 <div className="flex gap-1.5 flex-wrap">
                   {(["all", "firm", "visit", "final", "supply_stop"] as const).map(level => (
