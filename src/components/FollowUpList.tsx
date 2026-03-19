@@ -167,6 +167,33 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                         <Send className="h-3 w-3" />
                         {sendingReminder === key ? "..." : "Remind"}
                       </Button>
+                      {f.remarks?.toLowerCase().includes("no date given") && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs gap-1 text-warning"
+                          disabled={nudgingDate === key}
+                          onClick={async () => {
+                            setNudgingDate(key);
+                            try {
+                              const result = await sendDateNudge(f.customerName);
+                              if (result.success) {
+                                toast.success(`Date nudge sent to ${f.customerName}`);
+                              } else {
+                                toast.error(result.error || "Failed to send nudge");
+                              }
+                            } catch {
+                              toast.error("Failed to send nudge");
+                            } finally {
+                              setNudgingDate(null);
+                            }
+                          }}
+                        >
+                          <CalendarSearch className="h-3 w-3" />
+                          {nudgingDate === key ? "..." : "Ask Date"}
+                        </Button>
+                      )
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
