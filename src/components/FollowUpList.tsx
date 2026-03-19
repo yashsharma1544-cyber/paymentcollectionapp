@@ -31,6 +31,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
   const [markingDone, setMarkingDone] = useState<string | null>(null);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [togglingStop, setTogglingStop] = useState<string | null>(null);
+  const [nudgingDate, setNudgingDate] = useState<string | null>(null);
   const [deletingFollowUp, setDeletingFollowUp] = useState<string | null>(null);
   const [stopConfirm, setStopConfirm] = useState<{ customerName: string; isStopped: boolean } | null>(null);
   const [editingFollowUp, setEditingFollowUp] = useState<FollowUp | null>(null);
