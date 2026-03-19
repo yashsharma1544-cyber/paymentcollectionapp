@@ -192,8 +192,7 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                           <CalendarSearch className="h-3 w-3" />
                           {nudgingDate === key ? "..." : "Ask Date"}
                         </Button>
-                      )
-                      </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
