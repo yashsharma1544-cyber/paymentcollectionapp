@@ -212,11 +212,14 @@ serve(async (req) => {
 
         await sendSessionMessage(phone, datePrompt);
 
+        // Auto-create a default follow-up for 7 days in case they never reply with a date
+        await createFollowUp(customerName, `WhatsApp: Clicked "Will Pay Later" — no date given yet`, nextWeek);
+
         // Log the button click
         await logToSheets({
           phone,
           contactName: customerName,
-          messageText,
+          messageText: `Will Pay Later (default follow-up: ${nextWeek})`,
           messageType: "button_reply",
           direction,
           timestamp,
