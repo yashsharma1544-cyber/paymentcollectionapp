@@ -139,22 +139,29 @@ const CustomerDetail = () => {
   const health = useMemo(() => calculateHealthScore(decoded, allInvoices, allPayments), [decoded, allInvoices, allPayments]);
 
   const info = invoices[0];
+  // Find a valid phone number from any invoice (not just the first one)
+  const customerPhone = useMemo(() => {
+    for (const inv of invoices) {
+      if (inv.mobileNo && inv.mobileNo.length >= 10 && !inv.mobileNo.startsWith("1111")) return inv.mobileNo;
+    }
+    return invoices[0]?.mobileNo || "";
+  }, [invoices]);
 
   const handleWhatsApp = async (selectedInvoices: Invoice[]) => {
-    if (!info?.mobileNo || selectedInvoices.length === 0) return;
+    if (!customerPhone || selectedInvoices.length === 0) return;
     const msg = buildReminderMessage(decoded, selectedInvoices);
     setSendingWati(true);
     try {
-      const result = await sendViaWati(info.mobileNo, decoded, selectedInvoices);
+      const result = await sendViaWati(customerPhone, decoded, selectedInvoices);
       if (result.success) {
-        await logWhatsApp(decoded, info.mobileNo, currentUser || undefined);
+        await logWhatsApp(decoded, customerPhone, currentUser || undefined);
         toast({ title: "✅ WhatsApp sent via WATI", description: decoded });
       } else {
-        openWhatsApp(info.mobileNo, msg);
+        openWhatsApp(customerPhone, msg);
         toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
       }
     } catch {
-      openWhatsApp(info.mobileNo, msg);
+      openWhatsApp(customerPhone, msg);
       toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
     } finally {
       setSendingWati(false);
@@ -191,7 +198,7 @@ const CustomerDetail = () => {
               </div>
               {info && (
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {info.mobileNo && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{info.mobileNo}</span>}
+                  {customerPhone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{customerPhone}</span>}
                   {info.beat && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{info.beat}</span>}
                 </div>
               )}
@@ -230,7 +237,7 @@ const CustomerDetail = () => {
             </Button>
             <div className="flex-1 sm:flex-none" />
             <Button size="sm" variant="outline" onClick={() => setWhatsAppSelectorOpen(true)}
-              disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
+              disabled={!customerPhone || sendingWati}
               className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none ml-auto"
             >
               {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
@@ -466,8 +473,8 @@ const CustomerDetail = () => {
             </div>
 
             {/* WhatsApp Chat */}
-            {info?.mobileNo && (
-              <WhatsAppChatView phone={info.mobileNo} customerName={decoded} />
+            {customerPhone && (
+              <WhatsAppChatView phone={customerPhone} customerName={decoded} />
             )}
 
             {/* Payment History */}
