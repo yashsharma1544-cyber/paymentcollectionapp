@@ -290,7 +290,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for the promised date
-        await createFollowUp(customerName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
+        await createFollowUp(customerName, `WhatsApp: Will pay on ${paymentDate} | Reminder Sent`, paymentDate);
 
         return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
