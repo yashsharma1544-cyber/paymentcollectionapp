@@ -237,7 +237,7 @@ const CustomerDetail = () => {
             </Button>
             <div className="flex-1 sm:flex-none" />
             <Button size="sm" variant="outline" onClick={() => setWhatsAppSelectorOpen(true)}
-              disabled={!info?.mobileNo || kpis.totalOutstanding === 0 || sendingWati}
+              disabled={!customerPhone || sendingWati}
               className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none ml-auto"
             >
               {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
