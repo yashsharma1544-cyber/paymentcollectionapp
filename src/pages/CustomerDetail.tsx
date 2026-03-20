@@ -473,8 +473,8 @@ const CustomerDetail = () => {
             </div>
 
             {/* WhatsApp Chat */}
-            {info?.mobileNo && (
-              <WhatsAppChatView phone={info.mobileNo} customerName={decoded} />
+            {customerPhone && (
+              <WhatsAppChatView phone={customerPhone} customerName={decoded} />
             )}
 
             {/* Payment History */}
