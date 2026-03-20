@@ -48,6 +48,7 @@ function AppRoutes() {
         </Routes>
       </div>
       <BottomNav />
+      <PwaUpdatePrompt />
     </BrowserRouter>
   );
 }
