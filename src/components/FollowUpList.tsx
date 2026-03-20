@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell, CalendarSearch } from "lucide-react";
+import { CalendarClock, MessageSquare, Clock, CheckCircle, Pencil, CreditCard, Send, Trash2, BellOff, Bell, CalendarSearch, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { LumpsumPaymentDialog } from "@/components/LumpsumPaymentDialog";
 import { sendManualReminder, sendDateNudge } from "@/lib/reminder";
@@ -120,7 +120,13 @@ export function FollowUpList({ followUps, showCustomerName = false, stoppedCusto
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                    {f.remarks?.includes("Reminder Sent") && (
+                      <Badge variant="outline" className="text-[10px] gap-0.5 border-blue-400 text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400">
+                        <MailCheck className="h-2.5 w-2.5" />
+                        Sent
+                      </Badge>
+                    )}
                     <Badge variant={f.type === "Payment" ? "default" : f.type === "Overdue" ? "destructive" : "secondary"} className="text-[10px]">
                       {f.type}
                     </Badge>
