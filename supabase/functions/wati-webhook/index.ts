@@ -75,7 +75,7 @@ async function logToSheets(data: Record<string, string>) {
 }
 
 /** Create a follow-up entry via google-sheets function */
-async function createFollowUp(customerName: string, remarks: string, nextFollowUpDate: string) {
+async function createFollowUp(customerName: string, remarks: string, nextFollowUpDate: string, status: string = "Pending") {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
@@ -98,6 +98,7 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
         remarks,
         nextFollowUpDate: isoDate,
         type: "WhatsApp Auto",
+        status,
         addedBy: "WATI Bot",
       }),
     });
@@ -105,7 +106,7 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
       const errText = await gsResponse.text();
       console.error("Failed to create follow-up:", errText);
     } else {
-      console.log(`Follow-up created for ${customerName} on ${nextFollowUpDate}`);
+      console.log(`Follow-up created for ${customerName} on ${nextFollowUpDate} (status: ${status})`);
     }
   } catch (err) {
     console.error("Follow-up creation error:", err);
@@ -315,7 +316,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for today
-        await createFollowUp(customerName, "WhatsApp: Will pay today", today);
+        await createFollowUp(customerName, "WhatsApp: Will pay today", today, "Done");
 
         return new Response(JSON.stringify({ success: true, action: "will_pay_today_logged" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
