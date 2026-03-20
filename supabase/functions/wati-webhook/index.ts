@@ -214,7 +214,7 @@ serve(async (req) => {
         await sendSessionMessage(phone, datePrompt);
 
         // Auto-create a default follow-up for 7 days in case they never reply with a date
-        await createFollowUp(customerName, `WhatsApp: Clicked "Will Pay Later" — no date given yet`, nextWeek);
+        await createFollowUp(customerName, `WhatsApp: Clicked "Will Pay Later" — no date given yet | Reminder Sent`, nextWeek);
 
         // Log the button click
         await logToSheets({
@@ -290,7 +290,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for the promised date
-        await createFollowUp(customerName, `WhatsApp: Will pay on ${paymentDate}`, paymentDate);
+        await createFollowUp(customerName, `WhatsApp: Will pay on ${paymentDate} | Reminder Sent`, paymentDate);
 
         return new Response(JSON.stringify({ success: true, action: "payment_promise_logged", date: paymentDate }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -316,7 +316,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for today
-        await createFollowUp(customerName, "WhatsApp: Will pay today", today, "Done");
+        await createFollowUp(customerName, "WhatsApp: Will pay today | Reminder Sent", today);
 
         return new Response(JSON.stringify({ success: true, action: "will_pay_today_logged" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },

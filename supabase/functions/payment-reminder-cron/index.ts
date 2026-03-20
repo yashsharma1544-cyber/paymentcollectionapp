@@ -174,6 +174,12 @@ serve(async (req) => {
         continue;
       }
 
+      // Skip follow-ups where reminder was already sent (e.g. via WhatsApp auto-reply)
+      if (remarks.includes("Reminder Sent")) {
+        processed.push(`📨 Skipped (reminder already sent): ${customerName}`);
+        continue;
+      }
+
       const phone = customerPhoneMap[customerName];
       if (!phone) {
         console.log(`No phone for ${customerName}, skipping`);
