@@ -75,7 +75,7 @@ async function logToSheets(data: Record<string, string>) {
 }
 
 /** Create a follow-up entry via google-sheets function */
-async function createFollowUp(customerName: string, remarks: string, nextFollowUpDate: string) {
+async function createFollowUp(customerName: string, remarks: string, nextFollowUpDate: string, status: string = "Pending") {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
   const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
