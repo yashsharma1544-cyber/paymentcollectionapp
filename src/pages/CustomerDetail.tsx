@@ -198,7 +198,7 @@ const CustomerDetail = () => {
               </div>
               {info && (
                 <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {info.mobileNo && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{info.mobileNo}</span>}
+                  {customerPhone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{customerPhone}</span>}
                   {info.beat && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{info.beat}</span>}
                 </div>
               )}
