@@ -85,7 +85,8 @@ serve(async (req) => {
       if (!phone || !templateName) throw new Error("Missing phone or templateName");
 
       const whatsappNumber = cleanPhone(phone);
-      const requestBody = { template_name: templateName, broadcast_name: broadcastName || "payment_reminder", parameters: parameters || [] };
+      const uniqueBroadcast = (broadcastName || "payment_reminder") + "_" + Date.now();
+      const requestBody = { template_name: templateName, broadcast_name: uniqueBroadcast, parameters: parameters || [] };
       console.log("WATI template request:", JSON.stringify({ whatsappNumber, url: `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${whatsappNumber}`, body: requestBody }));
       
       const response = await watiPost(
