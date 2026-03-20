@@ -106,7 +106,7 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
       const errText = await gsResponse.text();
       console.error("Failed to create follow-up:", errText);
     } else {
-      console.log(`Follow-up created for ${customerName} on ${nextFollowUpDate}`);
+      console.log(`Follow-up created for ${customerName} on ${nextFollowUpDate} (status: ${status})`);
     }
   } catch (err) {
     console.error("Follow-up creation error:", err);
