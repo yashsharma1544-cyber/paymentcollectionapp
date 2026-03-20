@@ -316,7 +316,7 @@ serve(async (req) => {
         });
 
         // Auto-create follow-up for today
-        await createFollowUp(customerName, "WhatsApp: Will pay today", today);
+        await createFollowUp(customerName, "WhatsApp: Will pay today", today, "Done");
 
         return new Response(JSON.stringify({ success: true, action: "will_pay_today_logged" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
