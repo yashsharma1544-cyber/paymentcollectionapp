@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
+import { PwaUpdatePrompt } from "@/components/PwaUpdatePrompt";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import UserSelect from "./pages/UserSelect";
 import Index from "./pages/Index";
@@ -47,6 +48,7 @@ function AppRoutes() {
         </Routes>
       </div>
       <BottomNav />
+      <PwaUpdatePrompt />
     </BrowserRouter>
   );
 }
