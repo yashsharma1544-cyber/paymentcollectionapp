@@ -98,6 +98,7 @@ async function createFollowUp(customerName: string, remarks: string, nextFollowU
         remarks,
         nextFollowUpDate: isoDate,
         type: "WhatsApp Auto",
+        status,
         addedBy: "WATI Bot",
       }),
     });
