@@ -139,6 +139,13 @@ const CustomerDetail = () => {
   const health = useMemo(() => calculateHealthScore(decoded, allInvoices, allPayments), [decoded, allInvoices, allPayments]);
 
   const info = invoices[0];
+  // Find a valid phone number from any invoice (not just the first one)
+  const customerPhone = useMemo(() => {
+    for (const inv of invoices) {
+      if (inv.mobileNo && inv.mobileNo.length >= 10 && !inv.mobileNo.startsWith("1111")) return inv.mobileNo;
+    }
+    return invoices[0]?.mobileNo || "";
+  }, [invoices]);
 
   const handleWhatsApp = async (selectedInvoices: Invoice[]) => {
     if (!info?.mobileNo || selectedInvoices.length === 0) return;
