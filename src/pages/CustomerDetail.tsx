@@ -148,20 +148,20 @@ const CustomerDetail = () => {
   }, [invoices]);
 
   const handleWhatsApp = async (selectedInvoices: Invoice[]) => {
-    if (!info?.mobileNo || selectedInvoices.length === 0) return;
+    if (!customerPhone || selectedInvoices.length === 0) return;
     const msg = buildReminderMessage(decoded, selectedInvoices);
     setSendingWati(true);
     try {
-      const result = await sendViaWati(info.mobileNo, decoded, selectedInvoices);
+      const result = await sendViaWati(customerPhone, decoded, selectedInvoices);
       if (result.success) {
-        await logWhatsApp(decoded, info.mobileNo, currentUser || undefined);
+        await logWhatsApp(decoded, customerPhone, currentUser || undefined);
         toast({ title: "✅ WhatsApp sent via WATI", description: decoded });
       } else {
-        openWhatsApp(info.mobileNo, msg);
+        openWhatsApp(customerPhone, msg);
         toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
       }
     } catch {
-      openWhatsApp(info.mobileNo, msg);
+      openWhatsApp(customerPhone, msg);
       toast({ title: "⚠️ Fallback to WhatsApp link", variant: "destructive" });
     } finally {
       setSendingWati(false);
