@@ -204,7 +204,17 @@ serve(async (req) => {
 
   try {
     const payload = await req.json();
+    const eventType = payload?.eventType || "";
     console.log("WATI Webhook received:", JSON.stringify(payload));
+
+    // Only process actual incoming messages — ignore delivery/read receipts, 
+    // template sent notifications, and other status events to prevent duplicate replies
+    const allowedEvents = ["message", ""];
+    if (!allowedEvents.includes(eventType)) {
+      return new Response(JSON.stringify({ success: true, action: "ignored_status_event", eventType }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const waId = payload?.waId || payload?.contact?.wa_id || "";
     const phone = waId.replace(/^91/, "") || "";
