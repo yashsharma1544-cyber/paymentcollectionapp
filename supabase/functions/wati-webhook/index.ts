@@ -1,10 +1,72 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function buildEventKey(payload: Record<string, unknown>, phone: string, messageText: string): string | null {
+  const directKeys = [
+    typeof payload.id === "string" ? payload.id : null,
+    typeof payload.whatsappMessageId === "string" ? payload.whatsappMessageId : null,
+  ].filter((value): value is string => Boolean(value));
+
+  if (directKeys.length > 0) {
+    return directKeys[0];
+  }
+
+  const timestamp = typeof payload.timestamp === "string" ? payload.timestamp : "";
+  const ticketId = typeof payload.ticketId === "string" ? payload.ticketId : "";
+  const normalizedText = messageText.trim().toLowerCase();
+
+  if (!phone && !normalizedText && !timestamp && !ticketId) {
+    return null;
+  }
+
+  return `${phone}:${normalizedText}:${timestamp}:${ticketId}`;
+}
+
+async function claimIncomingEvent(
+  payload: Record<string, unknown>,
+  eventType: string,
+  messageText: string,
+  phone: string,
+): Promise<{ claimed: boolean; eventKey: string | null }> {
+  const eventKey = buildEventKey(payload, phone, messageText);
+
+  if (!eventKey) {
+    return { claimed: true, eventKey: null };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Missing backend credentials for WATI webhook dedupe");
+    return { claimed: true, eventKey };
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+  const { error } = await supabase.from("wati_webhook_events").insert({
+    event_key: eventKey,
+    event_type: eventType || "message",
+    message_text: messageText,
+    phone,
+  });
+
+  if (!error) {
+    return { claimed: true, eventKey };
+  }
+
+  if (error.code === "23505") {
+    return { claimed: false, eventKey };
+  }
+
+  console.error("Failed to claim WATI webhook event:", error);
+  return { claimed: true, eventKey };
+}
 
 function cleanPhone(phone: string): string {
   let cleaned = phone.replace(/[\s\-()]/g, "");
@@ -229,6 +291,14 @@ serve(async (req) => {
 
     // Only process incoming messages
     if (direction === "incoming" && messageText) {
+      const { claimed, eventKey } = await claimIncomingEvent(payload, eventType, messageText, phone);
+      if (!claimed) {
+        console.log(`[DEDUPED] Skipped duplicate incoming message: eventKey=${eventKey}, waId=${waId}, text=${messageText}`);
+        return new Response(JSON.stringify({ success: true, action: "ignored_duplicate_message", eventKey }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const lowerText = messageText.toLowerCase();
       
       // Look up the business customer name by phone (fallback to WhatsApp contact name)
