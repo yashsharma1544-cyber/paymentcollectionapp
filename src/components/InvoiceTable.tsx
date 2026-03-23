@@ -199,9 +199,12 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                 {/* Top row: name + outstanding */}
                 <div className="flex items-start justify-between gap-1 px-3 pt-2.5 sm:px-4 sm:pt-3">
                   <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <div className="p-1.5 rounded-full bg-primary/10 shrink-0 mt-0.5">
-                      <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-                    </div>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFocus(cg.customerName); }}
+                      className="shrink-0 mt-0.5 p-1.5 rounded-full hover:bg-yellow-500/20 transition-colors"
+                    >
+                      <Star className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFocused(cg.customerName) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+                    </button>
                     <p className="text-base font-semibold group-hover:text-primary transition-colors leading-snug break-words">
                       {cg.customerName}
                     </p>
