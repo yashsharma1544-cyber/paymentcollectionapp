@@ -186,6 +186,9 @@ const CustomerDetail = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
+                <button onClick={() => toggleFocus(decoded)} className="shrink-0">
+                  <Star className={`h-5 w-5 ${isFocused(decoded) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground hover:text-yellow-500"} transition-colors`} />
+                </button>
                 <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
                 <HealthBadge status={health.status} score={health.score} size="sm" />
                 {isReminderStopped && (
