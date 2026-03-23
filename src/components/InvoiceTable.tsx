@@ -69,6 +69,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   const [sendingWati, setSendingWati] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "outstanding">("name");
   const { toast } = useToast();
+  const { isFocused, toggleFocus } = useFocusCustomers();
 
   const { data: whatsAppLog = [] } = useQuery({
     queryKey: ["whatsapp-log"],
