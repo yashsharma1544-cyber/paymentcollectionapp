@@ -59,12 +59,14 @@ const CustomerDetail = () => {
 
   const invoices = useMemo(() => {
     const filtered = allInvoices.filter((inv) => inv.customerName === decoded);
+    // Latest invoice first (by bill date descending), regardless of payment status
     return [...filtered].sort((a, b) => {
-      // Unpaid first, then by overdue days descending
-      const aPaid = a.outstandingAmount === 0 ? 1 : 0;
-      const bPaid = b.outstandingAmount === 0 ? 1 : 0;
-      if (aPaid !== bPaid) return aPaid - bPaid;
-      return getOverdueDays(b.billDate) - getOverdueDays(a.billDate);
+      const dateA = parseDateDMY(a.billDate);
+      const dateB = parseDateDMY(b.billDate);
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateB.getTime() - dateA.getTime();
     });
   }, [allInvoices, decoded]);
   const payments = useMemo(() => allPayments.filter((p) => p.customerName === decoded), [allPayments, decoded]);
