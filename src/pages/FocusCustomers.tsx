@@ -36,14 +36,14 @@ const FocusCustomers = () => {
   const kpis = useMemo(() => {
     const totalOutstanding = focusInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
     const totalBill = focusInvoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalPaid = focusInvoices.reduce((s, i) => s + i.paidAmount, 0);
+    const totalCollected = focusPayments.reduce((s, p) => s + p.paidAmount, 0);
     const customers = new Set(focusInvoices.map((i) => i.customerName)).size;
     const overdueOutstanding = focusInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
-    const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
+    const collectionRate = totalBill > 0 ? Math.round((totalCollected / totalBill) * 100).toString() : "0";
     const avgCollectionDays = calcAvgCollectionDays(focusInvoices, focusPayments);
-    return { totalOutstanding, totalPaid, customers, overdueOutstanding, collectionRate, avgCollectionDays };
+    return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
   }, [focusInvoices, focusPayments]);
 
   return (
