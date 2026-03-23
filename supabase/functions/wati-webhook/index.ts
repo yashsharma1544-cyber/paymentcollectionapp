@@ -28,7 +28,6 @@ async function sendSessionMessage(phone: string, message: string) {
   const whatsappNumber = cleanPhone(phone);
   
   try {
-    // Try v1 first (more reliable), fall back to v2
     for (const version of ["v1", "v2"]) {
       const url = `${WATI_API_ENDPOINT}/api/${version}/sendSessionMessage/${whatsappNumber}?messageText=${encodeURIComponent(message)}`;
       const resp = await fetch(url, {
@@ -41,10 +40,39 @@ async function sendSessionMessage(phone: string, message: string) {
       });
       const text = await resp.text();
       console.log(`Auto-reply (${version}) to ${whatsappNumber}: ${resp.status}`, text);
-      if (resp.ok || resp.status !== 404) return; // success or non-404 error
+      if (resp.ok || resp.status !== 404) return;
     }
   } catch (err) {
     console.error("Auto-reply failed:", err);
+  }
+}
+
+/** Send an image file to a customer via WATI using a public URL */
+async function sendSessionImageViaUrl(phone: string, imageUrl: string, caption?: string) {
+  const WATI_API_TOKEN = (Deno.env.get("WATI_API_TOKEN") || "").replace(/^Bearer\s+/i, "");
+  const WATI_API_ENDPOINT = (Deno.env.get("WATI_API_ENDPOINT") || "").replace(/\/+$/, "");
+  if (!WATI_API_TOKEN || !WATI_API_ENDPOINT) {
+    console.error("WATI credentials not configured for image send");
+    return;
+  }
+
+  const whatsappNumber = cleanPhone(phone);
+
+  try {
+    const params = new URLSearchParams({ fileUrl: imageUrl });
+    if (caption) params.set("caption", caption);
+    const url = `${WATI_API_ENDPOINT}/api/v1/sendSessionFileViaUrl/${whatsappNumber}?${params.toString()}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${WATI_API_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+    });
+    const text = await resp.text();
+    console.log(`Image send to ${whatsappNumber}: ${resp.status}`, text);
+  } catch (err) {
+    console.error("Image send failed:", err);
   }
 }
 
