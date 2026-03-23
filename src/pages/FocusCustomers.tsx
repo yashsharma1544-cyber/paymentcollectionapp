@@ -36,7 +36,9 @@ const FocusCustomers = () => {
   const kpis = useMemo(() => {
     const totalOutstanding = focusInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
     const totalBill = focusInvoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalCollected = focusPayments.reduce((s, p) => s + p.paidAmount, 0);
+    const totalCollected = focusInvoices
+      .filter((i) => i.outstandingAmount > 0)
+      .reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(focusInvoices.map((i) => i.customerName)).size;
     const overdueOutstanding = focusInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
