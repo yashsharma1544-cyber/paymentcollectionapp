@@ -39,6 +39,7 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser } = useUser();
+  const { isFocused, toggleFocus } = useFocusCustomers();
 
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
