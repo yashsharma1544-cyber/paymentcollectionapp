@@ -191,6 +191,13 @@ const Index = () => {
                 <span className="sm:hidden">AI</span>
               </Button>
             </Link>
+            <Link to="/focus" className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10">
+                <Star className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Focus Customers</span>
+                <span className="sm:hidden">Focus</span>
+              </Button>
+            </Link>
             <Link to="/defaulters" className="flex-1 sm:flex-none">
               <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
                 <AlertTriangle className="h-3.5 w-3.5" />
