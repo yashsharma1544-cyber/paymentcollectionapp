@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchRecordedPayments, fetchWhatsAppLog } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert } from "lucide-react";
+import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
