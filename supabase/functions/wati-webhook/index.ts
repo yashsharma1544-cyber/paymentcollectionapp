@@ -372,6 +372,9 @@ serve(async (req) => {
 
         await sendSessionMessage(phone, bankDetails);
 
+        // Send QR code image
+        const qrImageUrl = "https://paymentcollectionapp.lovable.app/images/SA-QR-Code.jpeg";
+        await sendSessionImageViaUrl(phone, qrImageUrl, "📱 Scan & Pay — UPI ID: 9028901902@okbizaxis");
         await logToSheets({
           phone,
           contactName: customerName,
