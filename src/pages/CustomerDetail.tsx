@@ -17,7 +17,7 @@ import { WhatsAppInvoiceSelector } from "@/components/WhatsAppInvoiceSelector";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff, Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HealthBadge } from "@/components/HealthBadge";
