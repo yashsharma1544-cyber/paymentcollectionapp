@@ -102,7 +102,7 @@ const FocusCustomers = () => {
                 <CardContent className="p-2 sm:p-3 text-center">
                   <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collected</p>
-                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalCollected.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm bg-primary/10 overflow-hidden">
