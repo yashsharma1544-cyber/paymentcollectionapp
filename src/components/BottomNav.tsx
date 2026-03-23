@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, CalendarClock, History, ClipboardList, Users, UserCircle } from "lucide-react";
+import { Home, CalendarClock, History, Star, Users, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 
