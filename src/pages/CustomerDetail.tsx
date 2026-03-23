@@ -31,6 +31,7 @@ import { getOverdueDays, formatOverdue, calcAvgCollectionDays, parseDateDMY } fr
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { useFocusCustomers } from "@/hooks/use-focus-customers";
 
 const CustomerDetail = () => {
   const { customerName } = useParams<{ customerName: string }>();
