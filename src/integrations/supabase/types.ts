@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      focus_customers: {
+        Row: {
+          created_at: string
+          customer_name: string
+          id: string
+          user_name: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          id?: string
+          user_name: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       prediction_snapshots: {
         Row: {
           created_at: string

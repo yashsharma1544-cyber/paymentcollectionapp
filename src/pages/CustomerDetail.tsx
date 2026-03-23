@@ -17,7 +17,7 @@ import { WhatsAppInvoiceSelector } from "@/components/WhatsAppInvoiceSelector";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff, Star,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { HealthBadge } from "@/components/HealthBadge";
@@ -31,6 +31,7 @@ import { getOverdueDays, formatOverdue, calcAvgCollectionDays, parseDateDMY } fr
 import { buildReminderMessage, openWhatsApp, sendViaWati } from "@/lib/whatsapp";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { useFocusCustomers } from "@/hooks/use-focus-customers";
 
 const CustomerDetail = () => {
   const { customerName } = useParams<{ customerName: string }>();
@@ -38,6 +39,7 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser } = useUser();
+  const { isFocused, toggleFocus } = useFocusCustomers();
 
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
@@ -184,6 +186,9 @@ const CustomerDetail = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
+                <button onClick={() => toggleFocus(decoded)} className="shrink-0">
+                  <Star className={`h-5 w-5 ${isFocused(decoded) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground hover:text-yellow-500"} transition-colors`} />
+                </button>
                 <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
                 <HealthBadge status={health.status} score={health.score} size="sm" />
                 {isReminderStopped && (
