@@ -6,9 +6,9 @@ import { useUser } from "@/contexts/UserContext";
 const navItems = [
   { to: "/", label: "Home", icon: Home },
   { to: "/due-today", label: "Due Today", icon: CalendarClock },
+  { to: "/focus", label: "Focus", icon: Star },
   { to: "/crm", label: "CRM", icon: Users },
   { to: "/payments", label: "Payments", icon: History },
-  { to: "/daily-report", label: "Report", icon: ClipboardList },
 ];
 
 export function BottomNav() {
