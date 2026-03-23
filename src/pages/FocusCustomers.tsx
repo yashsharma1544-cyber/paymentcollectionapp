@@ -36,14 +36,14 @@ const FocusCustomers = () => {
   const kpis = useMemo(() => {
     const totalOutstanding = focusInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
     const totalBill = focusInvoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalPaid = focusInvoices.reduce((s, i) => s + i.paidAmount, 0);
+    const totalCollected = focusPayments.reduce((s, p) => s + p.paidAmount, 0);
     const customers = new Set(focusInvoices.map((i) => i.customerName)).size;
     const overdueOutstanding = focusInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
-    const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
+    const collectionRate = totalBill > 0 ? Math.round((totalCollected / totalBill) * 100).toString() : "0";
     const avgCollectionDays = calcAvgCollectionDays(focusInvoices, focusPayments);
-    return { totalOutstanding, totalPaid, customers, overdueOutstanding, collectionRate, avgCollectionDays };
+    return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
   }, [focusInvoices, focusPayments]);
 
   return (
@@ -102,7 +102,7 @@ const FocusCustomers = () => {
                 <CardContent className="p-2 sm:p-3 text-center">
                   <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
                   <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collected</p>
-                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
+                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalCollected.toLocaleString("en-IN")}</p>
                 </CardContent>
               </Card>
               <Card className="border-0 shadow-sm bg-primary/10 overflow-hidden">
