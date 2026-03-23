@@ -16,6 +16,7 @@ import { CreditCard, Search, User, ChevronRight, Phone, MessageCircle, Clock, Ca
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ExportMenu } from "@/components/ExportMenu";
+import { useFocusCustomers } from "@/hooks/use-focus-customers";
 
 interface InvoiceTableProps {
   invoices: Invoice[];
