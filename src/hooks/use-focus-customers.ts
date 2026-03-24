@@ -9,17 +9,15 @@ export function useFocusCustomers() {
   const queryClient = useQueryClient();
 
   const { data: focusCustomers = [], isLoading } = useQuery({
-    queryKey: [QUERY_KEY, currentUser],
+    queryKey: [QUERY_KEY],
     queryFn: async () => {
-      if (!currentUser) return [];
       const { data, error } = await supabase
         .from("focus_customers")
-        .select("customer_name")
-        .eq("user_name", currentUser);
+        .select("customer_name");
       if (error) throw error;
-      return (data || []).map((r) => r.customer_name);
+      // Deduplicate customer names across all users
+      return [...new Set((data || []).map((r) => r.customer_name))];
     },
-    enabled: !!currentUser,
   });
 
   const focusSet = new Set(focusCustomers);
@@ -29,10 +27,10 @@ export function useFocusCustomers() {
       if (!currentUser) throw new Error("No user");
       const isFocused = focusSet.has(customerName);
       if (isFocused) {
+        // Remove all entries for this customer (any user)
         const { error } = await supabase
           .from("focus_customers")
           .delete()
-          .eq("user_name", currentUser)
           .eq("customer_name", customerName);
         if (error) throw error;
       } else {
@@ -43,7 +41,7 @@ export function useFocusCustomers() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, currentUser] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
   });
 
