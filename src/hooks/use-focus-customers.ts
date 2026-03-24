@@ -27,10 +27,10 @@ export function useFocusCustomers() {
       if (!currentUser) throw new Error("No user");
       const isFocused = focusSet.has(customerName);
       if (isFocused) {
+        // Remove all entries for this customer (any user)
         const { error } = await supabase
           .from("focus_customers")
           .delete()
-          .eq("user_name", currentUser)
           .eq("customer_name", customerName);
         if (error) throw error;
       } else {
@@ -41,7 +41,7 @@ export function useFocusCustomers() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY, currentUser] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     },
   });
 
