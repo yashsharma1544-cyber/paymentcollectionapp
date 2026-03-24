@@ -176,7 +176,7 @@ const FocusCustomers = () => {
               </Card>
             </div>
 
-            <InvoiceTable invoices={focusInvoices} onPaymentSuccess={() => refetch()} exportTitle="Focus Customers" />
+            <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} exportTitle="Focus Customers" />
           </>
         )}
       </main>
