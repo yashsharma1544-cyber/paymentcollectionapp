@@ -14,6 +14,7 @@ import { MapPin } from "lucide-react";
 
 const FocusCustomers = () => {
   const { focusSet, isLoading: focusLoading } = useFocusCustomers();
+  const [selectedBeat, setSelectedBeat] = useState<string>("all");
 
   const { data: invoices = [], isLoading, refetch } = useQuery({
     queryKey: ["invoices"],
@@ -35,20 +36,38 @@ const FocusCustomers = () => {
     [allPayments, focusSet]
   );
 
+  const beats = useMemo(
+    () => [...new Set(focusInvoices.map((i) => i.beat))].sort(),
+    [focusInvoices]
+  );
+
+  const filteredInvoices = useMemo(
+    () => selectedBeat === "all" ? focusInvoices : focusInvoices.filter((i) => i.beat === selectedBeat),
+    [focusInvoices, selectedBeat]
+  );
+
+  const filteredPayments = useMemo(
+    () => selectedBeat === "all" ? focusPayments : focusPayments.filter((p) => {
+      const beatInvoiceBills = new Set(filteredInvoices.map((i) => i.billNo));
+      return beatInvoiceBills.has(p.billNo);
+    }),
+    [focusPayments, filteredInvoices, selectedBeat]
+  );
+
   const kpis = useMemo(() => {
-    const totalOutstanding = focusInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const totalBill = focusInvoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalCollected = focusInvoices
+    const totalOutstanding = filteredInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
+    const totalBill = filteredInvoices.reduce((s, i) => s + i.billAmount, 0);
+    const totalCollected = filteredInvoices
       .filter((i) => i.outstandingAmount > 0)
       .reduce((s, i) => s + i.paidAmount, 0);
-    const customers = new Set(focusInvoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = focusInvoices
+    const customers = new Set(filteredInvoices.map((i) => i.customerName)).size;
+    const overdueOutstanding = filteredInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalCollected / totalBill) * 100).toString() : "0";
-    const avgCollectionDays = calcAvgCollectionDays(focusInvoices, focusPayments);
+    const avgCollectionDays = calcAvgCollectionDays(filteredInvoices, filteredPayments);
     return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
-  }, [focusInvoices, focusPayments]);
+  }, [filteredInvoices, filteredPayments]);
 
   return (
     <div className="min-h-screen bg-background">
