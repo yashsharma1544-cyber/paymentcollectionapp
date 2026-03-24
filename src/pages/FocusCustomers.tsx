@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, IndianRupee, TrendingUp, Users, AlertTriangle, Timer, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
 
 const FocusCustomers = () => {
   const { focusSet, isLoading: focusLoading } = useFocusCustomers();
