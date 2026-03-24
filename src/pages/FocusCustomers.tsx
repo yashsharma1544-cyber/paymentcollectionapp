@@ -112,6 +112,24 @@ const FocusCustomers = () => {
           </div>
         ) : (
           <>
+            {/* Beat Filter */}
+            {beats.length > 1 && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <Select value={selectedBeat} onValueChange={setSelectedBeat}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="All Beats" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Beats</SelectItem>
+                    {beats.map((beat) => (
+                      <SelectItem key={beat} value={beat}>{beat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* KPI Summary */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
