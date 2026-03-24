@@ -9,17 +9,15 @@ export function useFocusCustomers() {
   const queryClient = useQueryClient();
 
   const { data: focusCustomers = [], isLoading } = useQuery({
-    queryKey: [QUERY_KEY, currentUser],
+    queryKey: [QUERY_KEY],
     queryFn: async () => {
-      if (!currentUser) return [];
       const { data, error } = await supabase
         .from("focus_customers")
-        .select("customer_name")
-        .eq("user_name", currentUser);
+        .select("customer_name");
       if (error) throw error;
-      return (data || []).map((r) => r.customer_name);
+      // Deduplicate customer names across all users
+      return [...new Set((data || []).map((r) => r.customer_name))];
     },
-    enabled: !!currentUser,
   });
 
   const focusSet = new Set(focusCustomers);
