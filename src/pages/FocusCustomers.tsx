@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, IndianRupee, TrendingUp, Users, AlertTriangle, Timer, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getOverdueDays, calcAvgCollectionDays } from "@/lib/date-utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MapPin } from "lucide-react";
 
 const FocusCustomers = () => {
   const { focusSet, isLoading: focusLoading } = useFocusCustomers();
+  const [selectedBeat, setSelectedBeat] = useState<string>("all");
 
   const { data: invoices = [], isLoading, refetch } = useQuery({
     queryKey: ["invoices"],
@@ -33,20 +36,38 @@ const FocusCustomers = () => {
     [allPayments, focusSet]
   );
 
+  const beats = useMemo(
+    () => [...new Set(focusInvoices.map((i) => i.beat))].sort(),
+    [focusInvoices]
+  );
+
+  const filteredInvoices = useMemo(
+    () => selectedBeat === "all" ? focusInvoices : focusInvoices.filter((i) => i.beat === selectedBeat),
+    [focusInvoices, selectedBeat]
+  );
+
+  const filteredPayments = useMemo(
+    () => selectedBeat === "all" ? focusPayments : focusPayments.filter((p) => {
+      const beatInvoiceBills = new Set(filteredInvoices.map((i) => i.billNo));
+      return beatInvoiceBills.has(p.billNo);
+    }),
+    [focusPayments, filteredInvoices, selectedBeat]
+  );
+
   const kpis = useMemo(() => {
-    const totalOutstanding = focusInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const totalBill = focusInvoices.reduce((s, i) => s + i.billAmount, 0);
-    const totalCollected = focusInvoices
+    const totalOutstanding = filteredInvoices.reduce((s, i) => s + i.outstandingAmount, 0);
+    const totalBill = filteredInvoices.reduce((s, i) => s + i.billAmount, 0);
+    const totalCollected = filteredInvoices
       .filter((i) => i.outstandingAmount > 0)
       .reduce((s, i) => s + i.paidAmount, 0);
-    const customers = new Set(focusInvoices.map((i) => i.customerName)).size;
-    const overdueOutstanding = focusInvoices
+    const customers = new Set(filteredInvoices.map((i) => i.customerName)).size;
+    const overdueOutstanding = filteredInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalCollected / totalBill) * 100).toString() : "0";
-    const avgCollectionDays = calcAvgCollectionDays(focusInvoices, focusPayments);
+    const avgCollectionDays = calcAvgCollectionDays(filteredInvoices, filteredPayments);
     return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
-  }, [focusInvoices, focusPayments]);
+  }, [filteredInvoices, filteredPayments]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,6 +112,24 @@ const FocusCustomers = () => {
           </div>
         ) : (
           <>
+            {/* Beat Filter */}
+            {beats.length > 1 && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <Select value={selectedBeat} onValueChange={setSelectedBeat}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs">
+                    <SelectValue placeholder="All Beats" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Beats</SelectItem>
+                    {beats.map((beat) => (
+                      <SelectItem key={beat} value={beat}>{beat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* KPI Summary */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
               <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
@@ -137,7 +176,7 @@ const FocusCustomers = () => {
               </Card>
             </div>
 
-            <InvoiceTable invoices={focusInvoices} onPaymentSuccess={() => refetch()} exportTitle="Focus Customers" />
+            <InvoiceTable invoices={filteredInvoices} onPaymentSuccess={() => refetch()} exportTitle="Focus Customers" />
           </>
         )}
       </main>
