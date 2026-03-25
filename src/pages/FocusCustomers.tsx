@@ -65,7 +65,7 @@ const FocusCustomers = () => {
     const overdueOutstanding = filteredInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
-    const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
+    const collectionRate = totalOutstanding > 0 ? Math.round((totalCollected / totalOutstanding) * 100).toString() : "0";
     const avgCollectionDays = calcAvgCollectionDays(filteredInvoices, filteredPayments);
     return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
   }, [filteredInvoices, filteredPayments]);
