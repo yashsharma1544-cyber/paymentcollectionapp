@@ -60,11 +60,12 @@ const FocusCustomers = () => {
     const totalCollected = filteredInvoices
       .filter((i) => i.outstandingAmount > 0)
       .reduce((s, i) => s + i.paidAmount, 0);
+    const totalPaid = filteredInvoices.reduce((s, i) => s + i.paidAmount, 0);
     const customers = new Set(filteredInvoices.map((i) => i.customerName)).size;
     const overdueOutstanding = filteredInvoices
       .filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0)
       .reduce((s, i) => s + i.outstandingAmount, 0);
-    const collectionRate = totalBill > 0 ? Math.round((totalCollected / totalBill) * 100).toString() : "0";
+    const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const avgCollectionDays = calcAvgCollectionDays(filteredInvoices, filteredPayments);
     return { totalOutstanding, totalCollected, customers, overdueOutstanding, collectionRate, avgCollectionDays };
   }, [filteredInvoices, filteredPayments]);
