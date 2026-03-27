@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { parseDateDMY } from "@/lib/date-utils";
 import { format } from "date-fns";
 import { useUser } from "@/contexts/UserContext";
 import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
