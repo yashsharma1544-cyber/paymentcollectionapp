@@ -43,7 +43,15 @@ export function LumpsumPaymentDialog({
   const { currentUser } = useUser();
 
   const outstandingInvoices = useMemo(
-    () => invoices.filter((inv) => inv.outstandingAmount > 0),
+    () =>
+      invoices
+        .filter((inv) => inv.outstandingAmount > 0)
+        .sort((a, b) => {
+          // Sort oldest invoice first by bill date
+          const dateA = a.billDate ? new Date(a.billDate.split("/").reverse().join("-")).getTime() : 0;
+          const dateB = b.billDate ? new Date(b.billDate.split("/").reverse().join("-")).getTime() : 0;
+          return dateA - dateB || a.billNo.localeCompare(b.billNo);
+        }),
     [invoices]
   );
 
