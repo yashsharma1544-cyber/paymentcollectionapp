@@ -125,6 +125,14 @@ const CustomerDetail = () => {
       if (!map.has(p.billNo)) map.set(p.billNo, []);
       map.get(p.billNo)!.push(p);
     }
+    // Sort each bill's payments: latest first
+    for (const [, arr] of map) {
+      arr.sort((a, b) => {
+        const da = parseDateDMY(a.paymentDate)?.getTime() || new Date(a.timestamp).getTime() || 0;
+        const db = parseDateDMY(b.paymentDate)?.getTime() || new Date(b.timestamp).getTime() || 0;
+        return db - da;
+      });
+    }
     return map;
   }, [payments]);
 
@@ -374,7 +382,7 @@ const CustomerDetail = () => {
                         const isClickable = hasPayments;
 
                         // Last payment date and days to clear
-                        const lastPayment = hasPayments ? billPayments[billPayments.length - 1] : null;
+                        const lastPayment = hasPayments ? billPayments[0] : null;
                         const collectedDate = lastPayment?.paymentDate || lastPayment?.timestamp?.split(" ")[0] || "";
                         const billDate = parseDateDMY(inv.billDate);
                         const paidDate = collectedDate ? parseDateDMY(collectedDate) : null;
