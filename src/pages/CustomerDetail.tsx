@@ -44,7 +44,7 @@ const CustomerDetail = () => {
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
   });
-  const { data: allPayments = [], isLoading: paymentsLoading, refetch: refetchPayments } = useQuery({
+  const { data: allPayments = [], isLoading: paymentsLoading } = useQuery({
     queryKey: ["recorded-payments"], queryFn: fetchRecordedPayments,
   });
   const { data: allFollowUps = [], isLoading: followUpsLoading, refetch: refetchFollowUps } = useQuery({
@@ -99,10 +99,9 @@ const CustomerDetail = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp, deleteTarget.customerName);
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
       toast({ title: "✅ Payment deleted successfully" });
       setDeleteTarget(null);
-      refetchPayments();
       refetch();
     } catch (e) {
       toast({ title: "Failed to delete", description: (e as Error).message, variant: "destructive" });
@@ -125,14 +124,6 @@ const CustomerDetail = () => {
     for (const p of payments) {
       if (!map.has(p.billNo)) map.set(p.billNo, []);
       map.get(p.billNo)!.push(p);
-    }
-    // Sort each bill's payments: latest first
-    for (const [, arr] of map) {
-      arr.sort((a, b) => {
-        const da = parseDateDMY(a.paymentDate)?.getTime() || new Date(a.timestamp).getTime() || 0;
-        const db = parseDateDMY(b.paymentDate)?.getTime() || new Date(b.timestamp).getTime() || 0;
-        return db - da;
-      });
     }
     return map;
   }, [payments]);
@@ -383,7 +374,7 @@ const CustomerDetail = () => {
                         const isClickable = hasPayments;
 
                         // Last payment date and days to clear
-                        const lastPayment = hasPayments ? billPayments[0] : null;
+                        const lastPayment = hasPayments ? billPayments[billPayments.length - 1] : null;
                         const collectedDate = lastPayment?.paymentDate || lastPayment?.timestamp?.split(" ")[0] || "";
                         const billDate = parseDateDMY(inv.billDate);
                         const paidDate = collectedDate ? parseDateDMY(collectedDate) : null;
