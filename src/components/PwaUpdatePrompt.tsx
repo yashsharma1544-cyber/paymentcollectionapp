@@ -9,8 +9,10 @@ export function PwaUpdatePrompt() {
     <>
       {/* Version badge — always visible, bottom-right above BottomNav on mobile */}
       <div className="fixed bottom-16 right-3 sm:bottom-3 sm:right-3 z-40">
-        <span className="text-[10px] text-muted-foreground/60 bg-card/80 backdrop-blur px-1.5 py-0.5 rounded-md border border-border/40 font-mono">
+        <span className="text-[10px] text-muted-foreground/60 bg-card/80 backdrop-blur px-1.5 py-0.5 rounded-md border border-border/40 font-mono leading-tight text-right">
           v{APP_VERSION}
+          <br />
+          {__BUILD_DATE__}
         </span>
       </div>
 
