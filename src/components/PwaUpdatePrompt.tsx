@@ -1,6 +1,6 @@
 import { usePwaUpdate } from "@/hooks/use-pwa-update";
 import { RefreshCw } from "lucide-react";
-import { APP_VERSION } from "@/lib/version";
+import { APP_VERSION, BUILD_DATE } from "@/lib/version";
 
 export function PwaUpdatePrompt() {
   const { needsUpdate, applyUpdate } = usePwaUpdate();
