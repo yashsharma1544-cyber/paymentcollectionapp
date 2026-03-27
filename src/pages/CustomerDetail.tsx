@@ -99,9 +99,10 @@ const CustomerDetail = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp, deleteTarget.customerName);
       toast({ title: "✅ Payment deleted successfully" });
       setDeleteTarget(null);
+      refetchPayments();
       refetch();
     } catch (e) {
       toast({ title: "Failed to delete", description: (e as Error).message, variant: "destructive" });
