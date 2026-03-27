@@ -382,7 +382,7 @@ const CustomerDetail = () => {
                         const isClickable = hasPayments;
 
                         // Last payment date and days to clear
-                        const lastPayment = hasPayments ? billPayments[billPayments.length - 1] : null;
+                        const lastPayment = hasPayments ? billPayments[0] : null;
                         const collectedDate = lastPayment?.paymentDate || lastPayment?.timestamp?.split(" ")[0] || "";
                         const billDate = parseDateDMY(inv.billDate);
                         const paidDate = collectedDate ? parseDateDMY(collectedDate) : null;
