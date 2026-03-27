@@ -8,7 +8,6 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
   const now = new Date();
   const buildVersion = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-  const buildDate = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   return ({
   server: {
     host: "::",
@@ -45,7 +44,6 @@ export default defineConfig(({ mode }) => {
   ].filter(Boolean),
   define: {
     __BUILD_VERSION__: JSON.stringify(buildVersion),
-    __BUILD_DATE__: JSON.stringify(buildDate),
   },
   resolve: {
     alias: {
