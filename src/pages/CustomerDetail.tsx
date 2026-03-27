@@ -44,7 +44,7 @@ const CustomerDetail = () => {
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
   });
-  const { data: allPayments = [], isLoading: paymentsLoading } = useQuery({
+  const { data: allPayments = [], isLoading: paymentsLoading, refetch: refetchPayments } = useQuery({
     queryKey: ["recorded-payments"], queryFn: fetchRecordedPayments,
   });
   const { data: allFollowUps = [], isLoading: followUpsLoading, refetch: refetchFollowUps } = useQuery({
@@ -99,9 +99,10 @@ const CustomerDetail = () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp);
+      await deletePayment(deleteTarget.billNo, deleteTarget.timestamp, deleteTarget.customerName);
       toast({ title: "✅ Payment deleted successfully" });
       setDeleteTarget(null);
+      refetchPayments();
       refetch();
     } catch (e) {
       toast({ title: "Failed to delete", description: (e as Error).message, variant: "destructive" });
