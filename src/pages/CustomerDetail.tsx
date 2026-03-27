@@ -125,6 +125,14 @@ const CustomerDetail = () => {
       if (!map.has(p.billNo)) map.set(p.billNo, []);
       map.get(p.billNo)!.push(p);
     }
+    // Sort each bill's payments: latest first
+    for (const [, arr] of map) {
+      arr.sort((a, b) => {
+        const da = parseDateDMY(a.paymentDate)?.getTime() || new Date(a.timestamp).getTime() || 0;
+        const db = parseDateDMY(b.paymentDate)?.getTime() || new Date(b.timestamp).getTime() || 0;
+        return db - da;
+      });
+    }
     return map;
   }, [payments]);
 
