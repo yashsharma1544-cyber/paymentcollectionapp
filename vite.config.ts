@@ -5,7 +5,10 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const now = new Date();
+  const buildVersion = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  return ({
   server: {
     host: "::",
     port: 8080,
