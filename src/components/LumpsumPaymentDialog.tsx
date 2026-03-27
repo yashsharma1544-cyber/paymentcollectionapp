@@ -47,9 +47,9 @@ export function LumpsumPaymentDialog({
       invoices
         .filter((inv) => inv.outstandingAmount > 0)
         .sort((a, b) => {
-          // Sort oldest invoice first by date, then by bill number
-          const dateA = a.date ? new Date(a.date.split("/").reverse().join("-")).getTime() : 0;
-          const dateB = b.date ? new Date(b.date.split("/").reverse().join("-")).getTime() : 0;
+          // Sort oldest invoice first by bill date
+          const dateA = a.billDate ? new Date(a.billDate.split("/").reverse().join("-")).getTime() : 0;
+          const dateB = b.billDate ? new Date(b.billDate.split("/").reverse().join("-")).getTime() : 0;
           return dateA - dateB || a.billNo.localeCompare(b.billNo);
         }),
     [invoices]
