@@ -42,9 +42,13 @@ export default defineConfig(({ mode }) => {
       },
     }),
   ].filter(Boolean),
+  define: {
+    __BUILD_VERSION__: JSON.stringify(buildVersion),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
+});
