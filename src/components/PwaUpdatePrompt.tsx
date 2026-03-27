@@ -12,7 +12,7 @@ export function PwaUpdatePrompt() {
         <span className="text-[10px] text-muted-foreground/60 bg-card/80 backdrop-blur px-1.5 py-0.5 rounded-md border border-border/40 font-mono leading-tight text-right">
           v{APP_VERSION}
           <br />
-          {__BUILD_DATE__}
+          {BUILD_DATE}
         </span>
       </div>
 

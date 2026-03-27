@@ -45,6 +45,7 @@ export default defineConfig(({ mode }) => {
   ].filter(Boolean),
   define: {
     __BUILD_VERSION__: JSON.stringify(buildVersion),
+    __BUILD_DATE__: JSON.stringify(buildDate),
   },
   resolve: {
     alias: {
