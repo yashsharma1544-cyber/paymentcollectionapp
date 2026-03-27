@@ -44,7 +44,7 @@ const CustomerDetail = () => {
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
   });
-  const { data: allPayments = [], isLoading: paymentsLoading } = useQuery({
+  const { data: allPayments = [], isLoading: paymentsLoading, refetch: refetchPayments } = useQuery({
     queryKey: ["recorded-payments"], queryFn: fetchRecordedPayments,
   });
   const { data: allFollowUps = [], isLoading: followUpsLoading, refetch: refetchFollowUps } = useQuery({
