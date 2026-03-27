@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { parseDateDMY } from "@/lib/date-utils";
 import { format } from "date-fns";
 import { useUser } from "@/contexts/UserContext";
 import { CalendarIcon, Banknote, Smartphone } from "lucide-react";
@@ -43,7 +44,13 @@ export function LumpsumPaymentDialog({
   const { currentUser } = useUser();
 
   const outstandingInvoices = useMemo(
-    () => invoices.filter((inv) => inv.outstandingAmount > 0),
+    () => invoices
+      .filter((inv) => inv.outstandingAmount > 0)
+      .sort((a, b) => {
+        const da = parseDateDMY(a.billDate)?.getTime() || 0;
+        const db = parseDateDMY(b.billDate)?.getTime() || 0;
+        return da - db; // oldest first
+      }),
     [invoices]
   );
 
