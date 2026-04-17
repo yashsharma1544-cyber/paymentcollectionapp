@@ -84,9 +84,14 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
               )}
             </div>
           </div>
-          <Badge className={cn("text-[10px] shrink-0", escalationColor)}>
-            {escalationLabel}
-          </Badge>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setInsightOpen(true)} className="p-1 rounded hover:bg-purple-500/10" title="AI insight">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+            </button>
+            <Badge className={cn("text-[10px]", escalationColor)}>
+              {escalationLabel}
+            </Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -183,6 +188,11 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
           </AlertDialogContent>
         </AlertDialog>
       </CardContent>
+      <CustomerInsightDialog
+        open={insightOpen}
+        onOpenChange={setInsightOpen}
+        customerName={d.customerName}
+      />
     </Card>
   );
 }
