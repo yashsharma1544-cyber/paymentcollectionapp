@@ -175,87 +175,24 @@ const CustomerDetail = () => {
     }
   };
 
+  const initials = decoded.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 space-y-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-              <IndianRupee className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <button onClick={() => toggleFocus(decoded)} className="shrink-0">
-                  <Star className={`h-5 w-5 ${isFocused(decoded) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground hover:text-yellow-500"} transition-colors`} />
-                </button>
-                <button onClick={() => setInsightOpen(true)} className="shrink-0" title="AI insight">
-                  <Sparkles className="h-5 w-5 text-purple-500 hover:text-purple-600 transition-colors" />
-                </button>
-                <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
-                <HealthBadge status={health.status} score={health.score} size="sm" />
-                {isReminderStopped && (
-                  <Badge variant="destructive" className="text-[10px] gap-1 shrink-0">
-                    <BellOff className="h-3 w-3" />
-                    Reminders Off
-                  </Badge>
-                )}
-                {lastEscalation && (
-                  <Badge variant="outline" className="text-[10px] gap-1 shrink-0 border-orange-500/30 text-orange-600">
-                    📨 {lastEscalation}
-                  </Badge>
-                )}
-              </div>
-              {info && (
-                <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                  {customerPhone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{customerPhone}</span>}
-                  {info.beat && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{info.beat}</span>}
-                </div>
-              )}
-            </div>
-            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            </Button>
+      {/* Sticky translucent header */}
+      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+        <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="shrink-0 rounded-xl" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4.5 w-4.5" />
+          </Button>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">Customer</p>
+            <p className="text-sm font-bold font-display truncate">{decoded}</p>
           </div>
-
-          {/* Last WhatsApp indicator */}
-          {lastWA ? (
-            <div className="ml-10 flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/20 px-3 py-1.5">
-              <MessageCircle className="h-4 w-4 text-green-600 shrink-0" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-green-700">Last WhatsApp Sent</span>
-                <span className="text-xs font-medium text-green-600">{lastWA.timestamp}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="ml-10 flex items-center gap-2 rounded-lg bg-muted/50 border border-border px-3 py-1.5">
-              <MessageCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-xs text-muted-foreground">No WhatsApp sent yet</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pl-10 flex-wrap">
-            <Button size="sm" onClick={() => setLumpsumOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
-              <Wallet className="h-3.5 w-3.5" />Lumpsum
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-1.5 text-xs flex-1 sm:flex-none">
-              <CalendarClock className="h-3.5 w-3.5" />Follow-up
-            </Button>
-            <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5 text-xs hidden sm:inline-flex">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />Refresh
-            </Button>
-            <div className="flex-1 sm:flex-none" />
-            <Button size="sm" variant="outline" onClick={() => setWhatsAppSelectorOpen(true)}
-              disabled={!customerPhone || sendingWati}
-              className="gap-1.5 text-green-600 border-green-600 hover:bg-green-50 text-xs flex-1 sm:flex-none ml-auto"
-            >
-              {sendingWati ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
-              {sendingWati ? "Sending..." : "WhatsApp"}
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-1.5 rounded-xl h-9">
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
         </div>
       </header>
 
