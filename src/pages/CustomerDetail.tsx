@@ -3,7 +3,7 @@ import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog,
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { StatCard } from "@/components/StatCard";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -196,70 +196,109 @@ const CustomerDetail = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-4 sm:px-6 py-5 sm:py-7 space-y-6 max-w-7xl">
+        {/* Hero customer card */}
+        {!isLoading && !error && invoices.length > 0 && (
+          <section className="rounded-3xl border surface-hero p-5 sm:p-7 shadow-card overflow-hidden relative">
+            <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-gradient-primary opacity-10 blur-3xl" aria-hidden />
+            <div className="relative flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl bg-gradient-primary text-primary-foreground flex items-center justify-center text-xl sm:text-2xl font-bold font-display shrink-0 shadow-glow">
+                {initials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight leading-tight">{decoded}</h1>
+                  <button onClick={() => toggleFocus(decoded)} className="shrink-0 p-1 rounded-lg hover:bg-warning/20 transition-colors">
+                    <Star className={`h-5 w-5 ${isFocused(decoded) ? "text-warning fill-warning" : "text-muted-foreground"}`} />
+                  </button>
+                  <button onClick={() => setInsightOpen(true)} className="shrink-0 p-1 rounded-lg hover:bg-accent/20 transition-colors" title="AI insight">
+                    <Sparkles className="h-5 w-5 text-accent" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  <HealthBadge status={health.status} score={health.score} size="md" />
+                  {isReminderStopped && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive text-[11px] font-semibold px-2 py-0.5 border border-destructive/20">
+                      <BellOff className="h-3 w-3" />Reminders Off
+                    </span>
+                  )}
+                  {lastEscalation && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning/10 text-warning text-[11px] font-semibold px-2 py-0.5 border border-warning/20">
+                      📨 {lastEscalation}
+                    </span>
+                  )}
+                </div>
+                {info && (
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2.5 flex-wrap">
+                    {customerPhone && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{customerPhone}</span>}
+                    {info.beat && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{info.beat}</span>}
+                    {lastWA ? (
+                      <span className="inline-flex items-center gap-1 text-success">
+                        <MessageCircle className="h-3.5 w-3.5" />Last WA: {lastWA.timestamp}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1">
+                        <MessageCircle className="h-3.5 w-3.5" />No WhatsApp sent
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="relative mt-5 flex items-center gap-2 flex-wrap">
+              <Button onClick={() => setLumpsumOpen(true)} className="gap-2 bg-gradient-primary shadow-glow rounded-xl">
+                <Wallet className="h-4 w-4" />Lumpsum Payment
+              </Button>
+              <Button variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-2 rounded-xl">
+                <CalendarClock className="h-4 w-4" />Follow-up
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setWhatsAppSelectorOpen(true)}
+                disabled={!customerPhone || sendingWati}
+                className="gap-2 rounded-xl text-success border-success/40 hover:bg-success/10"
+              >
+                {sendingWati ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                {sendingWati ? "Sending..." : "WhatsApp"}
+              </Button>
+              <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
+            </div>
+          </section>
+        )}
+
         {error ? (
-          <div className="text-center py-20">
-            <p className="text-destructive font-medium mb-2">Failed to load data</p>
-            <Button onClick={() => refetch()}>Retry</Button>
+          <div className="rounded-2xl border bg-card p-12 text-center shadow-card">
+            <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="font-semibold mb-1">Failed to load data</p>
+            <Button onClick={() => refetch()} className="mt-3">Retry</Button>
           </div>
         ) : isLoading ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-3">
-              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+            <Skeleton className="h-40 rounded-3xl" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
             </div>
-            <Skeleton className="h-64 rounded-xl" />
+            <Skeleton className="h-64 rounded-2xl" />
           </div>
         ) : invoices.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground">No invoices found for this customer</p>
-            <Button className="mt-4" onClick={() => navigate(-1)}>Go Back</Button>
+          <div className="rounded-2xl border bg-card p-12 text-center shadow-card">
+            <FileText className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="font-semibold mb-1">No invoices found</p>
+            <p className="text-sm text-muted-foreground mb-4">This customer has no records yet.</p>
+            <Button onClick={() => navigate(-1)}>Go Back</Button>
           </div>
         ) : (
           <>
             {/* KPIs */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
-              <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <IndianRupee className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-destructive mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Outstanding</p>
-                  <p className="text-xs sm:text-xl font-black text-destructive truncate">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-success/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <CheckCircle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-success mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Paid</p>
-                  <p className="text-xs sm:text-xl font-black text-success truncate">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-primary/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <TrendingUp className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Collection %</p>
-                  <p className="text-xs sm:text-xl font-black text-primary">{kpis.collectionRate}%</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <FileText className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Billed</p>
-                  <p className="text-xs sm:text-xl font-black truncate">₹{kpis.totalBill.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-warning/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <AlertTriangle className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-warning mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
-                  <p className="text-xs sm:text-xl font-black text-warning truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-orange-500/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-4 text-center">
-                  <Clock className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-orange-600 mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
-                  <p className="text-xs sm:text-xl font-black text-orange-600">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
-                </CardContent>
-              </Card>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <StatCard label="Outstanding" value={`₹${kpis.totalOutstanding.toLocaleString("en-IN")}`} icon={IndianRupee} tone="destructive" emphasis />
+              <StatCard label="Paid" value={`₹${kpis.totalPaid.toLocaleString("en-IN")}`} icon={CheckCircle} tone="success" />
+              <StatCard label="Collection %" value={`${kpis.collectionRate}%`} icon={TrendingUp} tone="primary" />
+              <StatCard label="Billed" value={`₹${kpis.totalBill.toLocaleString("en-IN")}`} icon={FileText} tone="muted" />
+              <StatCard label="Overdue Amt" value={`₹${kpis.overdueOutstanding.toLocaleString("en-IN")}`} icon={AlertTriangle} tone="warning" />
+              <StatCard label="Avg Collection" value={kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"} icon={Clock} tone="warning" />
             </div>
 
             {/* Follow-ups Section */}
