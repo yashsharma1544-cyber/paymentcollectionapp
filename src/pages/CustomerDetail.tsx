@@ -122,21 +122,24 @@ const CustomerDetail = () => {
   };
 
   // Unified ledger: chronological debits (invoices) + credits (payments) with running balance
-  type LedgerEntry = (
-    | { kind: "debit"; invoice: Invoice }
-    | { kind: "credit"; payment: RecordedPayment }
-  ) & { date: Date | null; dateStr: string; balance: number };
+  type LedgerEntry = {
+    kind: "debit" | "credit";
+    date: Date | null;
+    dateStr: string;
+    invoice?: Invoice;
+    payment?: RecordedPayment;
+    balance: number;
+  };
 
   const ledger = useMemo<LedgerEntry[]>(() => {
-    const entries: Array<Omit<LedgerEntry, "balance">> = [];
+    const entries: LedgerEntry[] = [];
     for (const inv of invoices) {
-      entries.push({ kind: "debit", date: parseDateDMY(inv.billDate), dateStr: inv.billDate, invoice: inv });
+      entries.push({ kind: "debit", date: parseDateDMY(inv.billDate), dateStr: inv.billDate, invoice: inv, balance: 0 });
     }
     for (const p of payments) {
       const dStr = p.paymentDate || p.timestamp?.split(" ")[0] || "";
-      entries.push({ kind: "credit", date: parseDateDMY(dStr), dateStr: dStr || p.timestamp, payment: p });
+      entries.push({ kind: "credit", date: parseDateDMY(dStr), dateStr: dStr || p.timestamp, payment: p, balance: 0 });
     }
-    // Oldest first for running balance computation
     entries.sort((a, b) => {
       if (!a.date && !b.date) return 0;
       if (!a.date) return -1;
@@ -144,13 +147,12 @@ const CustomerDetail = () => {
       return a.date.getTime() - b.date.getTime();
     });
     let balance = 0;
-    const withBalance: LedgerEntry[] = entries.map((e) => {
-      if (e.kind === "debit") balance += e.invoice.billAmount;
-      else balance -= e.payment.paidAmount + (e.payment.discount || 0);
-      return { ...e, balance } as LedgerEntry;
-    });
-    // Display newest first
-    return withBalance.reverse();
+    for (const e of entries) {
+      if (e.kind === "debit") balance += e.invoice!.billAmount;
+      else balance -= e.payment!.paidAmount + (e.payment!.discount || 0);
+      e.balance = balance;
+    }
+    return entries.reverse();
   }, [invoices, payments]);
 
   const kpis = useMemo(() => {
