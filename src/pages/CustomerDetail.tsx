@@ -90,7 +90,7 @@ const CustomerDetail = () => {
   const [lumpsumOpen, setLumpsumOpen] = useState(false);
   const [followUpOpen, setFollowUpOpen] = useState(false);
   const [whatsAppSelectorOpen, setWhatsAppSelectorOpen] = useState(false);
-  const [expandedBills, setExpandedBills] = useState<Set<string>>(new Set());
+  
   const [sendingWati, setSendingWati] = useState(false);
   const [editPaymentRec, setEditPaymentRec] = useState<RecordedPayment | null>(null);
   const [editPaymentOpen, setEditPaymentOpen] = useState(false);
