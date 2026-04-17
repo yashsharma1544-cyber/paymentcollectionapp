@@ -261,24 +261,26 @@ const CustomerDetail = () => {
               </div>
             </div>
 
-            {/* Action bar */}
-            <div className="relative mt-5 flex items-center gap-2 flex-wrap">
-              <Button onClick={() => setLumpsumOpen(true)} className="gap-2 bg-gradient-primary shadow-glow rounded-xl">
-                <Wallet className="h-4 w-4" />Lumpsum Payment
+            {/* Action bar - 2x2 grid on mobile, inline on desktop */}
+            <div className="relative mt-5 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:flex-wrap">
+              <Button onClick={() => setLumpsumOpen(true)} className="gap-2 bg-gradient-primary shadow-glow rounded-xl w-full sm:w-auto">
+                <Wallet className="h-4 w-4" />Lumpsum
               </Button>
-              <Button variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-2 rounded-xl">
+              <Button variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-2 rounded-xl w-full sm:w-auto">
                 <CalendarClock className="h-4 w-4" />Follow-up
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setWhatsAppSelectorOpen(true)}
                 disabled={!customerPhone || sendingWati}
-                className="gap-2 rounded-xl text-success border-success/40 hover:bg-success/10"
+                className="gap-2 rounded-xl text-success border-success/40 hover:bg-success/10 w-full sm:w-auto"
               >
                 {sendingWati ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
                 {sendingWati ? "Sending..." : "WhatsApp"}
               </Button>
-              <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
+              <div className="w-full sm:w-auto">
+                <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
+              </div>
             </div>
           </section>
         )}
@@ -306,14 +308,14 @@ const CustomerDetail = () => {
           </div>
         ) : (
           <>
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* KPIs - 2 cols on phone, 3 on tablet, 6 on desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
               <StatCard label="Outstanding" value={`₹${kpis.totalOutstanding.toLocaleString("en-IN")}`} icon={IndianRupee} tone="destructive" emphasis />
               <StatCard label="Paid" value={`₹${kpis.totalPaid.toLocaleString("en-IN")}`} icon={CheckCircle} tone="success" />
               <StatCard label="Collection %" value={`${kpis.collectionRate}%`} icon={TrendingUp} tone="primary" />
               <StatCard label="Billed" value={`₹${kpis.totalBill.toLocaleString("en-IN")}`} icon={FileText} tone="muted" />
-              <StatCard label="Overdue Amt" value={`₹${kpis.overdueOutstanding.toLocaleString("en-IN")}`} icon={AlertTriangle} tone="warning" />
-              <StatCard label="Avg Collection" value={kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"} icon={Clock} tone="warning" />
+              <StatCard label="Overdue" value={`₹${kpis.overdueOutstanding.toLocaleString("en-IN")}`} icon={AlertTriangle} tone="warning" />
+              <StatCard label="Avg Days" value={kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"} icon={Clock} tone="warning" />
             </div>
 
             {/* Follow-ups Section */}
@@ -354,19 +356,106 @@ const CustomerDetail = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-destructive/10 text-destructive">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-destructive/10 text-destructive">
                     <span className="h-1.5 w-1.5 rounded-full bg-destructive" />Debit
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-success/10 text-success">
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-success/10 text-success">
                     <span className="h-1.5 w-1.5 rounded-full bg-success" />Credit
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                    Balance ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
+                  <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold tabular-nums px-2 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary">
+                    Bal ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
                   </span>
                 </div>
               </div>
-              <div className="overflow-x-auto border-t">
+              {/* Mobile card view */}
+              <div className="md:hidden border-t divide-y">
+                {ledger.map((e, i) => {
+                  if (e.kind === "debit") {
+                    const inv = e.invoice!;
+                    const overdue = getOverdueDays(inv.billDate);
+                    return (
+                      <div key={`md-${inv.billNo}-${i}`} className="px-4 py-3 border-l-2 border-l-destructive/40 hover:bg-destructive/5">
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+                                <FileText className="h-2.5 w-2.5" />Debit
+                              </span>
+                              <span className="text-xs font-mono font-semibold text-primary">#{inv.billNo}</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">{e.dateStr} · Due {inv.dueDate}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-bold tabular-nums text-destructive">₹{inv.billAmount.toLocaleString("en-IN")}</p>
+                            <p className="text-[10px] text-muted-foreground tabular-nums">Bal ₹{e.balance.toLocaleString("en-IN")}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <StatusBadge status={inv.paymentStatus} />
+                            {inv.outstandingAmount > 0 && (
+                              <span className={`text-[10px] font-semibold ${overdue > 0 ? "text-destructive" : "text-success"}`}>
+                                {formatOverdue(overdue)} · ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
+                              </span>
+                            )}
+                          </div>
+                          {inv.outstandingAmount > 0 && (
+                            <Button size="sm" onClick={() => { setSelectedInvoice(inv); setDialogOpen(true); }} className="gap-1.5 h-7 text-xs rounded-lg">
+                              <CreditCard className="h-3 w-3" />Collect
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  const p = e.payment!;
+                  const userInitials = p.collectedBy ? p.collectedBy.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "—";
+                  const totalCredit = p.paidAmount + (p.discount || 0);
+                  return (
+                    <div key={`mc-${p.billNo}-${i}`} className="px-4 py-3 border-l-2 border-l-success/40 hover:bg-success/5">
+                      <div className="flex items-start justify-between gap-3 mb-1.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-success/10 text-success">
+                              <CheckCircle className="h-2.5 w-2.5" />Credit
+                            </span>
+                            <span className="text-xs font-mono font-semibold text-primary">#{p.billNo}</span>
+                            {p.paymentMode && <span className="px-1.5 py-0.5 rounded bg-muted text-[9px] font-medium uppercase tracking-wider">{p.paymentMode}</span>}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">{e.dateStr}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold tabular-nums text-success">₹{totalCredit.toLocaleString("en-IN")}</p>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">Bal ₹{e.balance.toLocaleString("en-IN")}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
+                          {p.collectedBy && (
+                            <span className="inline-flex items-center gap-1 min-w-0">
+                              <span className="h-4 w-4 rounded bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center shrink-0">{userInitials}</span>
+                              <span className="truncate">{p.collectedBy}</span>
+                            </span>
+                          )}
+                          {p.discount > 0 && <span className="text-primary font-medium shrink-0">· Disc ₹{p.discount.toLocaleString("en-IN")}</span>}
+                        </div>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => { setEditPaymentRec(p); setEditPaymentOpen(true); }}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(p)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden md:block overflow-x-auto border-t">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
@@ -472,18 +561,18 @@ const CustomerDetail = () => {
                 </Table>
               </div>
               {/* Ledger footer totals */}
-              <div className="border-t bg-muted/20 px-4 sm:px-5 py-3 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-4 text-[11px]">
+              <div className="border-t bg-muted/20 px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 text-[11px]">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Debits</span>
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Debits</span>
                     <span className="font-bold tabular-nums text-destructive">₹{kpis.totalBill.toLocaleString("en-IN")}</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Credits</span>
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Credits</span>
                     <span className="font-bold tabular-nums text-success">₹{kpis.totalPaid.toLocaleString("en-IN")}</span>
                   </span>
                 </div>
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-0">
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Closing Balance</span>
                   <span className="text-base font-bold font-display tabular-nums text-primary">
                     ₹{kpis.totalOutstanding.toLocaleString("en-IN")} Dr
