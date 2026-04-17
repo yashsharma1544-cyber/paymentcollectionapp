@@ -261,24 +261,26 @@ const CustomerDetail = () => {
               </div>
             </div>
 
-            {/* Action bar */}
-            <div className="relative mt-5 flex items-center gap-2 flex-wrap">
-              <Button onClick={() => setLumpsumOpen(true)} className="gap-2 bg-gradient-primary shadow-glow rounded-xl">
-                <Wallet className="h-4 w-4" />Lumpsum Payment
+            {/* Action bar - 2x2 grid on mobile, inline on desktop */}
+            <div className="relative mt-5 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:flex-wrap">
+              <Button onClick={() => setLumpsumOpen(true)} className="gap-2 bg-gradient-primary shadow-glow rounded-xl w-full sm:w-auto">
+                <Wallet className="h-4 w-4" />Lumpsum
               </Button>
-              <Button variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-2 rounded-xl">
+              <Button variant="secondary" onClick={() => setFollowUpOpen(true)} className="gap-2 rounded-xl w-full sm:w-auto">
                 <CalendarClock className="h-4 w-4" />Follow-up
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setWhatsAppSelectorOpen(true)}
                 disabled={!customerPhone || sendingWati}
-                className="gap-2 rounded-xl text-success border-success/40 hover:bg-success/10"
+                className="gap-2 rounded-xl text-success border-success/40 hover:bg-success/10 w-full sm:w-auto"
               >
                 {sendingWati ? <RefreshCw className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
                 {sendingWati ? "Sending..." : "WhatsApp"}
               </Button>
-              <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
+              <div className="w-full sm:w-auto">
+                <ExportMenu invoices={invoices} title={decoded} size="sm" payments={allPayments} />
+              </div>
             </div>
           </section>
         )}
