@@ -121,14 +121,37 @@ const CustomerDetail = () => {
     });
   };
 
-  const paymentsByBill = useMemo(() => {
-    const map = new Map<string, RecordedPayment[]>();
-    for (const p of payments) {
-      if (!map.has(p.billNo)) map.set(p.billNo, []);
-      map.get(p.billNo)!.push(p);
+  // Unified ledger: chronological debits (invoices) + credits (payments) with running balance
+  type LedgerEntry = (
+    | { kind: "debit"; invoice: Invoice }
+    | { kind: "credit"; payment: RecordedPayment }
+  ) & { date: Date | null; dateStr: string; balance: number };
+
+  const ledger = useMemo<LedgerEntry[]>(() => {
+    const entries: Array<Omit<LedgerEntry, "balance">> = [];
+    for (const inv of invoices) {
+      entries.push({ kind: "debit", date: parseDateDMY(inv.billDate), dateStr: inv.billDate, invoice: inv });
     }
-    return map;
-  }, [payments]);
+    for (const p of payments) {
+      const dStr = p.paymentDate || p.timestamp?.split(" ")[0] || "";
+      entries.push({ kind: "credit", date: parseDateDMY(dStr), dateStr: dStr || p.timestamp, payment: p });
+    }
+    // Oldest first for running balance computation
+    entries.sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return -1;
+      if (!b.date) return 1;
+      return a.date.getTime() - b.date.getTime();
+    });
+    let balance = 0;
+    const withBalance: LedgerEntry[] = entries.map((e) => {
+      if (e.kind === "debit") balance += e.invoice.billAmount;
+      else balance -= e.payment.paidAmount + (e.payment.discount || 0);
+      return { ...e, balance } as LedgerEntry;
+    });
+    // Display newest first
+    return withBalance.reverse();
+  }, [invoices, payments]);
 
   const kpis = useMemo(() => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
