@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_insights_cache: {
+        Row: {
+          cache_key: string
+          content: Json
+          expires_at: string
+          generated_at: string
+          kind: string
+          raw_stats: Json | null
+          tokens_used: number | null
+        }
+        Insert: {
+          cache_key: string
+          content: Json
+          expires_at: string
+          generated_at?: string
+          kind: string
+          raw_stats?: Json | null
+          tokens_used?: number | null
+        }
+        Update: {
+          cache_key?: string
+          content?: Json
+          expires_at?: string
+          generated_at?: string
+          kind?: string
+          raw_stats?: Json | null
+          tokens_used?: number | null
+        }
+        Relationships: []
+      }
       focus_customers: {
         Row: {
           created_at: string

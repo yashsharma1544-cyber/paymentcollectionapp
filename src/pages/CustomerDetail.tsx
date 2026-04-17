@@ -17,8 +17,9 @@ import { WhatsAppInvoiceSelector } from "@/components/WhatsAppInvoiceSelector";
 import { ExportMenu } from "@/components/ExportMenu";
 import {
   ArrowLeft, RefreshCw, IndianRupee, FileText, AlertTriangle,
-  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff, Star,
+  CheckCircle, TrendingUp, Phone, MapPin, CreditCard, Clock, Wallet, MessageCircle, CalendarClock, ChevronDown, Pencil, Trash2, BellOff, Star, Sparkles,
 } from "lucide-react";
+import { CustomerInsightDialog } from "@/components/CustomerInsightDialog";
 import { Badge } from "@/components/ui/badge";
 import { HealthBadge } from "@/components/HealthBadge";
 import { calculateHealthScore } from "@/lib/health-score";
@@ -40,6 +41,7 @@ const CustomerDetail = () => {
   const { toast } = useToast();
   const { currentUser } = useUser();
   const { isFocused, toggleFocus } = useFocusCustomers();
+  const [insightOpen, setInsightOpen] = useState(false);
 
   const { data: allInvoices = [], isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["invoices"], queryFn: fetchInvoices,
@@ -188,6 +190,9 @@ const CustomerDetail = () => {
               <div className="flex items-center gap-2">
                 <button onClick={() => toggleFocus(decoded)} className="shrink-0">
                   <Star className={`h-5 w-5 ${isFocused(decoded) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground hover:text-yellow-500"} transition-colors`} />
+                </button>
+                <button onClick={() => setInsightOpen(true)} className="shrink-0" title="AI insight">
+                  <Sparkles className="h-5 w-5 text-purple-500 hover:text-purple-600 transition-colors" />
                 </button>
                 <h1 className="text-lg font-bold tracking-tight truncate">{decoded}</h1>
                 <HealthBadge status={health.status} score={health.score} size="sm" />
@@ -568,6 +573,12 @@ const CustomerDetail = () => {
         invoices={invoices}
         onSend={handleWhatsApp}
         sending={sendingWati}
+      />
+
+      <CustomerInsightDialog
+        open={insightOpen}
+        onOpenChange={setInsightOpen}
+        customerName={decoded}
       />
     </div>
   );

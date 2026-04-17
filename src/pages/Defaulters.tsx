@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2, Search, X } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Phone, MapPin, Eye, Route, Clock, Send, Loader2, Search, X, Sparkles } from "lucide-react";
+import { CustomerInsightDialog } from "@/components/CustomerInsightDialog";
 import { useMemo, useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
   const escalationLabel = getEscalationLabel(d.escalationLevel);
   const [sending, setSending] = useState<string | null>(null);
   const [pendingTemplate, setPendingTemplate] = useState<{ name: string; label: string } | null>(null);
+  const [insightOpen, setInsightOpen] = useState(false);
   const { currentUser } = useUser();
   const { toast } = useToast();
 
@@ -82,9 +84,14 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
               )}
             </div>
           </div>
-          <Badge className={cn("text-[10px] shrink-0", escalationColor)}>
-            {escalationLabel}
-          </Badge>
+          <div className="flex items-center gap-1 shrink-0">
+            <button onClick={() => setInsightOpen(true)} className="p-1 rounded hover:bg-purple-500/10" title="AI insight">
+              <Sparkles className="h-4 w-4 text-purple-500" />
+            </button>
+            <Badge className={cn("text-[10px]", escalationColor)}>
+              {escalationLabel}
+            </Badge>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -181,6 +188,11 @@ function DefaulterCard({ d }: { d: DefaulterInfo }) {
           </AlertDialogContent>
         </AlertDialog>
       </CardContent>
+      <CustomerInsightDialog
+        open={insightOpen}
+        onOpenChange={setInsightOpen}
+        customerName={d.customerName}
+      />
     </Card>
   );
 }
