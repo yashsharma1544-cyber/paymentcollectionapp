@@ -111,16 +111,6 @@ const CustomerDetail = () => {
       setDeleting(false);
     }
   };
-
-  const toggleBillExpand = (billNo: string) => {
-    setExpandedBills(prev => {
-      const next = new Set(prev);
-      if (next.has(billNo)) next.delete(billNo);
-      else next.add(billNo);
-      return next;
-    });
-  };
-
   // Unified ledger: chronological debits (invoices) + credits (payments) with running balance
   type LedgerEntry = {
     kind: "debit" | "credit";
