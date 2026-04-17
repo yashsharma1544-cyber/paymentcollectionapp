@@ -356,15 +356,15 @@ const CustomerDetail = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-destructive/10 text-destructive">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-destructive/10 text-destructive">
                     <span className="h-1.5 w-1.5 rounded-full bg-destructive" />Debit
                   </span>
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-success/10 text-success">
+                  <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-success/10 text-success">
                     <span className="h-1.5 w-1.5 rounded-full bg-success" />Credit
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                    Balance ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
+                  <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold tabular-nums px-2 py-0.5 sm:py-1 rounded-full bg-primary/10 text-primary">
+                    Bal ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
                   </span>
                 </div>
               </div>
