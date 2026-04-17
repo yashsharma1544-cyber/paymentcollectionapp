@@ -65,11 +65,42 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "primary-glow": "hsl(var(--primary-glow))",
+        "primary-soft": "hsl(var(--primary-soft))",
+        "destructive-soft": "hsl(var(--destructive-soft))",
+        "warning-soft": "hsl(var(--warning-soft))",
+        "success-soft": "hsl(var(--success-soft))",
+        surface: {
+          DEFAULT: "hsl(var(--surface-1))",
+          1: "hsl(var(--surface-1))",
+          2: "hsl(var(--surface-2))",
+          elevated: "hsl(var(--surface-elevated))",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-subtle": "var(--gradient-subtle)",
+        "gradient-success": "var(--gradient-success)",
+        "gradient-warning": "var(--gradient-warning)",
+        "gradient-destructive": "var(--gradient-destructive)",
+        "gradient-hero": "var(--gradient-hero)",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-elevated)",
+        glow: "var(--shadow-glow)",
+        soft: "var(--shadow-soft)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
       keyframes: {
         "accordion-down": {

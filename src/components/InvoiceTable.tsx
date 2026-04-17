@@ -182,89 +182,111 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
       </div>
 
       {customerGroups.length === 0 ? (
-        <div className="rounded-xl border bg-card p-12 text-center text-muted-foreground">
-          No invoices found
+        <div className="rounded-2xl border bg-card p-12 text-center shadow-card">
+          <Search className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="font-semibold mb-1">No customers found</p>
+          <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {customerGroups.map((cg) => {
             const collectionPct = cg.totalBill > 0 ? Math.round((cg.totalPaid / cg.totalBill) * 100) : 0;
             const lastWA = lastWhatsAppMap.get(cg.customerName);
             const followUp = latestFollowUpMap.get(cg.customerName);
             const lastEscalation = lastEscalationMap.get(cg.customerName);
+            const initials = cg.customerName.split(" ").map(p => p[0]).join("").slice(0, 2).toUpperCase();
             return (
               <Link
                 key={cg.customerName}
                 to={`/customer/${encodeURIComponent(cg.customerName)}`}
-                className="block rounded-lg border bg-card hover:bg-muted/40 transition-colors group"
+                className="block rounded-2xl border bg-card shadow-card hover:shadow-elevated hover:border-primary/30 hover:-translate-y-0.5 transition-all group overflow-hidden"
               >
-                {/* Top row: name + outstanding */}
-                <div className="flex items-start justify-between gap-1 px-3 pt-2.5 sm:px-4 sm:pt-3">
-                  <div className="flex items-start gap-2 min-w-0 flex-1">
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFocus(cg.customerName); }}
-                      className="shrink-0 mt-0.5 p-1.5 rounded-full hover:bg-yellow-500/20 transition-colors"
-                    >
-                      <Star className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isFocused(cg.customerName) ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
-                    </button>
-                    <p className="text-base font-semibold group-hover:text-primary transition-colors leading-snug break-words">
-                      {cg.customerName}
-                    </p>
-                    {(() => {
-                      const health = calculateHealthScore(cg.customerName, invoices, allPayments);
-                      return <HealthBadge status={health.status} size="sm" showLabel={false} />;
-                    })()}
-                    <button
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInsightCustomer(cg.customerName); }}
-                      className="shrink-0 mt-0.5 p-1 rounded-full hover:bg-purple-500/20 transition-colors"
-                      title="AI insight"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-500" />
-                    </button>
+                {/* Top row: avatar + name + outstanding */}
+                <div className="flex items-start justify-between gap-2 px-3.5 pt-3.5 sm:px-4 sm:pt-4">
+                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/15 to-accent/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFocus(cg.customerName); }}
+                          className="shrink-0 p-1 -m-1 rounded-full hover:bg-warning/20 transition-colors"
+                        >
+                          <Star className={`h-3.5 w-3.5 ${isFocused(cg.customerName) ? "text-warning fill-warning" : "text-muted-foreground"}`} />
+                        </button>
+                        <p className="text-base font-semibold font-display group-hover:text-primary transition-colors leading-snug break-words">
+                          {cg.customerName}
+                        </p>
+                        {(() => {
+                          const health = calculateHealthScore(cg.customerName, invoices, allPayments);
+                          return <HealthBadge status={health.status} size="sm" showLabel={false} />;
+                        })()}
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInsightCustomer(cg.customerName); }}
+                          className="shrink-0 p-1 -m-1 rounded-full hover:bg-accent/20 transition-colors"
+                          title="AI insight"
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-accent" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0 -ml-2">
-                    <p className="text-lg font-extrabold text-destructive">
+                  <div className="text-right shrink-0">
+                    <p className="text-lg sm:text-xl font-bold font-display tabular-nums text-destructive leading-none">
                       ₹{cg.totalOutstanding.toLocaleString("en-IN")}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
                       of ₹{cg.totalBill.toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
 
+                {/* Collection progress bar */}
+                <div className="px-3.5 sm:px-4 mt-2.5">
+                  <div className="h-1 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-success to-success/70 transition-all"
+                      style={{ width: `${collectionPct}%` }}
+                    />
+                  </div>
+                </div>
+
                 {/* Bottom row: meta info */}
-                <div className="flex items-center gap-2 px-3 pb-2.5 pt-1.5 sm:px-4 sm:pb-3">
-                  <div className="flex items-center gap-2 sm:gap-3 text-[11px] sm:text-xs text-muted-foreground flex-wrap flex-1">
-                    <span className="flex items-center gap-0.5">
+                <div className="flex items-center gap-2 px-3.5 pb-3.5 pt-2.5 sm:px-4 sm:pb-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] text-muted-foreground flex-wrap flex-1">
+                    <span className="inline-flex items-center gap-0.5">
                       <Phone className="h-3 w-3 shrink-0" />
                       {cg.mobileNo}
                     </span>
+                    <span className="text-muted-foreground/40">·</span>
                     <span>{cg.invoiceCount} bill{cg.invoiceCount !== 1 ? "s" : ""}</span>
-                    <span>{collectionPct}% collected</span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span className="font-medium text-success">{collectionPct}% collected</span>
                     {cg.maxOverdueDays > 0 && (
                       <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
                         {formatOverdue(cg.maxOverdueDays)} overdue
                       </span>
                     )}
                     {cg.avgCollectionDays !== null && (
-                      <span className="flex items-center gap-0.5 text-[10px] font-medium text-orange-600 bg-orange-500/10 px-1.5 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded-full">
                         <Timer className="h-3 w-3" />
                         {cg.avgCollectionDays}d avg
                       </span>
                     )}
                     {lastWA ? (
-                      <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-success">
                         <MessageCircle className="h-3 w-3" />
                         {lastWA.timestamp}
                       </span>
                     ) : (
-                      <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground/60">
                         <MessageCircle className="h-3 w-3" />
                         No WA
                       </span>
                     )}
                     {lastEscalation && (
-                      <Badge variant="outline" className="text-[10px] border-orange-500/30 text-orange-600 px-1.5 py-0">
+                      <Badge variant="outline" className="text-[10px] border-warning/30 text-warning px-1.5 py-0">
                         📨 {lastEscalation}
                       </Badge>
                     )}
@@ -283,7 +305,6 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                             await logWhatsApp(cg.customerName, cg.mobileNo);
                             toast({ title: "✅ WhatsApp sent via WATI", description: cg.customerName });
                           } else {
-                            // Fallback to wa.me link
                             openWhatsApp(cg.mobileNo, msg);
                             toast({ title: "⚠️ WATI failed, opened WhatsApp", description: result.error, variant: "destructive" });
                           }
@@ -295,7 +316,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                         }
                       }}
                       disabled={sendingWati === cg.customerName}
-                      className="p-1.5 rounded-full text-green-600 hover:bg-green-100 transition-colors shrink-0 disabled:opacity-50"
+                      className="p-2 rounded-xl bg-success/10 text-success hover:bg-success/20 transition-colors shrink-0 disabled:opacity-50"
                       title="Send WhatsApp via WATI"
                     >
                       {sendingWati === cg.customerName ? (
@@ -306,14 +327,14 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                     </button>
                   )}
 
-                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>
 
                 {/* Follow-up info */}
                 {followUp && (
-                  <div className="flex items-center gap-1.5 px-3 pb-2 sm:px-4 text-[10px]">
-                    <CalendarClock className="h-3 w-3 text-primary shrink-0" />
-                    <span className="text-primary font-medium">
+                  <div className="flex items-center gap-1.5 px-3.5 pb-3 sm:px-4 -mt-1 text-[11px]">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10 text-primary font-medium">
+                      <CalendarClock className="h-3 w-3 shrink-0" />
                       Follow-up: {followUp.nextFollowUpDate || followUp.followUpDate}
                     </span>
                     {followUp.remarks && (
