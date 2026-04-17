@@ -350,241 +350,162 @@ const CustomerDetail = () => {
               </section>
             )}
 
-            {/* Invoices Table */}
+            {/* Customer Ledger - unified chronological journal */}
             <section className="rounded-2xl border bg-card shadow-card overflow-hidden">
-              <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
+              <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3 gap-3 flex-wrap">
                 <div className="flex items-center gap-2.5">
                   <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
+                    <BookOpen className="h-4 w-4 text-primary" />
                   </span>
                   <div>
-                    <h2 className="text-sm font-bold font-display leading-tight">Invoices</h2>
-                    <p className="text-[11px] text-muted-foreground">{invoices.length} bill{invoices.length !== 1 ? "s" : ""}</p>
+                    <h2 className="text-sm font-bold font-display leading-tight">Customer Ledger</h2>
+                    <p className="text-[11px] text-muted-foreground">
+                      {invoices.length} bill{invoices.length !== 1 ? "s" : ""} · {payments.length} payment{payments.length !== 1 ? "s" : ""} · newest first
+                    </p>
                   </div>
                 </div>
-                {kpis.avgCollectionDays !== null && (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning">
-                    <Clock className="h-3.5 w-3.5" />
-                    Avg {kpis.avgCollectionDays}d
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-destructive/10 text-destructive">
+                    <span className="h-1.5 w-1.5 rounded-full bg-destructive" />Debit
                   </span>
-                )}
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full bg-success/10 text-success">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success" />Credit
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs font-bold tabular-nums px-2.5 py-1 rounded-full bg-primary/10 text-primary">
+                    Balance ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
+                  </span>
+                </div>
               </div>
               <div className="overflow-x-auto border-t">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/30">
-                        <TableHead className="text-xs font-semibold whitespace-nowrap">Bill No</TableHead>
-                        <TableHead className="text-xs font-semibold whitespace-nowrap">Date</TableHead>
-                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Bill Amt</TableHead>
-                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Paid</TableHead>
-                        <TableHead className="text-xs font-semibold text-right whitespace-nowrap">Outstanding</TableHead>
-                        <TableHead className="text-xs font-semibold whitespace-nowrap">Due</TableHead>
-                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Overdue</TableHead>
-                        <TableHead className="text-xs font-semibold whitespace-nowrap">Collected</TableHead>
-                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Days</TableHead>
-                        <TableHead className="text-xs font-semibold whitespace-nowrap">Status</TableHead>
-                        <TableHead className="text-xs font-semibold text-center whitespace-nowrap">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {invoices.map((inv) => {
-                        const isPaid = inv.outstandingAmount === 0;
-                        const billPayments = paymentsByBill.get(inv.billNo) || [];
-                        const hasPayments = billPayments.length > 0;
-                        const isExpanded = expandedBills.has(inv.billNo);
-                        const isClickable = hasPayments;
-
-                        // Last payment date and days to clear
-                        const lastPayment = hasPayments ? billPayments[billPayments.length - 1] : null;
-                        const collectedDate = lastPayment?.paymentDate || lastPayment?.timestamp?.split(" ")[0] || "";
-                        const billDate = parseDateDMY(inv.billDate);
-                        const paidDate = collectedDate ? parseDateDMY(collectedDate) : null;
-                        let daysToClear: number | null = null;
-                        if (billDate && paidDate) {
-                          billDate.setHours(0, 0, 0, 0);
-                          paidDate.setHours(0, 0, 0, 0);
-                          daysToClear = Math.max(0, Math.floor((paidDate.getTime() - billDate.getTime()) / (1000 * 60 * 60 * 24)));
-                        }
-
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap w-24">Date</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Particulars</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap">Debit</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap">Credit</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right whitespace-nowrap">Balance</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">Status / Days</TableHead>
+                      <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center whitespace-nowrap w-28">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {ledger.map((e, i) => {
+                      if (e.kind === "debit") {
+                        const inv = e.invoice!;
+                        const overdue = getOverdueDays(inv.billDate);
                         return (
-                          <>
-                            <TableRow
-                              key={inv.billNo}
-                              className={`transition-colors ${isClickable ? "cursor-pointer hover:bg-primary/5" : "hover:bg-muted/20"} ${isExpanded ? "bg-primary/5" : ""}`}
-                              onClick={() => isClickable && toggleBillExpand(inv.billNo)}
-                            >
-                              <TableCell className="font-mono text-xs whitespace-nowrap">
-                                <span className="flex items-center gap-1">
-                                  {isClickable && (
-                                    <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                                  )}
-                                  {inv.billNo}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{inv.billDate}</TableCell>
-                              <TableCell className="text-right text-xs font-medium whitespace-nowrap">₹{inv.billAmount.toLocaleString("en-IN")}</TableCell>
-                              <TableCell className="text-right text-xs text-success font-medium whitespace-nowrap">₹{inv.paidAmount.toLocaleString("en-IN")}</TableCell>
-                              <TableCell className="text-right text-xs text-destructive font-semibold whitespace-nowrap">₹{inv.outstandingAmount.toLocaleString("en-IN")}</TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">{inv.dueDate}</TableCell>
-                              <TableCell className="text-center">
-                                {inv.outstandingAmount > 0 ? (
-                                  <span className={`text-xs font-bold ${getOverdueDays(inv.billDate) > 0 ? "text-destructive" : "text-success"}`}>
-                                    {formatOverdue(getOverdueDays(inv.billDate))}
-                                  </span>
-                                ) : <span className="text-xs text-muted-foreground">—</span>}
-                              </TableCell>
-                              <TableCell className="text-xs whitespace-nowrap">
-                                {collectedDate ? (
-                                  <span className="text-success font-medium">{collectedDate}</span>
-                                ) : (
-                                  <span className="text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {daysToClear !== null ? (
-                                  <div className="flex flex-col items-center gap-0.5">
-                                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${daysToClear <= 30 ? "text-success bg-success/10" : "text-destructive bg-destructive/10"}`}>
-                                      {daysToClear}d
-                                    </span>
-                                    {kpis.avgCollectionDays !== null && (
-                                      <span className={`text-[9px] font-medium ${daysToClear <= kpis.avgCollectionDays ? "text-success" : "text-destructive"}`}>
-                                        {daysToClear <= kpis.avgCollectionDays ? "▼" : "▲"} {Math.abs(daysToClear - kpis.avgCollectionDays)}d
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell><StatusBadge status={inv.paymentStatus} /></TableCell>
-                              <TableCell className="text-center">
+                          <TableRow key={`d-${inv.billNo}-${i}`} className="hover:bg-destructive/5 transition-colors border-l-2 border-l-destructive/40">
+                            <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{e.dateStr}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-xs font-semibold">Invoice <span className="font-mono text-primary">#{inv.billNo}</span></span>
+                                <span className="text-[10px] text-muted-foreground">Due: {inv.dueDate}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <span className="text-sm font-bold tabular-nums text-destructive">₹{inv.billAmount.toLocaleString("en-IN")}</span>
+                            </TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground">—</TableCell>
+                            <TableCell className="text-right">
+                              <span className="text-xs font-bold tabular-nums">₹{e.balance.toLocaleString("en-IN")}</span>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <div className="flex flex-col gap-0.5">
+                                <StatusBadge status={inv.paymentStatus} />
                                 {inv.outstandingAmount > 0 && (
-                                  <Button size="sm" onClick={(e) => { e.stopPropagation(); setSelectedInvoice(inv); setDialogOpen(true); }} className="gap-1.5 h-7 text-xs">
-                                    <CreditCard className="h-3 w-3" />Collect
-                                  </Button>
+                                  <span className={`text-[10px] font-semibold ${overdue > 0 ? "text-destructive" : "text-success"}`}>
+                                    {formatOverdue(overdue)} · ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
+                                  </span>
                                 )}
-                              </TableCell>
-                            </TableRow>
-                            {isExpanded && billPayments.map((p, pi) => (
-                              <TableRow key={`${inv.billNo}-pay-${pi}`} className="bg-muted/20 border-l-2 border-l-primary/30">
-                                <TableCell colSpan={2} className="text-[11px] text-muted-foreground pl-8">
-                                  Payment #{pi + 1}
-                                </TableCell>
-                                <TableCell className="text-right text-[11px] font-medium text-success">₹{p.paidAmount.toLocaleString("en-IN")}</TableCell>
-                                <TableCell className="text-[11px] text-muted-foreground" colSpan={2}>
-                                  {p.paymentDate || p.timestamp}
-                                  {p.paymentMode && <span className="ml-2 px-1.5 py-0.5 rounded bg-muted text-[10px] font-medium">{p.paymentMode}</span>}
-                                </TableCell>
-                                <TableCell className="text-[11px] text-muted-foreground">
-                                  {p.discount > 0 && <span className="text-primary font-medium">Disc: ₹{p.discount.toLocaleString("en-IN")}</span>}
-                                </TableCell>
-                                <TableCell className="text-[10px] text-muted-foreground">{p.timestamp}</TableCell>
-                                <TableCell className="text-center">
-                                  <div className="flex items-center justify-center gap-0.5">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => { e.stopPropagation(); setEditPaymentRec(p); setEditPaymentOpen(true); }}>
-                                      <Pencil className="h-3 w-3" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); }}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {inv.outstandingAmount > 0 && (
+                                <Button size="sm" onClick={() => { setSelectedInvoice(inv); setDialogOpen(true); }} className="gap-1.5 h-7 text-xs rounded-lg">
+                                  <CreditCard className="h-3 w-3" />Collect
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
                         );
-                      })}
-                    </TableBody>
-                  </Table>
+                      }
+                      const p = e.payment!;
+                      const userInitials = p.collectedBy ? p.collectedBy.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "—";
+                      const totalCredit = p.paidAmount + (p.discount || 0);
+                      return (
+                        <TableRow key={`c-${p.billNo}-${i}`} className="hover:bg-success/5 transition-colors border-l-2 border-l-success/40">
+                          <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{e.dateStr}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-semibold">
+                                Payment vs <span className="font-mono text-primary">#{p.billNo}</span>
+                                {p.paymentMode && <span className="ml-1.5 px-1.5 py-0.5 rounded bg-muted text-[9px] font-medium uppercase tracking-wider">{p.paymentMode}</span>}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {p.collectedBy && (
+                                  <>
+                                    <span className="h-4 w-4 rounded bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center">{userInitials}</span>
+                                    <span>{p.collectedBy}</span>
+                                  </>
+                                )}
+                                {p.discount > 0 && <span className="text-primary font-medium">· Discount ₹{p.discount.toLocaleString("en-IN")}</span>}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right text-xs text-muted-foreground">—</TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-sm font-bold tabular-nums text-success">₹{totalCredit.toLocaleString("en-IN")}</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-xs font-bold tabular-nums">₹{e.balance.toLocaleString("en-IN")}</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success">
+                              <CheckCircle className="h-2.5 w-2.5" />Received
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => { setEditPaymentRec(p); setEditPaymentOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(p)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              {/* Ledger footer totals */}
+              <div className="border-t bg-muted/20 px-4 sm:px-5 py-3 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-4 text-[11px]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Debits</span>
+                    <span className="font-bold tabular-nums text-destructive">₹{kpis.totalBill.toLocaleString("en-IN")}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Credits</span>
+                    <span className="font-bold tabular-nums text-success">₹{kpis.totalPaid.toLocaleString("en-IN")}</span>
+                  </span>
                 </div>
+                <div className="inline-flex items-center gap-2">
+                  <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Closing Balance</span>
+                  <span className="text-base font-bold font-display tabular-nums text-primary">
+                    ₹{kpis.totalOutstanding.toLocaleString("en-IN")} Dr
+                  </span>
+                </div>
+              </div>
             </section>
 
             {/* WhatsApp Chat */}
             {customerPhone && (
               <WhatsAppChatView phone={customerPhone} customerName={decoded} />
             )}
-
-            {/* Payment History */}
-            <section className="rounded-2xl border bg-card shadow-card overflow-hidden">
-              <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-success/10">
-                    <Clock className="h-4 w-4 text-success" />
-                  </span>
-                  <div>
-                    <h2 className="text-sm font-bold font-display leading-tight">Payment History</h2>
-                    <p className="text-[11px] text-muted-foreground">
-                      {paymentsLoading ? "Loading…" : `${payments.length} payment${payments.length !== 1 ? "s" : ""}`}
-                    </p>
-                  </div>
-                </div>
-                {!paymentsLoading && payments.length > 0 && (
-                  <span className="inline-flex items-center gap-1 text-sm font-bold font-display tabular-nums text-success">
-                    ₹{kpis.totalRecordedPayments.toLocaleString("en-IN")}
-                  </span>
-                )}
-              </div>
-              {paymentsLoading ? (
-                <div className="px-4 sm:px-5 pb-4"><Skeleton className="h-32 rounded-xl" /></div>
-              ) : payments.length === 0 ? (
-                <div className="px-4 sm:px-5 pb-8 pt-4 text-center">
-                  <Clock className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No payments recorded yet</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto border-t">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/40 hover:bg-muted/40 border-b">
-                        <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Bill No</TableHead>
-                        <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-right">Amount</TableHead>
-                        <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Date & Time</TableHead>
-                        <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Collected By</TableHead>
-                        <TableHead className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground text-center w-24">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.map((p, i) => {
-                        const userInitials = p.collectedBy ? p.collectedBy.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "—";
-                        return (
-                          <TableRow key={`${p.billNo}-${i}`} className="hover:bg-muted/30 transition-colors">
-                            <TableCell className="font-mono text-xs font-semibold">{p.billNo}</TableCell>
-                            <TableCell className="text-right">
-                              <span className="inline-flex items-center gap-1 text-sm font-bold tabular-nums text-success">
-                                ₹{p.paidAmount.toLocaleString("en-IN")}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground tabular-nums">{p.timestamp}</TableCell>
-                            <TableCell>
-                              {p.collectedBy ? (
-                                <span className="inline-flex items-center gap-1.5">
-                                  <span className="h-6 w-6 rounded-lg bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center">
-                                    {userInitials}
-                                  </span>
-                                  <span className="text-xs font-medium">{p.collectedBy}</span>
-                                </span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-0.5">
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" onClick={() => { setEditPaymentRec(p); setEditPaymentOpen(true); }}>
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget(p)}>
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </section>
           </>
         )}
       </main>
