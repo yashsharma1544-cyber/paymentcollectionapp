@@ -71,6 +71,7 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
   const [sortBy, setSortBy] = useState<"name" | "outstanding">("name");
   const { toast } = useToast();
   const { isFocused, toggleFocus } = useFocusCustomers();
+  const [insightCustomer, setInsightCustomer] = useState<string | null>(null);
 
   const { data: whatsAppLog = [] } = useQuery({
     queryKey: ["whatsapp-log"],
@@ -213,6 +214,13 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
                       const health = calculateHealthScore(cg.customerName, invoices, allPayments);
                       return <HealthBadge status={health.status} size="sm" showLabel={false} />;
                     })()}
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInsightCustomer(cg.customerName); }}
+                      className="shrink-0 mt-0.5 p-1 rounded-full hover:bg-purple-500/20 transition-colors"
+                      title="AI insight"
+                    >
+                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-500" />
+                    </button>
                   </div>
                   <div className="text-right shrink-0 -ml-2">
                     <p className="text-lg font-extrabold text-destructive">
@@ -324,6 +332,11 @@ export function InvoiceTable({ invoices, onPaymentSuccess, exportTitle, defaultS
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onSuccess={onPaymentSuccess}
+      />
+      <CustomerInsightDialog
+        open={!!insightCustomer}
+        onOpenChange={(o) => !o && setInsightCustomer(null)}
+        customerName={insightCustomer || ""}
       />
     </>
   );
