@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Target, Pencil, Check, Trophy } from "lucide-react";
 import type { RecordedPayment } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface DailyTargetProps {
   todayPayments: RecordedPayment[];
@@ -39,71 +39,103 @@ export function DailyTarget({ todayPayments }: DailyTargetProps) {
 
   if (target === 0 && !editing) {
     return (
-      <Card className="border-dashed border-2 border-primary/30 shadow-sm">
-        <CardContent className="p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
             <Target className="h-4 w-4 text-primary" />
-            <span className="text-xs text-muted-foreground">Set a daily collection target</span>
+          </span>
+          <div>
+            <p className="text-sm font-semibold">Set your daily target</p>
+            <p className="text-[11px] text-muted-foreground">Track today's collection goal</p>
           </div>
-          <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setEditing(true)}>
-            Set Target
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+        <Button size="sm" onClick={() => setEditing(true)} className="bg-gradient-primary">
+          Set Target
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className={`border-0 shadow-sm overflow-hidden ${isAchieved ? "bg-success/10 ring-2 ring-success/30" : "bg-primary/5"}`}>
-      <CardContent className="p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isAchieved ? <Trophy className="h-4 w-4 text-success" /> : <Target className="h-4 w-4 text-primary" />}
-            <span className="text-xs font-semibold">
-              {isAchieved ? "🎉 Target Achieved!" : "Daily Target"}
-            </span>
-          </div>
-          {editing ? (
-            <div className="flex items-center gap-1">
-              <Input
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                placeholder="₹ Amount"
-                className="h-7 w-24 text-xs"
-                autoFocus
-                onKeyDown={(e) => e.key === "Enter" && saveTarget()}
-              />
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveTarget}>
-                <Check className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+    <div
+      className={cn(
+        "rounded-2xl border p-4 sm:p-5 shadow-card overflow-hidden relative",
+        isAchieved
+          ? "bg-gradient-success text-success-foreground border-success/30"
+          : "bg-card",
+      )}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {isAchieved ? (
+            <Trophy className="h-4 w-4" />
           ) : (
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(true); setInputVal(String(target)); }}>
-              <Pencil className="h-3 w-3" />
-            </Button>
+            <Target className="h-4 w-4 text-primary" />
           )}
-        </div>
-
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <p className="text-lg font-black leading-tight">
-              ₹{collected.toLocaleString("en-IN")}
-              <span className="text-xs font-normal text-muted-foreground"> / ₹{target.toLocaleString("en-IN")}</span>
-            </p>
-          </div>
-          <span className={`text-sm font-bold ${isAchieved ? "text-success" : pct >= 75 ? "text-primary" : "text-muted-foreground"}`}>
-            {pct}%
+          <span className={cn("text-xs font-semibold uppercase tracking-wider", isAchieved ? "" : "text-muted-foreground")}>
+            {isAchieved ? "🎉 Target Achieved" : "Daily Target"}
           </span>
         </div>
+        {editing ? (
+          <div className="flex items-center gap-1">
+            <Input
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              placeholder="₹ Amount"
+              className="h-8 w-28 text-xs"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && saveTarget()}
+            />
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={saveTarget}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => { setEditing(true); setInputVal(String(target)); }}
+            className={cn(
+              "p-1.5 rounded-lg transition-colors",
+              isAchieved ? "hover:bg-white/20" : "hover:bg-muted",
+            )}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
 
-        {/* Progress bar */}
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${isAchieved ? "bg-success" : "bg-primary"}`}
-            style={{ width: `${pct}%` }}
-          />
+      <div className="flex items-end justify-between gap-3 mb-3">
+        <div>
+          <p className={cn("text-2xl sm:text-3xl font-bold font-display tabular-nums leading-none", isAchieved ? "" : "text-foreground")}>
+            ₹{collected.toLocaleString("en-IN")}
+          </p>
+          <p className={cn("text-xs mt-1", isAchieved ? "opacity-90" : "text-muted-foreground")}>
+            of ₹{target.toLocaleString("en-IN")} goal
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <span
+          className={cn(
+            "text-2xl font-bold font-display tabular-nums",
+            isAchieved ? "" : pct >= 75 ? "text-primary" : "text-muted-foreground",
+          )}
+        >
+          {pct}%
+        </span>
+      </div>
+
+      <div
+        className={cn(
+          "h-2.5 rounded-full overflow-hidden",
+          isAchieved ? "bg-white/20" : "bg-muted",
+        )}
+      >
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-700 ease-out",
+            isAchieved ? "bg-white" : "bg-gradient-primary",
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
   );
 }
