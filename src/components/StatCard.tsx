@@ -30,16 +30,16 @@ export function StatCard({ label, value, sub, icon: Icon, tone = "primary", tren
   const inner = (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-card p-4 sm:p-5 shadow-card transition-all",
+        "group relative overflow-hidden rounded-2xl border bg-card p-3 sm:p-5 shadow-card transition-all",
         "hover:shadow-elevated hover:-translate-y-0.5 ring-1 ring-transparent",
         c.ring,
         emphasis && "bg-gradient-subtle",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <span className={cn("inline-flex items-center justify-center h-9 w-9 rounded-xl", c.iconBg)}>
-          <Icon className={cn("h-4.5 w-4.5", c.iconColor)} />
+      <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
+        <span className={cn("inline-flex items-center justify-center h-7 w-7 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl", c.iconBg)}>
+          <Icon className={cn("h-3.5 w-3.5 sm:h-4.5 sm:w-4.5", c.iconColor)} />
         </span>
         {trend && (
           <span
@@ -52,11 +52,11 @@ export function StatCard({ label, value, sub, icon: Icon, tone = "primary", tren
           </span>
         )}
       </div>
-      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{label}</p>
-      <p className={cn("text-xl sm:text-2xl font-bold font-display tabular-nums leading-tight tracking-tight truncate", c.valueColor)}>
+      <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1 truncate">{label}</p>
+      <p className={cn("text-base sm:text-2xl font-bold font-display tabular-nums leading-tight tracking-tight truncate", c.valueColor)}>
         {value}
       </p>
-      {sub && <p className="text-[11px] text-muted-foreground mt-1 truncate">{sub}</p>}
+      {sub && <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 truncate">{sub}</p>}
     </div>
   );
 
