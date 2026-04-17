@@ -31,7 +31,7 @@ function AppRoutes() {
 
   return (
     <BrowserRouter>
-      <div className="pb-14 sm:pb-0">
+      <div className="pb-20 sm:pb-0 min-h-screen">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/payments" element={<RecordedPayments />} />

@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices, fetchRecordedPayments, fetchWhatsAppLog } from "@/lib/api";
 import { BeatChart } from "@/components/BeatChart";
 import { InvoiceTable } from "@/components/InvoiceTable";
-import { RefreshCw, Receipt, History, IndianRupee, Search, X, Users, FileText, TrendingUp, CalendarClock, Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route, BarChart3, ShieldCheck, Shield, ShieldAlert, Star } from "lucide-react";
+import {
+  RefreshCw, History, IndianRupee, Search, X, Users, TrendingUp, CalendarClock,
+  Download, AlertTriangle, ClipboardList, Timer, ArrowLeft, Brain, Route,
+  BarChart3, ShieldCheck, Shield, ShieldAlert, Star, Sparkles, ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
@@ -16,34 +19,31 @@ import { DailyTarget } from "@/components/DailyTarget";
 import { calculateAllHealthScores } from "@/lib/health-score";
 import { TopDefaultersCard } from "@/components/TopDefaultersCard";
 import { DailyBriefCard } from "@/components/DailyBriefCard";
+import { StatCard } from "@/components/StatCard";
+
+const greeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+};
 
 const Index = () => {
   const {
-    data: invoices = [],
-    isLoading,
-    error,
-    refetch,
-    isFetching,
-  } = useQuery({
-    queryKey: ["invoices"],
-    queryFn: fetchInvoices,
-  });
+    data: invoices = [], isLoading, error, refetch, isFetching,
+  } = useQuery({ queryKey: ["invoices"], queryFn: fetchInvoices });
 
   const { data: allPayments = [] } = useQuery({
-    queryKey: ["recorded-payments"],
-    queryFn: fetchRecordedPayments,
+    queryKey: ["recorded-payments"], queryFn: fetchRecordedPayments,
   });
 
   const { data: whatsappLog = [] } = useQuery({
-    queryKey: ["whatsapp-log"],
-    queryFn: fetchWhatsAppLog,
+    queryKey: ["whatsapp-log"], queryFn: fetchWhatsAppLog,
   });
-
-
 
   const [globalSearch, setGlobalSearch] = useState("");
   const [showSlowPayers, setShowSlowPayers] = useState(false);
-  const { currentUser, clearUser } = useUser();
+  const { currentUser } = useUser();
 
   const searchResults = useMemo(() => {
     if (!globalSearch) return null;
@@ -56,7 +56,6 @@ const Index = () => {
     );
   }, [invoices, globalSearch]);
 
-  // Compute slow payer customer names (avg > 30d)
   const slowPayerCustomers = useMemo(() => {
     const customerMap = new Map<string, { invoices: { billNo: string; billDate: string }[] }>();
     for (const inv of invoices) {
@@ -94,7 +93,6 @@ const Index = () => {
     return { totalOutstanding, totalPaid, customers, overdueOutstanding, remainingOutstanding, collectionRate, avgCollectionDays };
   }, [kpiInvoices, kpiPayments]);
 
-  // Health scores
   const healthSummary = useMemo(() => {
     const scores = calculateAllHealthScores(invoices, allPayments);
     let good = 0, avg = 0, risky = 0;
@@ -106,7 +104,6 @@ const Index = () => {
     return { good, avg, risky };
   }, [invoices, allPayments]);
 
-  // Today's payments for daily target
   const todayPayments = useMemo(() => {
     const now = new Date();
     return allPayments.filter(p => {
@@ -122,228 +119,253 @@ const Index = () => {
     });
   }, [allPayments]);
 
+  const formatDate = () =>
+    new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+
+  const quickLinks = [
+    { to: "/due-today", label: "Due Today", icon: CalendarClock, tone: "primary" as const },
+    { to: "/defaulters", label: "Defaulters", icon: AlertTriangle, tone: "destructive" as const },
+    { to: "/focus", label: "Focus", icon: Star, tone: "warning" as const },
+    { to: "/crm", label: "CRM", icon: Users, tone: "primary" as const },
+    { to: "/predictions", label: "AI Predict", icon: Brain, tone: "accent" as const },
+    { to: "/route-planner", label: "Routes", icon: Route, tone: "primary" as const },
+    { to: "/daily-report", label: "Daily Report", icon: ClipboardList, tone: "primary" as const },
+    { to: "/monthly-report", label: "Monthly", icon: BarChart3, tone: "primary" as const },
+    { to: "/payments", label: "Payments Log", icon: History, tone: "primary" as const },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <IndianRupee className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold tracking-tight leading-tight">Payment Collector</h1>
-                <p className="text-[11px] text-muted-foreground">
-                  Logged in as <span className="font-semibold text-foreground">{currentUser}</span>
-                </p>
-              </div>
+      {/* Sticky translucent header */}
+      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/70">
+        <div className="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center shrink-0">
+              <IndianRupee className="h-4.5 w-4.5 text-primary-foreground" />
             </div>
-            <Button variant="outline" size="icon" onClick={() => refetch()} disabled={isFetching} className="shrink-0 sm:hidden">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} className="gap-2 hidden sm:inline-flex">
-              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+            <div className="min-w-0">
+              <p className="text-sm font-bold font-display leading-tight truncate">Payment Collector</p>
+              <p className="text-[11px] text-muted-foreground leading-tight truncate">{formatDate()}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link to="/due-today" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <CalendarClock className="h-3.5 w-3.5" />
-                Due Today
-              </Button>
-            </Link>
-            <Link to="/payments" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <History className="h-3.5 w-3.5" />
-                Payments Log
-              </Button>
-            </Link>
-            <Link to="/daily-report" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <ClipboardList className="h-3.5 w-3.5" />
-                Daily Report
-              </Button>
-            </Link>
-            <Link to="/crm" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <CalendarClock className="h-3.5 w-3.5" />
-                CRM
-              </Button>
-            </Link>
-            <Link to="/monthly-report" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <BarChart3 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Monthly Report</span>
-                <span className="sm:hidden">Monthly</span>
-              </Button>
-            </Link>
-            <Link to="/route-planner" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <Route className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Route Planner</span>
-                <span className="sm:hidden">Route</span>
-              </Button>
-            </Link>
-            <Link to="/predictions" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs">
-                <Brain className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Predictions</span>
-                <span className="sm:hidden">AI</span>
-              </Button>
-            </Link>
-            <Link to="/focus" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10">
-                <Star className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Focus Customers</span>
-                <span className="sm:hidden">Focus</span>
-              </Button>
-            </Link>
-            <Link to="/defaulters" className="flex-1 sm:flex-none">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full sm:w-auto text-xs border-destructive/30 text-destructive hover:bg-destructive/10">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Defaulters</span>
-                <span className="sm:hidden">Default</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link to="/install" className="hidden sm:block">
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Download className="h-4 w-4" />
               </Button>
             </Link>
             <Button
-              variant={showSlowPayers ? "default" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => { setShowSlowPayers(!showSlowPayers); setGlobalSearch(""); }}
-              className="gap-1 text-xs flex-1 sm:flex-none"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="gap-1.5 h-9 rounded-xl"
             >
-              <Timer className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Slow Payers</span>
-              <span className="sm:hidden">Slow</span>
+              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
-            <BulkWatiSend invoices={invoices} />
-            <Link to="/install" className="sm:flex-none">
-              <Button variant="outline" size="icon" className="text-xs">
-                <Download className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-4 sm:px-6 py-5 sm:py-7 space-y-6 max-w-7xl">
         {error ? (
-          <div className="text-center py-20">
-            <p className="text-destructive font-medium mb-2">Failed to load invoices</p>
+          <div className="rounded-2xl border bg-card p-12 text-center">
+            <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-3" />
+            <p className="font-semibold mb-1">Failed to load invoices</p>
             <p className="text-sm text-muted-foreground mb-4">{(error as Error).message}</p>
             <Button onClick={() => refetch()}>Retry</Button>
           </div>
         ) : isLoading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-20 rounded-xl" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-xl" />
+          <div className="space-y-5">
+            <Skeleton className="h-32 rounded-2xl" />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-28 rounded-2xl" />
               ))}
             </div>
+            <Skeleton className="h-40 rounded-2xl" />
           </div>
         ) : (
           <>
-            {/* AI Daily Brief */}
-            <DailyBriefCard />
+            {/* Hero greeting */}
+            <section className="rounded-3xl border surface-hero p-5 sm:p-7 shadow-card overflow-hidden relative">
+              <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-gradient-primary opacity-10 blur-3xl" aria-hidden />
+              <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground font-medium">{greeting()},</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mt-0.5">
+                    {currentUser} <span className="inline-block">👋</span>
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                    You have <span className="font-semibold text-foreground tabular-nums">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</span> outstanding across <span className="font-semibold text-foreground">{kpis.customers}</span> customers.
+                  </p>
+                </div>
+                <div className="flex sm:flex-col sm:items-end gap-3 sm:gap-1">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Outstanding</p>
+                  <p className="text-3xl sm:text-4xl font-bold font-display tabular-nums text-gradient-primary leading-none">
+                    ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
+                  </p>
+                </div>
+              </div>
+            </section>
 
-            {/* Daily Target */}
-            <DailyTarget todayPayments={todayPayments} />
-
-            {/* KPI Summary */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
-              <Card className="border-0 shadow-sm bg-destructive/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <IndianRupee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-destructive mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Outstanding</p>
-                  <p className="text-xs sm:text-lg font-black text-destructive leading-tight truncate">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-success/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-success mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collected</p>
-                  <p className="text-xs sm:text-lg font-black text-success leading-tight truncate">₹{kpis.totalPaid.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-primary/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Collection %</p>
-                  <p className="text-xs sm:text-lg font-black text-primary leading-tight">{kpis.collectionRate}%</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Customers</p>
-                  <p className="text-xs sm:text-lg font-black leading-tight">{kpis.customers}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-warning/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-warning mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Overdue Amt</p>
-                  <p className="text-xs sm:text-lg font-black text-warning leading-tight truncate">₹{kpis.overdueOutstanding.toLocaleString("en-IN")}</p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-sm bg-orange-500/10 overflow-hidden">
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <Timer className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-600 mx-auto mb-0.5" />
-                  <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase tracking-wider truncate">Avg Collection</p>
-                  <p className="text-xs sm:text-lg font-black text-orange-600 leading-tight">{kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}</p>
-                </CardContent>
-              </Card>
+            {/* Daily Brief + Daily Target side by side on desktop */}
+            <div className="grid lg:grid-cols-2 gap-5">
+              <DailyBriefCard />
+              <DailyTarget todayPayments={todayPayments} />
             </div>
 
-            {/* Health Score Summary */}
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Health:</span>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">
-                <ShieldCheck className="h-3 w-3" />{healthSummary.good}
-              </span>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-warning bg-warning/10 px-2 py-0.5 rounded-full">
-                <Shield className="h-3 w-3" />{healthSummary.avg}
-              </span>
-              <span className="flex items-center gap-1 text-[11px] font-semibold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
-                <ShieldAlert className="h-3 w-3" />{healthSummary.risky}
-              </span>
-            </div>
+            {/* KPI Grid */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold font-display uppercase tracking-wider text-muted-foreground">Overview</h2>
+                {showSlowPayers && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowSlowPayers(false)} className="gap-1.5 text-xs h-8">
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Show all
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <StatCard
+                  label="Outstanding"
+                  value={`₹${kpis.totalOutstanding.toLocaleString("en-IN")}`}
+                  icon={IndianRupee}
+                  tone="destructive"
+                  emphasis
+                />
+                <StatCard
+                  label="Collected"
+                  value={`₹${kpis.totalPaid.toLocaleString("en-IN")}`}
+                  icon={TrendingUp}
+                  tone="success"
+                />
+                <StatCard
+                  label="Collection %"
+                  value={`${kpis.collectionRate}%`}
+                  icon={TrendingUp}
+                  tone="primary"
+                />
+                <StatCard
+                  label="Customers"
+                  value={kpis.customers}
+                  icon={Users}
+                  tone="muted"
+                />
+                <StatCard
+                  label="Overdue"
+                  value={`₹${kpis.overdueOutstanding.toLocaleString("en-IN")}`}
+                  icon={AlertTriangle}
+                  tone="warning"
+                  to="/defaulters"
+                />
+                <StatCard
+                  label="Avg Collection"
+                  value={kpis.avgCollectionDays !== null ? `${kpis.avgCollectionDays}d` : "—"}
+                  icon={Timer}
+                  tone="warning"
+                />
+              </div>
+            </section>
 
+            {/* Health summary chips */}
+            <section className="rounded-2xl border bg-card shadow-card p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold font-display">Customer Health</h3>
+                <span className="text-[11px] text-muted-foreground">{healthSummary.good + healthSummary.avg + healthSummary.risky} total</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-success/10 p-3 text-center">
+                  <ShieldCheck className="h-4 w-4 text-success mx-auto mb-1" />
+                  <p className="text-xl font-bold font-display text-success tabular-nums">{healthSummary.good}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-0.5">Good</p>
+                </div>
+                <div className="rounded-xl bg-warning/10 p-3 text-center">
+                  <Shield className="h-4 w-4 text-warning mx-auto mb-1" />
+                  <p className="text-xl font-bold font-display text-warning tabular-nums">{healthSummary.avg}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-0.5">Average</p>
+                </div>
+                <div className="rounded-xl bg-destructive/10 p-3 text-center">
+                  <ShieldAlert className="h-4 w-4 text-destructive mx-auto mb-1" />
+                  <p className="text-xl font-bold font-display text-destructive tabular-nums">{healthSummary.risky}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mt-0.5">Risky</p>
+                </div>
+              </div>
+            </section>
+
+            {/* Quick actions */}
+            <section>
+              <h2 className="text-sm font-bold font-display uppercase tracking-wider text-muted-foreground mb-3">Quick Actions</h2>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+                {quickLinks.map((q) => (
+                  <Link
+                    key={q.to}
+                    to={q.to}
+                    className="shrink-0 inline-flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2.5 text-sm font-medium shadow-card hover:shadow-elevated hover:border-primary/30 hover:-translate-y-0.5 transition-all"
+                  >
+                    <q.icon className={`h-4 w-4 ${
+                      q.tone === "destructive" ? "text-destructive" :
+                      q.tone === "warning" ? "text-warning" :
+                      q.tone === "accent" ? "text-accent" :
+                      "text-primary"
+                    }`} />
+                    {q.label}
+                  </Link>
+                ))}
+                <Button
+                  variant={showSlowPayers ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => { setShowSlowPayers(!showSlowPayers); setGlobalSearch(""); }}
+                  className="gap-1.5 text-sm h-auto py-2.5 rounded-xl shrink-0"
+                >
+                  <Timer className="h-4 w-4" />
+                  Slow Payers
+                </Button>
+                <BulkWatiSend invoices={invoices} />
+              </div>
+            </section>
 
             {/* Global Search */}
-            <div className="relative max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <section className="relative max-w-xl mx-auto w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
               <Input
                 placeholder="Search customer, bill no, or mobile..."
                 value={globalSearch}
                 onChange={(e) => setGlobalSearch(e.target.value)}
-                className="pl-9 pr-9"
+                className="pl-11 pr-11 h-12 rounded-2xl border-border bg-card shadow-card text-sm"
               />
               {globalSearch && (
-                <button onClick={() => setGlobalSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                <button
+                  onClick={() => setGlobalSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               )}
-            </div>
+            </section>
 
             {searchResults ? (
-              <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
+              <section>
+                <h2 className="text-sm font-bold font-display mb-3">
+                  Search results <span className="text-muted-foreground font-normal">({searchResults.length})</span>
+                </h2>
+                <InvoiceTable invoices={searchResults} onPaymentSuccess={() => refetch()} />
+              </section>
             ) : showSlowPayers ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowSlowPayers(false)} className="gap-1.5 text-xs">
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    Back to Dashboard
-                  </Button>
-                  <h2 className="text-sm font-semibold text-muted-foreground">Slow Payers (Avg &gt; 30d)</h2>
-                </div>
+              <section>
+                <h2 className="text-sm font-bold font-display mb-3 flex items-center gap-2">
+                  <Timer className="h-4 w-4 text-warning" />
+                  Slow Payers <span className="text-muted-foreground font-normal text-xs">(avg &gt; 30 days)</span>
+                </h2>
                 <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
-              </div>
+              </section>
             ) : (
               <>
-                <BeatChart invoices={invoices} payments={allPayments} />
-                {/* Top Defaulters Summary */}
+                <section>
+                  <h2 className="text-sm font-bold font-display uppercase tracking-wider text-muted-foreground mb-3">Beats Performance</h2>
+                  <BeatChart invoices={invoices} payments={allPayments} />
+                </section>
                 <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
               </>
             )}
