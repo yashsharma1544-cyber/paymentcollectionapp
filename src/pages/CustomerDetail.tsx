@@ -561,18 +561,18 @@ const CustomerDetail = () => {
                 </Table>
               </div>
               {/* Ledger footer totals */}
-              <div className="border-t bg-muted/20 px-4 sm:px-5 py-3 flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-4 text-[11px]">
+              <div className="border-t bg-muted/20 px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 text-[11px]">
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Debits</span>
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Debits</span>
                     <span className="font-bold tabular-nums text-destructive">₹{kpis.totalBill.toLocaleString("en-IN")}</span>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Total Credits</span>
+                    <span className="text-muted-foreground uppercase tracking-wider font-semibold">Credits</span>
                     <span className="font-bold tabular-nums text-success">₹{kpis.totalPaid.toLocaleString("en-IN")}</span>
                   </span>
                 </div>
-                <div className="inline-flex items-center gap-2">
+                <div className="inline-flex items-center justify-between sm:justify-start gap-2 pt-2 sm:pt-0 border-t sm:border-0">
                   <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">Closing Balance</span>
                   <span className="text-base font-bold font-display tabular-nums text-primary">
                     ₹{kpis.totalOutstanding.toLocaleString("en-IN")} Dr
