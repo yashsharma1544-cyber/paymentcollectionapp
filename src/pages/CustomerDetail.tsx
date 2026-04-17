@@ -303,33 +303,48 @@ const CustomerDetail = () => {
 
             {/* Follow-ups Section */}
             {(followUps.length > 0 || followUpsLoading) && (
-              <div>
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4" />
-                  Follow-ups
-                  <span className="text-xs font-normal normal-case">— {followUps.length} record{followUps.length !== 1 ? "s" : ""}</span>
-                </h2>
-                {followUpsLoading ? (
-                  <Skeleton className="h-32 rounded-xl" />
-                ) : (
-                  <FollowUpList followUps={[...followUps].reverse()} stoppedCustomers={stoppedCustomers} onStopToggle={() => refetchStopped()} />
-                )}
-              </div>
+              <section className="rounded-2xl border bg-card shadow-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                      <CalendarClock className="h-4 w-4 text-primary" />
+                    </span>
+                    <div>
+                      <h2 className="text-sm font-bold font-display leading-tight">Follow-ups</h2>
+                      <p className="text-[11px] text-muted-foreground">{followUps.length} record{followUps.length !== 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-4 sm:px-5 pb-4">
+                  {followUpsLoading ? (
+                    <Skeleton className="h-32 rounded-xl" />
+                  ) : (
+                    <FollowUpList followUps={[...followUps].reverse()} stoppedCustomers={stoppedCustomers} onStopToggle={() => refetchStopped()} />
+                  )}
+                </div>
+              </section>
             )}
 
             {/* Invoices Table */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Invoices</h2>
+            <section className="rounded-2xl border bg-card shadow-card overflow-hidden">
+              <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </span>
+                  <div>
+                    <h2 className="text-sm font-bold font-display leading-tight">Invoices</h2>
+                    <p className="text-[11px] text-muted-foreground">{invoices.length} bill{invoices.length !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
                 {kpis.avgCollectionDays !== null && (
-                  <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-warning/10 text-warning">
                     <Clock className="h-3.5 w-3.5" />
-                    Avg: {kpis.avgCollectionDays}d
+                    Avg {kpis.avgCollectionDays}d
                   </span>
                 )}
               </div>
-              <div className="rounded-xl border bg-card overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="overflow-x-auto border-t">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
