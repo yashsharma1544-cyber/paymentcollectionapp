@@ -192,18 +192,18 @@ const Index = () => {
             <section className="rounded-3xl border surface-hero p-5 sm:p-7 shadow-card overflow-hidden relative">
               <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-gradient-primary opacity-10 blur-3xl" aria-hidden />
               <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm text-muted-foreground font-medium">{greeting()},</p>
-                  <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mt-0.5">
+                  <h1 className="text-2xl sm:text-3xl font-bold font-display tracking-tight mt-0.5 truncate">
                     {currentUser} <span className="inline-block">👋</span>
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2 max-w-md">
                     You have <span className="font-semibold text-foreground tabular-nums">₹{kpis.totalOutstanding.toLocaleString("en-IN")}</span> outstanding across <span className="font-semibold text-foreground">{kpis.customers}</span> customers.
                   </p>
                 </div>
-                <div className="flex sm:flex-col sm:items-end gap-3 sm:gap-1">
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Total Outstanding</p>
-                  <p className="text-3xl sm:text-4xl font-bold font-display tabular-nums text-gradient-primary leading-none">
+                <div className="flex items-end justify-between sm:flex-col sm:items-end gap-2 sm:gap-1 min-w-0">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold shrink-0">Total Outstanding</p>
+                  <p className="text-2xl sm:text-4xl font-bold font-display tabular-nums text-gradient-primary leading-none truncate">
                     ₹{kpis.totalOutstanding.toLocaleString("en-IN")}
                   </p>
                 </div>
