@@ -15,6 +15,7 @@ import { BulkWatiSend } from "@/components/BulkWatiSend";
 import { DailyTarget } from "@/components/DailyTarget";
 import { calculateAllHealthScores } from "@/lib/health-score";
 import { TopDefaultersCard } from "@/components/TopDefaultersCard";
+import { DailyBriefCard } from "@/components/DailyBriefCard";
 
 const Index = () => {
   const {
@@ -243,6 +244,9 @@ const Index = () => {
           </div>
         ) : (
           <>
+            {/* AI Daily Brief */}
+            <DailyBriefCard />
+
             {/* Daily Target */}
             <DailyTarget todayPayments={todayPayments} />
 
