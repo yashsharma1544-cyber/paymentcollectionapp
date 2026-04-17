@@ -161,6 +161,22 @@ export function LumpsumPaymentDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Total Outstanding Banner */}
+          <div className="rounded-xl p-4 bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Total Outstanding</p>
+                <p className="text-2xl font-bold text-destructive mt-1">
+                  ₹{totalOutstanding.toLocaleString("en-IN")}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Across</p>
+                <p className="text-sm font-semibold">{outstandingInvoices.length} invoice{outstandingInvoices.length !== 1 ? "s" : ""}</p>
+              </div>
+            </div>
+          </div>
+
           {/* Payment Mode */}
           <div className="space-y-2">
             <Label>Payment Mode</Label>
