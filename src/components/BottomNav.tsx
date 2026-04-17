@@ -16,9 +16,12 @@ export function BottomNav() {
   const { currentUser, clearUser } = useUser();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="mx-2 mb-2 rounded-2xl border bg-card/85 backdrop-blur-xl shadow-elevated supports-[backdrop-filter]:bg-card/70">
-        <div className="flex items-center justify-around h-14 px-1">
+        <div className="flex items-stretch justify-around h-14 px-1">
           {navItems.map((item) => {
             const isActive = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             return (
@@ -26,15 +29,15 @@ export function BottomNav() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-12 rounded-xl transition-all",
+                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 rounded-xl transition-all px-0.5",
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {isActive && (
-                  <span className="absolute inset-x-2 inset-y-1 rounded-lg bg-primary/10 -z-0" aria-hidden />
+                  <span className="absolute inset-x-1.5 inset-y-1 rounded-lg bg-primary/10 -z-0" aria-hidden />
                 )}
-                <item.icon className={cn("h-5 w-5 relative", isActive && "stroke-[2.4]")} />
-                <span className={cn("text-[9.5px] relative", isActive ? "font-semibold" : "font-medium")}>
+                <item.icon className={cn("h-[18px] w-[18px] relative", isActive && "stroke-[2.4]")} />
+                <span className={cn("text-[9px] leading-none relative", isActive ? "font-semibold" : "font-medium")}>
                   {item.label}
                 </span>
               </Link>
@@ -42,10 +45,10 @@ export function BottomNav() {
           })}
           <button
             onClick={clearUser}
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 h-12 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 rounded-xl text-muted-foreground hover:text-foreground transition-colors px-0.5"
           >
-            <UserCircle className="h-5 w-5" />
-            <span className="text-[9.5px] font-medium truncate max-w-[52px]">
+            <UserCircle className="h-[18px] w-[18px]" />
+            <span className="text-[9px] leading-none font-medium truncate max-w-full">
               {currentUser?.split(" ")[0]}
             </span>
           </button>
