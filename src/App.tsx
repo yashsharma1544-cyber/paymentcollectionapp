@@ -1,9 +1,10 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
+import { AppShell } from "@/components/AppShell";
 import { PwaUpdatePrompt } from "@/components/PwaUpdatePrompt";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import UserSelect from "./pages/UserSelect";
@@ -24,14 +25,14 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function AppRoutes() {
-  const { currentUser } = useUser();
-
-  if (!currentUser) return <UserSelect />;
+function ShellWithRoutes() {
+  const qc = useQueryClient();
+  const fetching = useIsFetching();
+  const handleRefresh = () => qc.invalidateQueries();
 
   return (
-    <BrowserRouter>
-      <div className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-0 min-h-screen">
+    <AppShell onRefresh={handleRefresh} isFetching={fetching > 0}>
+      <div className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-2">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/payments" element={<RecordedPayments />} />
@@ -49,6 +50,17 @@ function AppRoutes() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
+    </AppShell>
+  );
+}
+
+function AppRoutes() {
+  const { currentUser } = useUser();
+  if (!currentUser) return <UserSelect />;
+
+  return (
+    <BrowserRouter>
+      <ShellWithRoutes />
       <BottomNav />
       <PwaUpdatePrompt />
     </BrowserRouter>

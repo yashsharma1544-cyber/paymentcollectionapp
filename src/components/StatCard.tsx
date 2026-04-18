@@ -2,7 +2,7 @@ import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-type Tone = "primary" | "destructive" | "success" | "warning" | "muted" | "accent";
+type Tone = "primary" | "destructive" | "success" | "warning" | "muted" | "accent" | "brand";
 
 interface StatCardProps {
   label: string;
@@ -16,13 +16,14 @@ interface StatCardProps {
   className?: string;
 }
 
-const toneMap: Record<Tone, { iconBg: string; iconColor: string; valueColor: string; ring: string }> = {
-  primary:     { iconBg: "bg-primary/10",       iconColor: "text-primary",       valueColor: "text-foreground",  ring: "hover:ring-primary/30" },
-  destructive: { iconBg: "bg-destructive/10",   iconColor: "text-destructive",   valueColor: "text-destructive", ring: "hover:ring-destructive/30" },
-  success:     { iconBg: "bg-success/10",       iconColor: "text-success",       valueColor: "text-success",     ring: "hover:ring-success/30" },
-  warning:     { iconBg: "bg-warning/10",       iconColor: "text-warning",       valueColor: "text-warning",     ring: "hover:ring-warning/30" },
-  muted:       { iconBg: "bg-muted",            iconColor: "text-muted-foreground", valueColor: "text-foreground", ring: "hover:ring-border" },
-  accent:      { iconBg: "bg-accent/10",        iconColor: "text-accent",        valueColor: "text-foreground",  ring: "hover:ring-accent/30" },
+const toneMap: Record<Tone, { bar: string; iconBg: string; iconColor: string; valueColor: string }> = {
+  primary:     { bar: "bg-primary",     iconBg: "bg-primary/10",     iconColor: "text-primary",        valueColor: "text-foreground" },
+  destructive: { bar: "bg-destructive", iconBg: "bg-destructive/10", iconColor: "text-destructive",    valueColor: "text-foreground" },
+  success:     { bar: "bg-success",     iconBg: "bg-success/10",     iconColor: "text-success",        valueColor: "text-foreground" },
+  warning:     { bar: "bg-warning",     iconBg: "bg-warning/10",     iconColor: "text-warning",        valueColor: "text-foreground" },
+  muted:       { bar: "bg-muted-foreground/40", iconBg: "bg-muted", iconColor: "text-muted-foreground", valueColor: "text-foreground" },
+  accent:      { bar: "bg-accent",      iconBg: "bg-accent/10",      iconColor: "text-accent",         valueColor: "text-foreground" },
+  brand:       { bar: "bg-brand-navy",  iconBg: "bg-brand-navy/10",  iconColor: "text-brand-navy",     valueColor: "text-foreground" },
 };
 
 export function StatCard({ label, value, sub, icon: Icon, tone = "primary", trend, to, emphasis, className }: StatCardProps) {
@@ -30,21 +31,23 @@ export function StatCard({ label, value, sub, icon: Icon, tone = "primary", tren
   const inner = (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-card p-3 sm:p-5 shadow-card transition-all",
-        "hover:shadow-elevated hover:-translate-y-0.5 ring-1 ring-transparent",
-        c.ring,
+        "group relative overflow-hidden rounded-lg border bg-card p-3.5 sm:p-4 shadow-card transition-all",
+        "hover:shadow-elevated hover:border-foreground/10",
         emphasis && "bg-gradient-subtle",
         className,
       )}
     >
-      <div className="flex items-start justify-between gap-2 mb-2 sm:mb-3">
-        <span className={cn("inline-flex items-center justify-center h-7 w-7 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl", c.iconBg)}>
-          <Icon className={cn("h-3.5 w-3.5 sm:h-4.5 sm:w-4.5", c.iconColor)} />
+      {/* Left accent bar */}
+      <span className={cn("absolute left-0 top-0 bottom-0 w-[3px]", c.bar)} aria-hidden />
+
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className={cn("inline-flex items-center justify-center h-8 w-8 rounded-md", c.iconBg)}>
+          <Icon className={cn("h-4 w-4", c.iconColor)} />
         </span>
         {trend && (
           <span
             className={cn(
-              "text-[10px] font-semibold px-1.5 py-0.5 rounded-md",
+              "text-[10px] font-bold px-1.5 py-0.5 rounded",
               trend.positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
             )}
           >
@@ -52,11 +55,11 @@ export function StatCard({ label, value, sub, icon: Icon, tone = "primary", tren
           </span>
         )}
       </div>
-      <p className="text-[10px] sm:text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-0.5 sm:mb-1 truncate">{label}</p>
-      <p className={cn("text-base sm:text-2xl font-bold font-display tabular-nums leading-tight tracking-tight truncate", c.valueColor)}>
+      <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground mb-0.5 truncate">{label}</p>
+      <p className={cn("kpi-number text-lg sm:text-2xl leading-tight truncate", c.valueColor)}>
         {value}
       </p>
-      {sub && <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 sm:mt-1 truncate">{sub}</p>}
+      {sub && <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-1 truncate">{sub}</p>}
     </div>
   );
 
