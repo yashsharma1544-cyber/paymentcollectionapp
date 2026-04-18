@@ -238,82 +238,91 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Daily Brief + Daily Target */}
-      <div className="grid lg:grid-cols-2 gap-5">
-        <DailyBriefCard />
-        <DailyTarget todayPayments={todayPayments} />
-      </div>
+      {/* Two-column layout: main content + AI brief sidebar */}
+      <div className="grid xl:grid-cols-[1fr_340px] gap-5">
+        <div className="space-y-6 min-w-0">
+          {/* Daily Target */}
+          <DailyTarget todayPayments={todayPayments} />
 
-      {/* Customer Health */}
-      <section className="rounded-lg border bg-card shadow-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h3 className="text-sm font-bold font-display">Customer Health</h3>
-            <p className="text-[11px] text-muted-foreground">{healthSummary.good + healthSummary.avg + healthSummary.risky} active accounts</p>
-          </div>
-          <Link to="/crm" className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1">
-            View CRM <ChevronRight className="h-3 w-3" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {[
-            { icon: ShieldCheck, label: "Good", count: healthSummary.good, color: "success" },
-            { icon: Shield, label: "Average", count: healthSummary.avg, color: "warning" },
-            { icon: ShieldAlert, label: "Risky", count: healthSummary.risky, color: "destructive" },
-          ].map((h) => (
-            <div key={h.label} className={`rounded-md border p-3 sm:p-4 bg-${h.color}/5 border-${h.color}/20`}>
-              <h.icon className={`h-4 w-4 text-${h.color} mb-2`} />
-              <p className={`text-2xl sm:text-3xl font-extrabold font-display text-${h.color} tabular-nums leading-none`}>{h.count}</p>
-              <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground font-bold mt-1.5">{h.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+          {showSlowPayers ? (
+            <section>
+              <h2 className="text-base font-bold font-display mb-3 flex items-center gap-2">
+                <Timer className="h-4 w-4 text-warning" />
+                Slow Payers <span className="text-muted-foreground font-normal text-xs">(avg &gt; 30 days)</span>
+              </h2>
+              <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
+            </section>
+          ) : (
+            <>
+              {/* Beat Performance — moved up */}
+              <section>
+                <h2 className="section-eyebrow mb-3">Beat Performance</h2>
+                <BeatChart invoices={invoices} payments={allPayments} />
+              </section>
 
-      {/* Quick Actions */}
-      <section>
-        <h2 className="section-eyebrow mb-3">Quick Actions</h2>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
-          {quickLinks.map((q) => (
-            <Link
-              key={q.to}
-              to={q.to}
-              className="shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
-            >
-              <q.icon className="h-4 w-4" />
-              {q.label}
-            </Link>
-          ))}
-          <Button
-            variant={showSlowPayers ? "default" : "outline"}
-            size="sm"
-            onClick={() => setShowSlowPayers(!showSlowPayers)}
-            className="gap-1.5 text-sm h-auto py-2 rounded-md shrink-0 font-semibold"
-          >
-            <Timer className="h-4 w-4" />
-            Slow Payers
-          </Button>
-          <BulkWatiSend invoices={invoices} />
-        </div>
-      </section>
+              {/* Customer Health */}
+              <section className="rounded-lg border bg-card shadow-card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-bold font-display">Customer Health</h3>
+                    <p className="text-[11px] text-muted-foreground">{healthSummary.good + healthSummary.avg + healthSummary.risky} active accounts</p>
+                  </div>
+                  <Link to="/crm" className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                    View CRM <ChevronRight className="h-3 w-3" />
+                  </Link>
+                </div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { icon: ShieldCheck, label: "Good", count: healthSummary.good, color: "success" },
+                    { icon: Shield, label: "Average", count: healthSummary.avg, color: "warning" },
+                    { icon: ShieldAlert, label: "Risky", count: healthSummary.risky, color: "destructive" },
+                  ].map((h) => (
+                    <div key={h.label} className={`rounded-md border p-3 sm:p-4 bg-${h.color}/5 border-${h.color}/20`}>
+                      <h.icon className={`h-4 w-4 text-${h.color} mb-2`} />
+                      <p className={`text-2xl sm:text-3xl font-extrabold font-display text-${h.color} tabular-nums leading-none`}>{h.count}</p>
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground font-bold mt-1.5">{h.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
 
-      {showSlowPayers ? (
-        <section>
-          <h2 className="text-base font-bold font-display mb-3 flex items-center gap-2">
-            <Timer className="h-4 w-4 text-warning" />
-            Slow Payers <span className="text-muted-foreground font-normal text-xs">(avg &gt; 30 days)</span>
-          </h2>
-          <InvoiceTable invoices={invoices} onPaymentSuccess={() => refetch()} exportTitle="Slow Payers" defaultSlowPayer />
-        </section>
-      ) : (
-        <>
+              <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
+            </>
+          )}
+
+          {/* Quick Actions */}
           <section>
-            <h2 className="section-eyebrow mb-3">Beat Performance</h2>
-            <BeatChart invoices={invoices} payments={allPayments} />
+            <h2 className="section-eyebrow mb-3">Quick Actions</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+              {quickLinks.map((q) => (
+                <Link
+                  key={q.to}
+                  to={q.to}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
+                >
+                  <q.icon className="h-4 w-4" />
+                  {q.label}
+                </Link>
+              ))}
+              <Button
+                variant={showSlowPayers ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowSlowPayers(!showSlowPayers)}
+                className="gap-1.5 text-sm h-auto py-2 rounded-md shrink-0 font-semibold"
+              >
+                <Timer className="h-4 w-4" />
+                Slow Payers
+              </Button>
+              <BulkWatiSend invoices={invoices} />
+            </div>
           </section>
-          <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
-        </>
-      )}
+        </div>
+
+        {/* Right sidebar: Daily AI Brief (sticky on desktop) */}
+        <aside className="xl:sticky xl:top-20 xl:self-start">
+          <DailyBriefCard />
+        </aside>
+      </div>
     </div>
   );
 };
