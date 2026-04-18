@@ -180,21 +180,21 @@ const Index = () => {
         <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-accent/20 blur-3xl" aria-hidden />
         <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.14em] font-bold text-white/60">{greeting()}</p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold font-display tracking-tight mt-1 text-white truncate">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.14em] font-bold text-white/60">{greeting()}</p>
+            <h1 className="text-xl sm:text-3xl font-extrabold font-display tracking-tight mt-1 text-white truncate">
               {currentUser}
             </h1>
-            <p className="text-sm text-white/70 mt-2 max-w-md">
+            <p className="text-xs sm:text-sm text-white/70 mt-2 max-w-md">
               Managing <span className="font-semibold text-white tabular-nums">{kpis.customers}</span> customers ·{" "}
-              <span className="font-semibold text-white tabular-nums">{kpis.dueSoonCount}</span> invoices due in 3 days
+              <span className="font-semibold text-white tabular-nums">{kpis.dueSoonCount}</span> due in 3 days
             </p>
           </div>
-          <div className="flex items-end justify-between sm:flex-col sm:items-end gap-2 sm:gap-1">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-white/60 font-bold">Total Outstanding</p>
+          <div className="flex flex-col items-start sm:items-end gap-1">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-[0.14em] text-white/60 font-bold">Total Outstanding</p>
             <p className="text-3xl sm:text-4xl font-extrabold font-display tabular-nums text-white leading-none">
               {fmtCompact(kpis.totalOutstanding)}
             </p>
-            <p className="text-[11px] text-white/70 mt-1">
+            <p className="text-[10px] sm:text-[11px] text-white/70 mt-0.5">
               {kpis.overdueRatio}% overdue · {fmtCompact(kpis.overdueOutstanding)}
             </p>
           </div>

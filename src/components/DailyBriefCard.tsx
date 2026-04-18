@@ -11,7 +11,9 @@ export function DailyBriefCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [missingKey, setMissingKey] = useState(false);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(() =>
+    typeof window === "undefined" ? true : window.matchMedia("(min-width: 1280px)").matches,
+  );
 
   const load = async (force = false) => {
     setLoading(true);
