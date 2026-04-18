@@ -19,6 +19,7 @@ import { calculateAllHealthScores } from "@/lib/health-score";
 import { TopDefaultersCard } from "@/components/TopDefaultersCard";
 import { DailyBriefCard } from "@/components/DailyBriefCard";
 import { StatCard } from "@/components/StatCard";
+import { useFocusCustomers } from "@/hooks/use-focus-customers";
 
 const greeting = () => {
   const h = new Date().getHours();
@@ -47,6 +48,7 @@ const Index = () => {
 
   const [showSlowPayers, setShowSlowPayers] = useState(false);
   const { currentUser } = useUser();
+  const { focusSet } = useFocusCustomers();
 
   const slowPayerCustomers = useMemo(() => {
     const customerMap = new Map<string, { invoices: { billNo: string; billDate: string }[] }>();
@@ -119,10 +121,26 @@ const Index = () => {
     });
   }, [allPayments]);
 
-  const quickLinks = [
-    { to: "/due-today", label: "Due Today", icon: CalendarClock },
-    { to: "/defaulters", label: "Defaulters", icon: AlertTriangle },
-    { to: "/focus", label: "Focus", icon: Star },
+  const quickCounts = useMemo(() => {
+    const dueToday = invoices.filter(i => {
+      const od = getOverdueDays(i.billDate);
+      return od >= -3 && od <= 0 && i.outstandingAmount > 0;
+    }).length;
+    const defaulters = new Set(
+      invoices.filter(i => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).map(i => i.customerName)
+    ).size;
+    return { dueToday, defaulters };
+  }, [invoices]);
+
+  const focusCount = useMemo(
+    () => new Set(invoices.filter(i => focusSet.has(i.customerName) && i.outstandingAmount > 0).map(i => i.customerName)).size,
+    [invoices, focusSet],
+  );
+
+  const quickLinks: { to: string; label: string; icon: typeof CalendarClock; count?: number; tone?: "warning" | "destructive" | "brand" }[] = [
+    { to: "/due-today", label: "Due Today", icon: CalendarClock, count: quickCounts.dueToday, tone: "warning" },
+    { to: "/defaulters", label: "Defaulters", icon: AlertTriangle, count: quickCounts.defaulters, tone: "destructive" },
+    { to: "/focus", label: "Focus", icon: Star, count: focusCount, tone: "brand" },
     { to: "/crm", label: "CRM", icon: Users },
     { to: "/predictions", label: "AI Predict", icon: Brain },
     { to: "/route-planner", label: "Routes", icon: Route },
@@ -248,16 +266,28 @@ const Index = () => {
           <section>
             <h2 className="section-eyebrow mb-3">Quick Actions</h2>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
-              {quickLinks.map((q) => (
-                <Link
-                  key={q.to}
-                  to={q.to}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
-                >
-                  <q.icon className="h-4 w-4" />
-                  {q.label}
-                </Link>
-              ))}
+              {quickLinks.map((q) => {
+                const toneClass =
+                  q.tone === "destructive" ? "bg-destructive text-destructive-foreground" :
+                  q.tone === "warning" ? "bg-warning text-warning-foreground" :
+                  q.tone === "brand" ? "bg-primary text-primary-foreground" :
+                  "bg-muted text-muted-foreground";
+                return (
+                  <Link
+                    key={q.to}
+                    to={q.to}
+                    className="relative shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
+                  >
+                    <q.icon className="h-4 w-4" />
+                    {q.label}
+                    {typeof q.count === "number" && q.count > 0 && (
+                      <span className={`ml-0.5 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold tabular-nums ${toneClass}`}>
+                        {q.count > 99 ? "99+" : q.count}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
               <Button
                 variant={showSlowPayers ? "default" : "outline"}
                 size="sm"
