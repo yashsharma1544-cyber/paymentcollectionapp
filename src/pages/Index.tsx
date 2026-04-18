@@ -48,6 +48,7 @@ const Index = () => {
 
   const [showSlowPayers, setShowSlowPayers] = useState(false);
   const { currentUser } = useUser();
+  const { focusSet } = useFocusCustomers();
 
   const slowPayerCustomers = useMemo(() => {
     const customerMap = new Map<string, { invoices: { billNo: string; billDate: string }[] }>();
