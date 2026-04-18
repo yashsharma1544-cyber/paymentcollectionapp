@@ -1,0 +1,9 @@
+{
+  "appId": "app.lovable.2be3549d6b8e4a76966e5f10c6ec0f29",
+  "appName": "paymentcollectionapp",
+  "webDir": "dist",
+  "server": {
+    "url": "https://2be3549d-6b8e-4a76-966e-5f10c6ec0f29.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  }
+}
