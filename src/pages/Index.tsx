@@ -119,10 +119,26 @@ const Index = () => {
     });
   }, [allPayments]);
 
-  const quickLinks = [
-    { to: "/due-today", label: "Due Today", icon: CalendarClock },
-    { to: "/defaulters", label: "Defaulters", icon: AlertTriangle },
-    { to: "/focus", label: "Focus", icon: Star },
+  const quickCounts = useMemo(() => {
+    const dueToday = invoices.filter(i => {
+      const od = getOverdueDays(i.billDate);
+      return od >= -3 && od <= 0 && i.outstandingAmount > 0;
+    }).length;
+    const defaulters = new Set(
+      invoices.filter(i => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).map(i => i.customerName)
+    ).size;
+    return { dueToday, defaulters };
+  }, [invoices]);
+
+  const focusCount = useMemo(
+    () => new Set(invoices.filter(i => focusSet.has(i.customerName) && i.outstandingAmount > 0).map(i => i.customerName)).size,
+    [invoices, focusSet],
+  );
+
+  const quickLinks: { to: string; label: string; icon: typeof CalendarClock; count?: number; tone?: "warning" | "destructive" | "brand" }[] = [
+    { to: "/due-today", label: "Due Today", icon: CalendarClock, count: quickCounts.dueToday, tone: "warning" },
+    { to: "/defaulters", label: "Defaulters", icon: AlertTriangle, count: quickCounts.defaulters, tone: "destructive" },
+    { to: "/focus", label: "Focus", icon: Star, count: focusCount, tone: "brand" },
     { to: "/crm", label: "CRM", icon: Users },
     { to: "/predictions", label: "AI Predict", icon: Brain },
     { to: "/route-planner", label: "Routes", icon: Route },
