@@ -244,6 +244,33 @@ const Index = () => {
           {/* Daily Target */}
           <DailyTarget todayPayments={todayPayments} />
 
+          {/* Quick Actions — moved above Beats */}
+          <section>
+            <h2 className="section-eyebrow mb-3">Quick Actions</h2>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
+              {quickLinks.map((q) => (
+                <Link
+                  key={q.to}
+                  to={q.to}
+                  className="shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
+                >
+                  <q.icon className="h-4 w-4" />
+                  {q.label}
+                </Link>
+              ))}
+              <Button
+                variant={showSlowPayers ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowSlowPayers(!showSlowPayers)}
+                className="gap-1.5 text-sm h-auto py-2 rounded-md shrink-0 font-semibold"
+              >
+                <Timer className="h-4 w-4" />
+                Slow Payers
+              </Button>
+              <BulkWatiSend invoices={invoices} />
+            </div>
+          </section>
+
           {showSlowPayers ? (
             <section>
               <h2 className="text-base font-bold font-display mb-3 flex items-center gap-2">
@@ -254,7 +281,7 @@ const Index = () => {
             </section>
           ) : (
             <>
-              {/* Beat Performance — moved up */}
+              {/* Beat Performance */}
               <section>
                 <h2 className="section-eyebrow mb-3">Beat Performance</h2>
                 <BeatChart invoices={invoices} payments={allPayments} />
@@ -289,33 +316,6 @@ const Index = () => {
               <TopDefaultersCard invoices={invoices} whatsappLog={whatsappLog} payments={allPayments} />
             </>
           )}
-
-          {/* Quick Actions */}
-          <section>
-            <h2 className="section-eyebrow mb-3">Quick Actions</h2>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin -mx-1 px-1">
-              {quickLinks.map((q) => (
-                <Link
-                  key={q.to}
-                  to={q.to}
-                  className="shrink-0 inline-flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-sm font-semibold shadow-soft hover:border-primary/40 hover:text-primary transition-all"
-                >
-                  <q.icon className="h-4 w-4" />
-                  {q.label}
-                </Link>
-              ))}
-              <Button
-                variant={showSlowPayers ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowSlowPayers(!showSlowPayers)}
-                className="gap-1.5 text-sm h-auto py-2 rounded-md shrink-0 font-semibold"
-              >
-                <Timer className="h-4 w-4" />
-                Slow Payers
-              </Button>
-              <BulkWatiSend invoices={invoices} />
-            </div>
-          </section>
         </div>
 
         {/* Right sidebar: Daily AI Brief (sticky on desktop) */}
