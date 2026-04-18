@@ -19,6 +19,7 @@ import { calculateAllHealthScores } from "@/lib/health-score";
 import { TopDefaultersCard } from "@/components/TopDefaultersCard";
 import { DailyBriefCard } from "@/components/DailyBriefCard";
 import { StatCard } from "@/components/StatCard";
+import { useFocusCustomers } from "@/hooks/use-focus-customers";
 
 const greeting = () => {
   const h = new Date().getHours();
