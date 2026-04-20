@@ -13,6 +13,26 @@ function getApiBase() {
   };
 }
 
+export type AiProvider = "claude" | "gemini" | "gpt";
+
+export const AI_PROVIDERS: { value: AiProvider; label: string; hint: string }[] = [
+  { value: "gemini", label: "Gemini", hint: "Google · Fast & free" },
+  { value: "gpt", label: "ChatGPT", hint: "OpenAI GPT-5 mini" },
+  { value: "claude", label: "Claude", hint: "Anthropic Haiku" },
+];
+
+const PROVIDER_KEY = "ai_provider";
+
+export function getProvider(): AiProvider {
+  if (typeof window === "undefined") return "gemini";
+  const v = window.localStorage.getItem(PROVIDER_KEY) as AiProvider | null;
+  return v && ["claude", "gemini", "gpt"].includes(v) ? v : "gemini";
+}
+
+export function setProvider(p: AiProvider) {
+  if (typeof window !== "undefined") window.localStorage.setItem(PROVIDER_KEY, p);
+}
+
 export interface CustomerInsight {
   headline: string;
   behavior: string;
@@ -22,6 +42,7 @@ export interface CustomerInsight {
   talking_points: string[];
   _cached?: boolean;
   _generated_at?: string;
+  _provider?: AiProvider;
 }
 
 export interface DailyBrief {
@@ -33,6 +54,7 @@ export interface DailyBrief {
   metrics_note: string;
   _cached?: boolean;
   _generated_at?: string;
+  _provider?: AiProvider;
 }
 
 export interface AiError {
@@ -51,10 +73,10 @@ async function callFn(body: Record<string, unknown>): Promise<any> {
   return data;
 }
 
-export async function getCustomerInsight(customerName: string, forceRefresh = false): Promise<CustomerInsight> {
-  return await callFn({ action: "customer-insight", customer_name: customerName, force_refresh: forceRefresh });
+export async function getCustomerInsight(customerName: string, forceRefresh = false, provider?: AiProvider): Promise<CustomerInsight> {
+  return await callFn({ action: "customer-insight", customer_name: customerName, force_refresh: forceRefresh, provider: provider || getProvider() });
 }
 
-export async function getDailyBrief(userName: string, forceRefresh = false): Promise<DailyBrief> {
-  return await callFn({ action: "daily-brief", user_name: userName, force_refresh: forceRefresh });
+export async function getDailyBrief(userName: string, forceRefresh = false, provider?: AiProvider): Promise<DailyBrief> {
+  return await callFn({ action: "daily-brief", user_name: userName, force_refresh: forceRefresh, provider: provider || getProvider() });
 }
