@@ -74,8 +74,10 @@ export function MiniCalculator({ onApply }: Props) {
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-64 p-3"
+        className="w-[calc(100vw-2rem)] max-w-xs p-3"
         align="end"
+        sideOffset={8}
+        collisionPadding={8}
         onOpenAutoFocus={(e) => {
           e.preventDefault();
           inputRef.current?.focus();
