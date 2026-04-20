@@ -26,7 +26,17 @@ function evaluate(expr: string): number | null {
 export function MiniCalculator({ onApply }: Props) {
   const [open, setOpen] = useState(false);
   const [expr, setExpr] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const result = evaluate(expr);
+
+  useEffect(() => {
+    if (open) {
+      // Focus input shortly after popover mounts
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setExpr("");
+    }
+  }, [open]);
 
   const append = (s: string) => setExpr((e) => e + s);
   const clear = () => setExpr("");
@@ -37,6 +47,16 @@ export function MiniCalculator({ onApply }: Props) {
     onApply(result);
     setOpen(false);
     setExpr("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      apply();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+    }
   };
 
   const keys = [
