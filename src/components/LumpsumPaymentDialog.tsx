@@ -16,6 +16,7 @@ import type { Invoice } from "@/lib/invoice";
 import { recordBatchPayments, type PaymentAllocation } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { MiniCalculator } from "@/components/MiniCalculator";
 
 interface LumpsumPaymentDialogProps {
   invoices: Invoice[];
