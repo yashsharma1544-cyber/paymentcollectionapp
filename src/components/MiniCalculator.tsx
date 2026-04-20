@@ -73,10 +73,25 @@ export function MiniCalculator({ onApply }: Props) {
           <CalcIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3" align="end">
+      <PopoverContent
+        className="w-64 p-3"
+        align="end"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      >
         <div className="space-y-2">
-          <div className="rounded-md border bg-muted/30 px-3 py-2 text-right">
-            <div className="text-xs text-muted-foreground min-h-[16px] truncate">{expr || " "}</div>
+          <Input
+            ref={inputRef}
+            value={expr}
+            onChange={(e) => setExpr(e.target.value.replace(/×/g, "*").replace(/÷/g, "/"))}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g. 5000+2000+500"
+            inputMode="decimal"
+            className="text-right font-mono"
+          />
+          <div className="rounded-md border bg-muted/30 px-3 py-1.5 text-right">
             <div className="text-lg font-semibold tabular-nums">
               {result !== null ? `₹${result.toLocaleString("en-IN")}` : "—"}
             </div>
