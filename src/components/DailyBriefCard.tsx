@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, AlertTriangle, Target, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDailyBrief, type DailyBrief } from "@/lib/ai-insights";
+import { getDailyBrief, getProvider, setProvider, type DailyBrief, type AiProvider } from "@/lib/ai-insights";
 import { useUser } from "@/contexts/UserContext";
+import { AiProviderPicker } from "@/components/AiProviderPicker";
 
 export function DailyBriefCard() {
   const { currentUser } = useUser();
@@ -11,16 +12,17 @@ export function DailyBriefCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [missingKey, setMissingKey] = useState(false);
+  const [provider, setProviderState] = useState<AiProvider>(() => getProvider());
   const [open, setOpen] = useState(() =>
     typeof window === "undefined" ? true : window.matchMedia("(min-width: 1280px)").matches,
   );
 
-  const load = async (force = false) => {
+  const load = async (force = false, prov?: AiProvider) => {
     setLoading(true);
     setError(null);
     setMissingKey(false);
     try {
-      const data = await getDailyBrief(currentUser || "Team", force);
+      const data = await getDailyBrief(currentUser || "Team", force, prov || provider);
       setBrief(data);
     } catch (e: any) {
       if (e?.code === "MISSING_KEY") setMissingKey(true);
@@ -28,6 +30,12 @@ export function DailyBriefCard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProviderChange = (p: AiProvider) => {
+    setProviderState(p);
+    setProvider(p);
+    load(false, p);
   };
 
   useEffect(() => {
@@ -52,6 +60,7 @@ export function DailyBriefCard() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <AiProviderPicker value={provider} onChange={handleProviderChange} disabled={loading} />
               <Button
                 variant="ghost"
                 size="icon"

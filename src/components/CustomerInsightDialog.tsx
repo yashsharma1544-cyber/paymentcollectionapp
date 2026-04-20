@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, AlertCircle, MessageCircle, Target } from "lucide-react";
-import { getCustomerInsight, type CustomerInsight } from "@/lib/ai-insights";
+import { getCustomerInsight, getProvider, setProvider, type CustomerInsight, type AiProvider } from "@/lib/ai-insights";
+import { AiProviderPicker } from "@/components/AiProviderPicker";
 
 interface Props {
   open: boolean;
@@ -17,14 +18,15 @@ export function CustomerInsightDialog({ open, onOpenChange, customerName }: Prop
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [missingKey, setMissingKey] = useState(false);
+  const [provider, setProviderState] = useState<AiProvider>(() => getProvider());
 
-  const load = async (force = false) => {
+  const load = async (force = false, prov?: AiProvider) => {
     if (!customerName) return;
     setLoading(true);
     setError(null);
     setMissingKey(false);
     try {
-      const data = await getCustomerInsight(customerName, force);
+      const data = await getCustomerInsight(customerName, force, prov || provider);
       setInsight(data);
     } catch (e: any) {
       if (e?.code === "MISSING_KEY") setMissingKey(true);
@@ -32,6 +34,12 @@ export function CustomerInsightDialog({ open, onOpenChange, customerName }: Prop
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProviderChange = (p: AiProvider) => {
+    setProviderState(p);
+    setProvider(p);
+    load(false, p);
   };
 
   useEffect(() => {
@@ -136,14 +144,18 @@ export function CustomerInsightDialog({ open, onOpenChange, customerName }: Prop
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t">
-              <Button size="sm" variant="outline" className="h-8" onClick={() => load(true)} disabled={loading}>
-                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-              <div className="text-[10px] text-muted-foreground">
+            <div className="flex items-center justify-between pt-2 border-t gap-2">
+              <div className="flex items-center gap-1.5">
+                <Button size="sm" variant="outline" className="h-8" onClick={() => load(true)} disabled={loading}>
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+                <AiProviderPicker value={provider} onChange={handleProviderChange} disabled={loading} />
+              </div>
+              <div className="text-[10px] text-muted-foreground text-right">
                 {insight._cached ? "Cached" : "Fresh"}
-                {insight._generated_at && ` · ${new Date(insight._generated_at).toLocaleString("en-IN")}`}
+                {insight._provider && ` · ${insight._provider}`}
+                {insight._generated_at && <div>{new Date(insight._generated_at).toLocaleString("en-IN")}</div>}
               </div>
             </div>
           </div>
