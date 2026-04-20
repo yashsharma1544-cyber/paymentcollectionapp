@@ -208,7 +208,7 @@ export function LumpsumPaymentDialog({
           {/* Amount + Discount inputs */}
           <div className="space-y-2">
             <Label>Amount Received (₹)</Label>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Input
                 type="number"
                 placeholder="Enter amount received"
@@ -216,6 +216,7 @@ export function LumpsumPaymentDialog({
                 onChange={(e) => { setLumpsumAmount(e.target.value); setAllocations({}); }}
                 min={0}
                 max={totalOutstanding}
+                className="min-w-0 flex-1"
               />
               <MiniCalculator onApply={(v) => { setLumpsumAmount(String(v)); setAllocations({}); }} />
             </div>
