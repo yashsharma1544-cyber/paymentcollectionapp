@@ -217,6 +217,7 @@ export function LumpsumPaymentDialog({
                 min={0}
                 max={totalOutstanding}
               />
+              <MiniCalculator onApply={(v) => { setLumpsumAmount(String(v)); setAllocations({}); }} />
             </div>
           </div>
 
