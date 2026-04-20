@@ -301,6 +301,11 @@ const Index = () => {
             </div>
           </section>
 
+          {/* Daily AI Brief — shown here on mobile/tablet, hidden on xl (rendered in sidebar instead) */}
+          <div className="xl:hidden">
+            <DailyBriefCard />
+          </div>
+
           {showSlowPayers ? (
             <section>
               <h2 className="text-base font-bold font-display mb-3 flex items-center gap-2">
@@ -348,8 +353,8 @@ const Index = () => {
           )}
         </div>
 
-        {/* Right sidebar: Daily AI Brief (sticky on desktop) */}
-        <aside className="xl:sticky xl:top-20 xl:self-start">
+        {/* Right sidebar: Daily AI Brief (desktop xl only) */}
+        <aside className="hidden xl:block xl:sticky xl:top-20 xl:self-start">
           <DailyBriefCard />
         </aside>
       </div>
