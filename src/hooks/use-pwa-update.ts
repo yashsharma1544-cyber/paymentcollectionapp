@@ -17,31 +17,36 @@ export function usePwaUpdate() {
 
     navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
 
-    navigator.serviceWorker.ready.then((reg) => {
-      // Check if there's already a waiting worker
+    const checkForWaitingWorker = (reg: ServiceWorkerRegistrationWithWaiting) => {
       if (reg.waiting) {
-        setRegistration(reg as ServiceWorkerRegistrationWithWaiting);
+        setRegistration(reg);
         setNeedsUpdate(true);
       }
+    };
 
-      // Listen for new service workers
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) return;
+
+      const typedReg = reg as ServiceWorkerRegistrationWithWaiting;
+      checkForWaitingWorker(typedReg);
+      reg.update();
+
       reg.addEventListener("updatefound", () => {
         const newWorker = reg.installing;
         if (!newWorker) return;
 
         newWorker.addEventListener("statechange", () => {
           if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-            setRegistration(reg as ServiceWorkerRegistrationWithWaiting);
+            setRegistration(typedReg);
             setNeedsUpdate(true);
           }
         });
       });
     });
 
-    // Check for updates every 60 seconds
     const interval = setInterval(() => {
-      navigator.serviceWorker.ready.then((reg) => reg.update());
-    }, 60_000);
+      navigator.serviceWorker.getRegistration().then((reg) => reg?.update());
+    }, 30_000);
 
     return () => {
       clearInterval(interval);

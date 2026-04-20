@@ -17,7 +17,7 @@ export function PwaUpdatePrompt() {
       {/* Update banner */}
       {needsUpdate && (
         <div className="fixed top-0 left-0 right-0 z-[100] bg-primary text-primary-foreground px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg animate-in slide-in-from-top duration-300">
-          <span className="text-sm font-medium">A new version is available!</span>
+          <span className="text-sm font-medium">A new version is available. Tap update to refresh the app.</span>
           <button
             onClick={applyUpdate}
             className="flex items-center gap-1.5 bg-primary-foreground/20 hover:bg-primary-foreground/30 active:scale-[0.97] text-primary-foreground text-sm font-semibold px-3 py-1.5 rounded-md transition-all"
