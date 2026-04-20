@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { Invoice } from "@/lib/invoice";
 import { recordPayment } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { MiniCalculator } from "@/components/MiniCalculator";
 
 interface PaymentDialogProps {
   invoice: Invoice | null;
@@ -131,15 +132,19 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
 
           <div className="space-y-2">
             <Label htmlFor="amount">Amount Received (₹)</Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="Enter amount received"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              min={0}
-              max={invoice.outstandingAmount}
-            />
+            <div className="flex items-center gap-2">
+              <Input
+                id="amount"
+                type="number"
+                placeholder="Enter amount received"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                min={0}
+                max={invoice.outstandingAmount}
+                className="min-w-0 flex-1"
+              />
+              <MiniCalculator onApply={(v) => setAmount(String(v))} />
+            </div>
           </div>
 
           <div className="space-y-2">
