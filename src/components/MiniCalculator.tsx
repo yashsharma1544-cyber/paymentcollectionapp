@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calculator as CalcIcon, Delete } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -25,7 +26,17 @@ function evaluate(expr: string): number | null {
 export function MiniCalculator({ onApply }: Props) {
   const [open, setOpen] = useState(false);
   const [expr, setExpr] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const result = evaluate(expr);
+
+  useEffect(() => {
+    if (open) {
+      // Focus input shortly after popover mounts
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setExpr("");
+    }
+  }, [open]);
 
   const append = (s: string) => setExpr((e) => e + s);
   const clear = () => setExpr("");
@@ -36,6 +47,16 @@ export function MiniCalculator({ onApply }: Props) {
     onApply(result);
     setOpen(false);
     setExpr("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      apply();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+    }
   };
 
   const keys = [
@@ -52,10 +73,25 @@ export function MiniCalculator({ onApply }: Props) {
           <CalcIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3" align="end">
+      <PopoverContent
+        className="w-64 p-3"
+        align="end"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+      >
         <div className="space-y-2">
-          <div className="rounded-md border bg-muted/30 px-3 py-2 text-right">
-            <div className="text-xs text-muted-foreground min-h-[16px] truncate">{expr || " "}</div>
+          <Input
+            ref={inputRef}
+            value={expr}
+            onChange={(e) => setExpr(e.target.value.replace(/×/g, "*").replace(/÷/g, "/"))}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g. 5000+2000+500"
+            inputMode="decimal"
+            className="text-right font-mono"
+          />
+          <div className="rounded-md border bg-muted/30 px-3 py-1.5 text-right">
             <div className="text-lg font-semibold tabular-nums">
               {result !== null ? `₹${result.toLocaleString("en-IN")}` : "—"}
             </div>
