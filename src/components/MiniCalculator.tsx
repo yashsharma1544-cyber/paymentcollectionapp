@@ -99,19 +99,20 @@ export function MiniCalculator({ onApply }: Props) {
             </div>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
-            <Button type="button" variant="secondary" size="sm" onClick={clear}>C</Button>
-            <Button type="button" variant="secondary" size="sm" onClick={() => append("(")}>(</Button>
-            <Button type="button" variant="secondary" size="sm" onClick={() => append(")")}>)</Button>
-            <Button type="button" variant="secondary" size="sm" onClick={back}><Delete className="h-3.5 w-3.5" /></Button>
+            <Button type="button" variant="secondary" size="sm" className="h-10" onClick={clear}>C</Button>
+            <Button type="button" variant="secondary" size="sm" className="h-10" onClick={() => append("(")}>(</Button>
+            <Button type="button" variant="secondary" size="sm" className="h-10" onClick={() => append(")")}>)</Button>
+            <Button type="button" variant="secondary" size="sm" className="h-10" onClick={back}><Delete className="h-3.5 w-3.5" /></Button>
             {keys.map((k) =>
               k === "=" ? (
-                <Button key={k} type="button" size="sm" onClick={apply} disabled={result === null}>=</Button>
+                <Button key={k} type="button" size="sm" className="h-10" onClick={apply} disabled={result === null}>=</Button>
               ) : (
                 <Button
                   key={k}
                   type="button"
                   variant={["+", "-", "*", "/"].includes(k) ? "secondary" : "outline"}
                   size="sm"
+                  className="h-10"
                   onClick={() => append(k)}
                 >
                   {k === "*" ? "×" : k === "/" ? "÷" : k}
