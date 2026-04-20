@@ -10,6 +10,11 @@ const corsHeaders = {
 const SPREADSHEET_ID = "1IH-MYfQi324eMeiPXD5otZz_9trPlVUDBJViTgVWEuI";
 const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 const CLAUDE_URL = "https://api.anthropic.com/v1/messages";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const GEMINI_MODEL = "google/gemini-3-flash-preview";
+const GPT_MODEL = "openai/gpt-5-mini";
+
+type Provider = "claude" | "gemini" | "gpt";
 
 // ---------- Google Sheets helpers ----------
 function base64UrlEncode(input: Uint8Array | string): string {
@@ -101,7 +106,18 @@ async function setCached(supabase: any, cacheKey: string, kind: string, content:
   }, { onConflict: "cache_key" });
 }
 
-// ---------- Claude call ----------
+// ---------- AI calls ----------
+function extractJson(text: string): any {
+  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (_e) {
+    const m = cleaned.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error(`AI returned non-JSON: ${text.slice(0, 200)}`);
+  }
+}
+
 async function callClaude(apiKey: string, system: string, userMsg: string): Promise<{ json: any; tokens: number }> {
   const res = await fetch(CLAUDE_URL, {
     method: "POST",
@@ -120,17 +136,49 @@ async function callClaude(apiKey: string, system: string, userMsg: string): Prom
   const data = await res.json();
   if (!res.ok) throw new Error(`Claude error ${res.status}: ${JSON.stringify(data)}`);
   const text = data.content?.[0]?.text || "";
-  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-  let parsed: any;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch (_e) {
-    const m = cleaned.match(/\{[\s\S]*\}/);
-    if (m) parsed = JSON.parse(m[0]);
-    else throw new Error(`Claude returned non-JSON: ${text.slice(0, 200)}`);
-  }
   const tokens = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
-  return { json: parsed, tokens };
+  return { json: extractJson(text), tokens };
+}
+
+async function callLovableAI(apiKey: string, model: string, system: string, userMsg: string): Promise<{ json: any; tokens: number }> {
+  const res = await fetch(LOVABLE_AI_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: system + "\n\nIMPORTANT: Return ONLY a valid JSON object, no markdown fences, no commentary." },
+        { role: "user", content: userMsg },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("Rate limit hit on Lovable AI. Please wait a moment and try again.");
+    if (res.status === 402) throw new Error("Lovable AI credits exhausted. Add funds in Settings → Workspace → Usage.");
+    throw new Error(`Lovable AI error ${res.status}: ${JSON.stringify(data)}`);
+  }
+  const text = data.choices?.[0]?.message?.content || "";
+  const tokens = (data.usage?.prompt_tokens || 0) + (data.usage?.completion_tokens || 0);
+  return { json: extractJson(text), tokens };
+}
+
+async function callAI(provider: Provider, system: string, userMsg: string): Promise<{ json: any; tokens: number; provider: Provider }> {
+  if (provider === "claude") {
+    const key = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
+    const r = await callClaude(key, system, userMsg);
+    return { ...r, provider: "claude" };
+  }
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) throw new Error("LOVABLE_API_KEY not configured");
+  const model = provider === "gpt" ? GPT_MODEL : GEMINI_MODEL;
+  const r = await callLovableAI(key, model, system, userMsg);
+  return { ...r, provider };
 }
 
 // ---------- Customer insight ----------
