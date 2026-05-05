@@ -357,7 +357,7 @@ serve(async (req) => {
       const phone = url.searchParams.get("phone");
       if (!phone) throw new Error("Missing phone parameter");
       
-      const data = await fetchSheet(accessToken, "Outstanding!B1:C5000");
+      const data = await fetchSheet(accessToken, "Outstanding!B1:C100000");
       const rows = data?.values || [];
       const normalizedPhone = phone.replace(/[\s\-()]/g, "").replace(/^91/, "");
       
