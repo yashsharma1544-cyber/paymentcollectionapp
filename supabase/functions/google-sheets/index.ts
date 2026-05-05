@@ -176,7 +176,7 @@ serve(async (req) => {
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
     if (action === "fetch") {
-      const data = await fetchSheet(accessToken, "Outstanding!A1:Z5000");
+      const data = await fetchSheet(accessToken, "Outstanding!A1:Z100000");
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -357,7 +357,7 @@ serve(async (req) => {
       const phone = url.searchParams.get("phone");
       if (!phone) throw new Error("Missing phone parameter");
       
-      const data = await fetchSheet(accessToken, "Outstanding!B1:C5000");
+      const data = await fetchSheet(accessToken, "Outstanding!B1:C100000");
       const rows = data?.values || [];
       const normalizedPhone = phone.replace(/[\s\-()]/g, "").replace(/^91/, "");
       
