@@ -29,7 +29,9 @@ export function usePwaUpdate() {
 
       const typedReg = reg as ServiceWorkerRegistrationWithWaiting;
       checkForWaitingWorker(typedReg);
-      reg.update();
+      reg.update().catch(() => {
+        // Swallow — preview env may redirect sw.js
+      });
 
       reg.addEventListener("updatefound", () => {
         const newWorker = reg.installing;
@@ -45,7 +47,7 @@ export function usePwaUpdate() {
     });
 
     const interval = setInterval(() => {
-      navigator.serviceWorker.getRegistration().then((reg) => reg?.update());
+      navigator.serviceWorker.getRegistration().then((reg) => reg?.update().catch(() => {}));
     }, 30_000);
 
     return () => {
