@@ -29,7 +29,9 @@ export function usePwaUpdate() {
 
       const typedReg = reg as ServiceWorkerRegistrationWithWaiting;
       checkForWaitingWorker(typedReg);
-      reg.update();
+      reg.update().catch(() => {
+        // Swallow — preview env may redirect sw.js
+      });
 
       reg.addEventListener("updatefound", () => {
         const newWorker = reg.installing;
