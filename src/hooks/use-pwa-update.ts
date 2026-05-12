@@ -47,7 +47,7 @@ export function usePwaUpdate() {
     });
 
     const interval = setInterval(() => {
-      navigator.serviceWorker.getRegistration().then((reg) => reg?.update());
+      navigator.serviceWorker.getRegistration().then((reg) => reg?.update().catch(() => {}));
     }, 30_000);
 
     return () => {
