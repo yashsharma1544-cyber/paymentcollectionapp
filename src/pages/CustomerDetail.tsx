@@ -526,9 +526,14 @@ const CustomerDetail = () => {
                             <TableCell className="whitespace-nowrap">
                               <div className="flex flex-col gap-0.5">
                                 <StatusBadge status={inv.paymentStatus} />
-                                {inv.outstandingAmount > 0 && (
+                                {inv.outstandingAmount > 0 && !inv.isOpeningBalance && (
                                   <span className={`text-[10px] font-semibold ${overdue > 0 ? "text-destructive" : "text-success"}`}>
                                     {formatOverdue(overdue)} · ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
+                                  </span>
+                                )}
+                                {inv.outstandingAmount > 0 && inv.isOpeningBalance && (
+                                  <span className="text-[10px] font-semibold text-warning">
+                                    ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
                                   </span>
                                 )}
                               </div>
