@@ -60,9 +60,11 @@ export function openingBalanceToInvoice(ob: {
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
   if (!data.values || data.values.length === 0) return [];
 
-  // No header row — the fetch range starts at row 4731 directly
-  const rows = data.values;
+  // Skip header row if present
+  const first = data.values[0]?.[0]?.toString().toLowerCase() || "";
+  const rows = first.includes("bill") || first.includes("invoice") ? data.values.slice(1) : data.values;
   return rows
+
     .map((row) => ({
       billNo: row[0] || "",
       customerName: row[1] || "",
