@@ -17,9 +17,11 @@ function getApiBase() {
 
 export async function fetchInvoices(): Promise<Invoice[]> {
   const { baseUrl, headers } = getApiBase();
-  const [invRes, openings] = await Promise.all([
+  const [invRes, openings, obPayments] = await Promise.all([
     fetch(`${baseUrl}?action=fetch`, { headers }),
     fetchOpeningBalances().catch(() => [] as OpeningBalance[]),
+    // Pull payments only to net against OB virtual invoices.
+    fetchRecordedPayments().catch(() => [] as RecordedPayment[]),
   ]);
   if (!invRes.ok) throw new Error(`Failed to fetch invoices: ${await invRes.text()}`);
   const invoices = parseSheetData(await invRes.json());
@@ -33,11 +35,23 @@ export async function fetchInvoices(): Promise<Invoice[]> {
     }
   }
 
+  // Sum payments (paid + discount) recorded against each OB- billNo
+  const obPaidMap = new Map<string, number>();
+  for (const p of obPayments) {
+    if (!p.billNo.startsWith("OB-")) continue;
+    obPaidMap.set(p.billNo, (obPaidMap.get(p.billNo) || 0) + p.paidAmount + (p.discount || 0));
+  }
+
   const obInvoices = openings
     .filter((ob) => ob.openingBalance > 0)
     .map((ob) => {
       const m = meta.get(ob.ledgerName);
-      return openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+      const inv = openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+      const paid = obPaidMap.get(inv.billNo) || 0;
+      inv.paidAmount = Math.min(paid, inv.billAmount);
+      inv.outstandingAmount = Math.max(0, inv.billAmount - paid);
+      inv.paymentStatus = inv.outstandingAmount === 0 ? "Paid" : "Pending";
+      return inv;
     });
 
   return [...obInvoices, ...invoices];
@@ -110,6 +124,7 @@ export interface RecordedPayment {
   discount: number;
   notes: string;
   collectedBy: string;
+  source: "Opening Balance" | "Bill" | "";
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -118,17 +133,26 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
   if (!response.ok) throw new Error(`Failed to fetch recorded payments: ${await response.text()}`);
   const data = await response.json();
   if (!data.values || data.values.length < 2) return [];
-  return data.values.slice(1).map((row: string[]) => ({
-    billNo: row[0] || "",
-    customerName: row[1] || "",
-    paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
-    timestamp: row[3] || "",
-    paymentDate: row[4] || "",
-    paymentMode: row[5] || "",
-    discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
-    notes: row[7] || "",
-    collectedBy: row[8] || "",
-  })).filter((p: RecordedPayment) => p.billNo);
+  return data.values.slice(1).map((row: string[]) => {
+    const billNo = row[0] || "";
+    const rawSource = (row[9] || "").trim();
+    const source: RecordedPayment["source"] =
+      rawSource === "Opening Balance" ? "Opening Balance"
+      : rawSource === "Bill" ? "Bill"
+      : billNo.startsWith("OB-") ? "Opening Balance" : "";
+    return {
+      billNo,
+      customerName: row[1] || "",
+      paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
+      timestamp: row[3] || "",
+      paymentDate: row[4] || "",
+      paymentMode: row[5] || "",
+      discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
+      notes: row[7] || "",
+      collectedBy: row[8] || "",
+      source,
+    };
+  }).filter((p: RecordedPayment) => p.billNo);
 }
 
 export async function editPayment(params: {

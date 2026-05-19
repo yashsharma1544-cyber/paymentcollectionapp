@@ -149,12 +149,14 @@ const CustomerDetail = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0 && !i.isOpeningBalance).reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
     const avgCollectionDays = calcAvgCollectionDays(invoices, payments);
+    const openingBalance = invoices.filter((i) => i.isOpeningBalance).reduce((s, i) => s + i.billAmount, 0);
+    const openingOutstanding = invoices.filter((i) => i.isOpeningBalance).reduce((s, i) => s + i.outstandingAmount, 0);
 
-    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays };
+    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays, openingBalance, openingOutstanding };
   }, [invoices, payments]);
 
   const health = useMemo(() => calculateHealthScore(decoded, allInvoices, allPayments), [decoded, allInvoices, allPayments]);
@@ -311,6 +313,15 @@ const CustomerDetail = () => {
             {/* KPIs - 2 cols on phone, 3 on tablet, 6 on desktop */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
               <StatCard label="Outstanding" value={`₹${kpis.totalOutstanding.toLocaleString("en-IN")}`} icon={IndianRupee} tone="destructive" emphasis />
+              {kpis.openingBalance > 0 && (
+                <StatCard
+                  label="Opening Balance"
+                  value={`₹${kpis.openingOutstanding.toLocaleString("en-IN")}`}
+                  icon={BookOpen}
+                  tone="warning"
+                  sub={kpis.openingBalance !== kpis.openingOutstanding ? `of ₹${kpis.openingBalance.toLocaleString("en-IN")}` : undefined}
+                />
+              )}
               <StatCard label="Paid" value={`₹${kpis.totalPaid.toLocaleString("en-IN")}`} icon={CheckCircle} tone="success" />
               <StatCard label="Collection %" value={`${kpis.collectionRate}%`} icon={TrendingUp} tone="primary" />
               <StatCard label="Billed" value={`₹${kpis.totalBill.toLocaleString("en-IN")}`} icon={FileText} tone="muted" />
@@ -375,16 +386,26 @@ const CustomerDetail = () => {
                     const inv = e.invoice!;
                     const overdue = getOverdueDays(inv.billDate);
                     return (
-                      <div key={`md-${inv.billNo}-${i}`} className="px-4 py-3 border-l-2 border-l-destructive/40 hover:bg-destructive/5">
+                      <div key={`md-${inv.billNo}-${i}`} className={`px-4 py-3 border-l-2 hover:bg-destructive/5 ${inv.isOpeningBalance ? "border-l-warning bg-warning/5" : "border-l-destructive/40"}`}>
                         <div className="flex items-start justify-between gap-3 mb-1.5">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                                <FileText className="h-2.5 w-2.5" />Debit
-                              </span>
-                              <span className="text-xs font-mono font-semibold text-primary">#{inv.billNo}</span>
+                              {inv.isOpeningBalance ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-warning/15 text-warning">
+                                  <BookOpen className="h-2.5 w-2.5" />Opening Balance
+                                </span>
+                              ) : (
+                                <>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+                                    <FileText className="h-2.5 w-2.5" />Debit
+                                  </span>
+                                  <span className="text-xs font-mono font-semibold text-primary">#{inv.billNo}</span>
+                                </>
+                              )}
                             </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">{e.dateStr} · Due {inv.dueDate}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                              {inv.isOpeningBalance ? "Carried forward" : `${e.dateStr} · Due ${inv.dueDate}`}
+                            </p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-bold tabular-nums text-destructive">₹{inv.billAmount.toLocaleString("en-IN")}</p>
@@ -394,9 +415,14 @@ const CustomerDetail = () => {
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <StatusBadge status={inv.paymentStatus} />
-                            {inv.outstandingAmount > 0 && (
+                            {inv.outstandingAmount > 0 && !inv.isOpeningBalance && (
                               <span className={`text-[10px] font-semibold ${overdue > 0 ? "text-destructive" : "text-success"}`}>
                                 {formatOverdue(overdue)} · ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
+                              </span>
+                            )}
+                            {inv.outstandingAmount > 0 && inv.isOpeningBalance && (
+                              <span className="text-[10px] font-semibold text-warning">
+                                ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
                               </span>
                             )}
                           </div>
@@ -474,12 +500,20 @@ const CustomerDetail = () => {
                         const inv = e.invoice!;
                         const overdue = getOverdueDays(inv.billDate);
                         return (
-                          <TableRow key={`d-${inv.billNo}-${i}`} className="hover:bg-destructive/5 transition-colors border-l-2 border-l-destructive/40">
-                            <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{e.dateStr}</TableCell>
+                          <TableRow key={`d-${inv.billNo}-${i}`} className={`hover:bg-destructive/5 transition-colors border-l-2 ${inv.isOpeningBalance ? "border-l-warning bg-warning/5" : "border-l-destructive/40"}`}>
+                            <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{inv.isOpeningBalance ? "—" : e.dateStr}</TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold">Invoice <span className="font-mono text-primary">#{inv.billNo}</span></span>
-                                <span className="text-[10px] text-muted-foreground">Due: {inv.dueDate}</span>
+                                {inv.isOpeningBalance ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-warning/15 text-warning w-fit">
+                                    <BookOpen className="h-2.5 w-2.5" />Opening Balance
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span className="text-xs font-semibold">Invoice <span className="font-mono text-primary">#{inv.billNo}</span></span>
+                                    <span className="text-[10px] text-muted-foreground">Due: {inv.dueDate}</span>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
@@ -492,9 +526,14 @@ const CustomerDetail = () => {
                             <TableCell className="whitespace-nowrap">
                               <div className="flex flex-col gap-0.5">
                                 <StatusBadge status={inv.paymentStatus} />
-                                {inv.outstandingAmount > 0 && (
+                                {inv.outstandingAmount > 0 && !inv.isOpeningBalance && (
                                   <span className={`text-[10px] font-semibold ${overdue > 0 ? "text-destructive" : "text-success"}`}>
                                     {formatOverdue(overdue)} · ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
+                                  </span>
+                                )}
+                                {inv.outstandingAmount > 0 && inv.isOpeningBalance && (
+                                  <span className="text-[10px] font-semibold text-warning">
+                                    ₹{inv.outstandingAmount.toLocaleString("en-IN")} due
                                   </span>
                                 )}
                               </div>
