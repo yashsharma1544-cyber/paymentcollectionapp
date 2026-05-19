@@ -1,4 +1,9 @@
-import { getOverdueDays } from "@/lib/date-utils";
+import { getOverdueDays, parseDateDMY } from "@/lib/date-utils";
+
+/** Cutoff: ignore any invoice/payment dated before this. */
+export const DATA_CUTOFF_DMY = "01/04/2026";
+export const DATA_CUTOFF_DATE = new Date(2026, 3, 1);
+
 
 export interface Invoice {
   billNo: string;
