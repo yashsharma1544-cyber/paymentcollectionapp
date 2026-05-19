@@ -200,7 +200,8 @@ serve(async (req) => {
       if (!billNo || !customerName || paidAmount === undefined) {
         throw new Error("Missing required fields: billNo, customerName, paidAmount");
       }
-      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0, notes || "", collectedBy || ""]]);
+      const source = String(billNo).startsWith("OB-") ? "Opening Balance" : "Bill";
+      const data = await appendToSheet(accessToken, "Record Payments", [[billNo, customerName, paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", discount || 0, notes || "", collectedBy || "", source]]);
 
       // Auto-close pending follow-ups for this customer
       try {
@@ -221,6 +222,7 @@ serve(async (req) => {
       }
       const values = allocations.map((a: { billNo: string; customerName: string; paidAmount: number }, idx: number) => [
         a.billNo, a.customerName, a.paidAmount, timestamp, paymentDate || "", paymentMode || "Cash", idx === 0 ? (discount || 0) : 0, idx === 0 ? (notes || "") : "", collectedBy || "",
+        String(a.billNo).startsWith("OB-") ? "Opening Balance" : "Bill",
       ]);
       const data = await appendToSheet(accessToken, "Record Payments", values);
 
