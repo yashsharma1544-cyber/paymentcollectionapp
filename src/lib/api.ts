@@ -154,7 +154,15 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
       collectedBy: row[8] || "",
       source,
     };
-  }).filter((p: RecordedPayment) => p.billNo);
+  }).filter((p: RecordedPayment) => {
+    if (!p.billNo) return false;
+    // Keep OB payments regardless of date (they apply to the opening balance bucket).
+    if (p.billNo.startsWith("OB-")) return true;
+    const d = parseDateDMY(p.paymentDate) || parseDateDMY(p.timestamp);
+    if (!d) return true; // keep if undated rather than silently dropping
+    return d.getTime() >= DATA_CUTOFF_DATE.getTime();
+  });
+
 }
 
 export async function editPayment(params: {
