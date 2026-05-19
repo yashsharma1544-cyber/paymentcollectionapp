@@ -149,12 +149,14 @@ const CustomerDetail = () => {
     const totalBill = invoices.reduce((s, i) => s + i.billAmount, 0);
     const totalPaid = invoices.reduce((s, i) => s + i.paidAmount, 0);
     const totalOutstanding = invoices.reduce((s, i) => s + i.outstandingAmount, 0);
-    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0).reduce((s, i) => s + i.outstandingAmount, 0);
+    const overdueOutstanding = invoices.filter((i) => getOverdueDays(i.billDate) > 0 && i.outstandingAmount > 0 && !i.isOpeningBalance).reduce((s, i) => s + i.outstandingAmount, 0);
     const collectionRate = totalBill > 0 ? Math.round((totalPaid / totalBill) * 100).toString() : "0";
     const totalRecordedPayments = payments.reduce((s, p) => s + p.paidAmount, 0);
     const avgCollectionDays = calcAvgCollectionDays(invoices, payments);
+    const openingBalance = invoices.filter((i) => i.isOpeningBalance).reduce((s, i) => s + i.billAmount, 0);
+    const openingOutstanding = invoices.filter((i) => i.isOpeningBalance).reduce((s, i) => s + i.outstandingAmount, 0);
 
-    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays };
+    return { totalBill, totalPaid, totalOutstanding, overdueOutstanding, collectionRate, totalRecordedPayments, avgCollectionDays, openingBalance, openingOutstanding };
   }, [invoices, payments]);
 
   const health = useMemo(() => calculateHealthScore(decoded, allInvoices, allPayments), [decoded, allInvoices, allPayments]);
