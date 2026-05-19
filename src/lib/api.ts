@@ -48,6 +48,9 @@ export async function fetchOpeningBalances(): Promise<OpeningBalance[]> {
     closingBalance: toNum(row[4]),
     netMovement: toNum(row[5]),
   })).filter((r: OpeningBalance) => r.ledgerName);
+}
+
+
 
 export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
