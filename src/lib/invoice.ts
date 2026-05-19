@@ -1,4 +1,9 @@
-import { getOverdueDays } from "@/lib/date-utils";
+import { getOverdueDays, parseDateDMY } from "@/lib/date-utils";
+
+/** Cutoff: ignore any invoice/payment dated before this. */
+export const DATA_CUTOFF_DMY = "01/04/2026";
+export const DATA_CUTOFF_DATE = new Date(2026, 3, 1);
+
 
 export interface Invoice {
   billNo: string;
@@ -38,11 +43,11 @@ export function openingBalanceToInvoice(ob: {
     billNo: `OB-${ob.ledgerName}`,
     customerName: ob.ledgerName,
     mobileNo,
-    billDate: "01/01/2020",
+    billDate: DATA_CUTOFF_DMY,
     billAmount: ob.openingBalance,
     paidAmount: 0,
     outstandingAmount: ob.openingBalance,
-    dueDate: "01/01/2020",
+    dueDate: DATA_CUTOFF_DMY,
     daysOverdue: 0,
     reminderLevel: "",
     beat,
@@ -50,6 +55,7 @@ export function openingBalanceToInvoice(ob: {
     isOpeningBalance: true,
   };
 }
+
 
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
   if (!data.values || data.values.length === 0) return [];
@@ -71,5 +77,11 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
       paymentStatus: row[10] || "Pending",
       beat: row[11] || "Unassigned",
     }))
-    .filter((inv) => inv.billNo);
+    .filter((inv) => {
+      if (!inv.billNo) return false;
+      const d = parseDateDMY(inv.billDate);
+      if (!d) return false;
+      return d.getTime() >= DATA_CUTOFF_DATE.getTime();
+    });
+
 }
