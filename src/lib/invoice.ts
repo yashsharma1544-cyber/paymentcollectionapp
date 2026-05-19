@@ -77,5 +77,11 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
       paymentStatus: row[10] || "Pending",
       beat: row[11] || "Unassigned",
     }))
-    .filter((inv) => inv.billNo);
+    .filter((inv) => {
+      if (!inv.billNo) return false;
+      const d = parseDateDMY(inv.billDate);
+      if (!d) return false;
+      return d.getTime() >= DATA_CUTOFF_DATE.getTime();
+    });
+
 }
