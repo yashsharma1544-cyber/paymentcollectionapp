@@ -110,6 +110,7 @@ export interface RecordedPayment {
   discount: number;
   notes: string;
   collectedBy: string;
+  source: "Opening Balance" | "Bill" | "";
 }
 
 export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
@@ -118,17 +119,26 @@ export async function fetchRecordedPayments(): Promise<RecordedPayment[]> {
   if (!response.ok) throw new Error(`Failed to fetch recorded payments: ${await response.text()}`);
   const data = await response.json();
   if (!data.values || data.values.length < 2) return [];
-  return data.values.slice(1).map((row: string[]) => ({
-    billNo: row[0] || "",
-    customerName: row[1] || "",
-    paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
-    timestamp: row[3] || "",
-    paymentDate: row[4] || "",
-    paymentMode: row[5] || "",
-    discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
-    notes: row[7] || "",
-    collectedBy: row[8] || "",
-  })).filter((p: RecordedPayment) => p.billNo);
+  return data.values.slice(1).map((row: string[]) => {
+    const billNo = row[0] || "";
+    const rawSource = (row[9] || "").trim();
+    const source: RecordedPayment["source"] =
+      rawSource === "Opening Balance" ? "Opening Balance"
+      : rawSource === "Bill" ? "Bill"
+      : billNo.startsWith("OB-") ? "Opening Balance" : "";
+    return {
+      billNo,
+      customerName: row[1] || "",
+      paidAmount: parseFloat(row[2]?.replace(/[₹,]/g, "") || "0"),
+      timestamp: row[3] || "",
+      paymentDate: row[4] || "",
+      paymentMode: row[5] || "",
+      discount: parseFloat(row[6]?.replace(/[₹,]/g, "") || "0"),
+      notes: row[7] || "",
+      collectedBy: row[8] || "",
+      source,
+    };
+  }).filter((p: RecordedPayment) => p.billNo);
 }
 
 export async function editPayment(params: {
