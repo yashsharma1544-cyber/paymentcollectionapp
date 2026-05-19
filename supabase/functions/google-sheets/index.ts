@@ -411,8 +411,8 @@ serve(async (req) => {
       }
       if (targetRow === -1) throw new Error("Payment record not found");
 
-      // Update columns C through I (Paid Amount, Timestamp, Payment Date, Payment Mode, Discount, Notes, Collected By)
-      const range = encodeURIComponent(`Record Payments!C${targetRow}:I${targetRow}`);
+      // Update columns C through J (Paid Amount, Timestamp, Payment Date, Payment Mode, Discount, Notes, Collected By, Source)
+      const range = encodeURIComponent(`Record Payments!C${targetRow}:J${targetRow}`);
       const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`;
       const response = await fetch(sheetsUrl, {
         method: "PUT",
@@ -425,6 +425,7 @@ serve(async (req) => {
           discount || 0,
           notes || "",
           collectedBy || "",
+          String(billNo).startsWith("OB-") ? "Opening Balance" : "Bill",
         ]] }),
       });
       const result = await response.json();
