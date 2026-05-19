@@ -43,11 +43,11 @@ export function openingBalanceToInvoice(ob: {
     billNo: `OB-${ob.ledgerName}`,
     customerName: ob.ledgerName,
     mobileNo,
-    billDate: "01/01/2020",
+    billDate: DATA_CUTOFF_DMY,
     billAmount: ob.openingBalance,
     paidAmount: 0,
     outstandingAmount: ob.openingBalance,
-    dueDate: "01/01/2020",
+    dueDate: DATA_CUTOFF_DMY,
     daysOverdue: 0,
     reminderLevel: "",
     beat,
@@ -55,6 +55,7 @@ export function openingBalanceToInvoice(ob: {
     isOpeningBalance: true,
   };
 }
+
 
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
   if (!data.values || data.values.length === 0) return [];
