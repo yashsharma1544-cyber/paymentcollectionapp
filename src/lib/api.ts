@@ -22,6 +22,33 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return parseSheetData(await response.json());
 }
 
+export interface OpeningBalance {
+  ledgerName: string;
+  group: string;
+  category: string;
+  openingBalance: number;
+  closingBalance: number;
+  netMovement: number;
+}
+
+const toNum = (v?: string) =>
+  parseFloat((v || "0").toString().replace(/[₹,()\s]/g, "").replace(/^-?$/, "0")) || 0;
+
+export async function fetchOpeningBalances(): Promise<OpeningBalance[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-opening-balances`, { headers });
+  if (!response.ok) throw new Error(`Failed to fetch opening balances: ${await response.text()}`);
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((row: string[]) => ({
+    ledgerName: row[0] || "",
+    group: row[1] || "",
+    category: row[2] || "",
+    openingBalance: toNum(row[3]),
+    closingBalance: toNum(row[4]),
+    netMovement: toNum(row[5]),
+  })).filter((r: OpeningBalance) => r.ledgerName);
+
 export async function recordPayment(billNo: string, customerName: string, paidAmount: number, paymentDate?: string, paymentMode?: string, discount?: number, notes?: string, collectedBy?: string): Promise<void> {
   const { baseUrl, headers } = getApiBase();
   const response = await fetch(`${baseUrl}?action=record`, {
