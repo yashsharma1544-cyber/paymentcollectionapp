@@ -313,6 +313,15 @@ const CustomerDetail = () => {
             {/* KPIs - 2 cols on phone, 3 on tablet, 6 on desktop */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
               <StatCard label="Outstanding" value={`₹${kpis.totalOutstanding.toLocaleString("en-IN")}`} icon={IndianRupee} tone="destructive" emphasis />
+              {kpis.openingBalance > 0 && (
+                <StatCard
+                  label="Opening Balance"
+                  value={`₹${kpis.openingOutstanding.toLocaleString("en-IN")}`}
+                  icon={BookOpen}
+                  tone="warning"
+                  sub={kpis.openingBalance !== kpis.openingOutstanding ? `of ₹${kpis.openingBalance.toLocaleString("en-IN")}` : undefined}
+                />
+              )}
               <StatCard label="Paid" value={`₹${kpis.totalPaid.toLocaleString("en-IN")}`} icon={CheckCircle} tone="success" />
               <StatCard label="Collection %" value={`${kpis.collectionRate}%`} icon={TrendingUp} tone="primary" />
               <StatCard label="Billed" value={`₹${kpis.totalBill.toLocaleString("en-IN")}`} icon={FileText} tone="muted" />
