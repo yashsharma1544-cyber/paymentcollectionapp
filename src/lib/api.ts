@@ -17,9 +17,11 @@ function getApiBase() {
 
 export async function fetchInvoices(): Promise<Invoice[]> {
   const { baseUrl, headers } = getApiBase();
-  const [invRes, openings] = await Promise.all([
+  const [invRes, openings, obPayments] = await Promise.all([
     fetch(`${baseUrl}?action=fetch`, { headers }),
     fetchOpeningBalances().catch(() => [] as OpeningBalance[]),
+    // Pull payments only to net against OB virtual invoices.
+    fetchRecordedPayments().catch(() => [] as RecordedPayment[]),
   ]);
   if (!invRes.ok) throw new Error(`Failed to fetch invoices: ${await invRes.text()}`);
   const invoices = parseSheetData(await invRes.json());
@@ -33,11 +35,23 @@ export async function fetchInvoices(): Promise<Invoice[]> {
     }
   }
 
+  // Sum payments (paid + discount) recorded against each OB- billNo
+  const obPaidMap = new Map<string, number>();
+  for (const p of obPayments) {
+    if (!p.billNo.startsWith("OB-")) continue;
+    obPaidMap.set(p.billNo, (obPaidMap.get(p.billNo) || 0) + p.paidAmount + (p.discount || 0));
+  }
+
   const obInvoices = openings
     .filter((ob) => ob.openingBalance > 0)
     .map((ob) => {
       const m = meta.get(ob.ledgerName);
-      return openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+      const inv = openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+      const paid = obPaidMap.get(inv.billNo) || 0;
+      inv.paidAmount = Math.min(paid, inv.billAmount);
+      inv.outstandingAmount = Math.max(0, inv.billAmount - paid);
+      inv.paymentStatus = inv.outstandingAmount === 0 ? "Paid" : "Pending";
+      return inv;
     });
 
   return [...obInvoices, ...invoices];
