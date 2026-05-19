@@ -26,9 +26,10 @@ export function sortInvoicesUnpaidFirst(invoices: Invoice[]): Invoice[] {
 }
 
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
-  if (!data.values || data.values.length < 2) return [];
+  if (!data.values || data.values.length === 0) return [];
 
-  const rows = data.values.slice(1); // skip header
+  // No header row — the fetch range starts at row 4731 directly
+  const rows = data.values;
   return rows
     .map((row) => ({
       billNo: row[0] || "",
