@@ -79,20 +79,27 @@ export function PaymentDialog({ invoice, open, onClose, onSuccess }: PaymentDial
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-['Space_Grotesk']">Record Payment</DialogTitle>
+          <DialogTitle className="font-['Space_Grotesk']">
+            {invoice.isOpeningBalance ? "Collect Opening Balance" : "Record Payment"}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          {invoice.isOpeningBalance && (
+            <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning">
+              Opening Balance carried forward
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-muted-foreground">Bill No</p>
-              <p className="font-medium">{invoice.billNo}</p>
+              <p className="text-muted-foreground">{invoice.isOpeningBalance ? "Reference" : "Bill No"}</p>
+              <p className="font-medium">{invoice.isOpeningBalance ? "Opening Balance" : invoice.billNo}</p>
             </div>
             <div>
               <p className="text-muted-foreground">Customer</p>
               <p className="font-medium">{invoice.customerName}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Bill Amount</p>
+              <p className="text-muted-foreground">{invoice.isOpeningBalance ? "Opening Balance" : "Bill Amount"}</p>
               <p className="font-medium">₹{invoice.billAmount.toLocaleString("en-IN")}</p>
             </div>
             <div>
