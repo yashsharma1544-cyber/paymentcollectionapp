@@ -17,9 +17,30 @@ function getApiBase() {
 
 export async function fetchInvoices(): Promise<Invoice[]> {
   const { baseUrl, headers } = getApiBase();
-  const response = await fetch(`${baseUrl}?action=fetch`, { headers });
-  if (!response.ok) throw new Error(`Failed to fetch invoices: ${await response.text()}`);
-  return parseSheetData(await response.json());
+  const [invRes, openings] = await Promise.all([
+    fetch(`${baseUrl}?action=fetch`, { headers }),
+    fetchOpeningBalances().catch(() => [] as OpeningBalance[]),
+  ]);
+  if (!invRes.ok) throw new Error(`Failed to fetch invoices: ${await invRes.text()}`);
+  const invoices = parseSheetData(await invRes.json());
+
+  // Derive mobile/beat per customer from existing invoices so opening-balance
+  // virtual rows inherit them.
+  const meta = new Map<string, { mobileNo: string; beat: string }>();
+  for (const inv of invoices) {
+    if (!meta.has(inv.customerName)) {
+      meta.set(inv.customerName, { mobileNo: inv.mobileNo, beat: inv.beat });
+    }
+  }
+
+  const obInvoices = openings
+    .filter((ob) => ob.openingBalance > 0)
+    .map((ob) => {
+      const m = meta.get(ob.ledgerName);
+      return openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+    });
+
+  return [...obInvoices, ...invoices];
 }
 
 export interface OpeningBalance {
