@@ -182,6 +182,18 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "fetch-opening-balances") {
+      try {
+        const data = await fetchSheet(accessToken, "Opening Balances!A1:F100000");
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (_e) {
+        return new Response(JSON.stringify({ values: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
     } else if (action === "record") {
       const body = await req.json();
       const { billNo, customerName, paidAmount, paymentDate, paymentMode, discount, notes, collectedBy } = body;
