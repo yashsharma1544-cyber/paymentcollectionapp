@@ -45,6 +45,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   }
 
   const obInvoices = openings
+    .map((ob) => ({ ...ob, openingBalance: Math.abs(ob.openingBalance) }))
     .filter((ob) => ob.openingBalance > 0)
     .map((ob) => {
       const m = meta.get(ob.ledgerName);
@@ -55,6 +56,7 @@ export async function fetchInvoices(): Promise<Invoice[]> {
       inv.paymentStatus = inv.outstandingAmount === 0 ? "Paid" : "Pending";
       return inv;
     });
+
 
   return [...obInvoices, ...invoices];
 }
