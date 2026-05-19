@@ -386,16 +386,26 @@ const CustomerDetail = () => {
                     const inv = e.invoice!;
                     const overdue = getOverdueDays(inv.billDate);
                     return (
-                      <div key={`md-${inv.billNo}-${i}`} className="px-4 py-3 border-l-2 border-l-destructive/40 hover:bg-destructive/5">
+                      <div key={`md-${inv.billNo}-${i}`} className={`px-4 py-3 border-l-2 hover:bg-destructive/5 ${inv.isOpeningBalance ? "border-l-warning bg-warning/5" : "border-l-destructive/40"}`}>
                         <div className="flex items-start justify-between gap-3 mb-1.5">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
-                                <FileText className="h-2.5 w-2.5" />Debit
-                              </span>
-                              <span className="text-xs font-mono font-semibold text-primary">#{inv.billNo}</span>
+                              {inv.isOpeningBalance ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-warning/15 text-warning">
+                                  <BookOpen className="h-2.5 w-2.5" />Opening Balance
+                                </span>
+                              ) : (
+                                <>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">
+                                    <FileText className="h-2.5 w-2.5" />Debit
+                                  </span>
+                                  <span className="text-xs font-mono font-semibold text-primary">#{inv.billNo}</span>
+                                </>
+                              )}
                             </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">{e.dateStr} · Due {inv.dueDate}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                              {inv.isOpeningBalance ? "Carried forward" : `${e.dateStr} · Due ${inv.dueDate}`}
+                            </p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-sm font-bold tabular-nums text-destructive">₹{inv.billAmount.toLocaleString("en-IN")}</p>
