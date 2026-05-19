@@ -176,7 +176,8 @@ serve(async (req) => {
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
     if (action === "fetch") {
-      const data = await fetchSheet(accessToken, "Outstanding!A1:Z100000");
+      // Only fetch invoices from row 4731 onwards (no header in this slice)
+      const data = await fetchSheet(accessToken, "Outstanding!A4731:Z100000");
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
