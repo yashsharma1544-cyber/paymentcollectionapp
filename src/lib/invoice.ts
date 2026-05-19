@@ -13,16 +13,42 @@ export interface Invoice {
   reminderLevel: string;
   beat: string;
   paymentStatus: string;
+  isOpeningBalance?: boolean;
 }
 
-/** Sort invoices: unpaid first (descending by overdue days), paid last */
+/** Sort invoices: opening balance first, then unpaid (oldest first), then paid */
 export function sortInvoicesUnpaidFirst(invoices: Invoice[]): Invoice[] {
   return [...invoices].sort((a, b) => {
+    if (!!a.isOpeningBalance !== !!b.isOpeningBalance) {
+      return a.isOpeningBalance ? -1 : 1;
+    }
     const aPaid = a.outstandingAmount === 0 ? 1 : 0;
     const bPaid = b.outstandingAmount === 0 ? 1 : 0;
     if (aPaid !== bPaid) return aPaid - bPaid;
     return getOverdueDays(b.billDate) - getOverdueDays(a.billDate);
   });
+}
+
+/** Build a synthetic invoice from an opening balance entry */
+export function openingBalanceToInvoice(ob: {
+  ledgerName: string;
+  openingBalance: number;
+}, mobileNo = "", beat = "Unassigned"): Invoice {
+  return {
+    billNo: `OB-${ob.ledgerName}`,
+    customerName: ob.ledgerName,
+    mobileNo,
+    billDate: "01/01/2020",
+    billAmount: ob.openingBalance,
+    paidAmount: 0,
+    outstandingAmount: ob.openingBalance,
+    dueDate: "01/01/2020",
+    daysOverdue: 0,
+    reminderLevel: "",
+    beat,
+    paymentStatus: "Pending",
+    isOpeningBalance: true,
+  };
 }
 
 export function parseSheetData(data: { values?: string[][] }): Invoice[] {
