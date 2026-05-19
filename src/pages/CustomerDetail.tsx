@@ -495,12 +495,20 @@ const CustomerDetail = () => {
                         const inv = e.invoice!;
                         const overdue = getOverdueDays(inv.billDate);
                         return (
-                          <TableRow key={`d-${inv.billNo}-${i}`} className="hover:bg-destructive/5 transition-colors border-l-2 border-l-destructive/40">
-                            <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{e.dateStr}</TableCell>
+                          <TableRow key={`d-${inv.billNo}-${i}`} className={`hover:bg-destructive/5 transition-colors border-l-2 ${inv.isOpeningBalance ? "border-l-warning bg-warning/5" : "border-l-destructive/40"}`}>
+                            <TableCell className="text-xs tabular-nums text-muted-foreground whitespace-nowrap">{inv.isOpeningBalance ? "—" : e.dateStr}</TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold">Invoice <span className="font-mono text-primary">#{inv.billNo}</span></span>
-                                <span className="text-[10px] text-muted-foreground">Due: {inv.dueDate}</span>
+                                {inv.isOpeningBalance ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-warning/15 text-warning w-fit">
+                                    <BookOpen className="h-2.5 w-2.5" />Opening Balance
+                                  </span>
+                                ) : (
+                                  <>
+                                    <span className="text-xs font-semibold">Invoice <span className="font-mono text-primary">#{inv.billNo}</span></span>
+                                    <span className="text-[10px] text-muted-foreground">Due: {inv.dueDate}</span>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-right">
