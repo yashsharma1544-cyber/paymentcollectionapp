@@ -1,5 +1,5 @@
 import type { Invoice } from "@/lib/invoice";
-import { parseSheetData } from "@/lib/invoice";
+import { parseSheetData, openingBalanceToInvoice } from "@/lib/invoice";
 
 const FUNCTION_NAME = "google-sheets";
 
