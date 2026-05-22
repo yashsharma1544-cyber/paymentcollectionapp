@@ -19,14 +19,21 @@ function getApiBase() {
 
 export async function fetchInvoices(): Promise<Invoice[]> {
   const { baseUrl, headers } = getApiBase();
-  const [invRes, openings, obPayments] = await Promise.all([
+  const [invRes, openings, obPayments, phoneOverrides] = await Promise.all([
     fetch(`${baseUrl}?action=fetch`, { headers }),
     fetchOpeningBalances().catch(() => [] as OpeningBalance[]),
     // Pull payments only to net against OB virtual invoices.
     fetchRecordedPayments().catch(() => [] as RecordedPayment[]),
+    fetchCustomerPhones().catch(() => ({} as Record<string, string>)),
   ]);
   if (!invRes.ok) throw new Error(`Failed to fetch invoices: ${await invRes.text()}`);
   const invoices = parseSheetData(await invRes.json());
+
+  // Override mobile from CustomerPhones tab
+  for (const inv of invoices) {
+    const override = phoneOverrides[inv.customerName];
+    if (override) inv.mobileNo = override;
+  }
 
   // Derive mobile/beat per customer from existing invoices so opening-balance
   // virtual rows inherit them.
@@ -49,7 +56,8 @@ export async function fetchInvoices(): Promise<Invoice[]> {
     .filter((ob) => ob.openingBalance > 0)
     .map((ob) => {
       const m = meta.get(ob.ledgerName);
-      const inv = openingBalanceToInvoice(ob, m?.mobileNo, m?.beat);
+      const phoneOverride = phoneOverrides[ob.ledgerName];
+      const inv = openingBalanceToInvoice(ob, phoneOverride || m?.mobileNo, m?.beat);
       const paid = obPaidMap.get(inv.billNo) || 0;
       inv.paidAmount = Math.min(paid, inv.billAmount);
       inv.outstandingAmount = Math.max(0, inv.billAmount - paid);
@@ -59,6 +67,34 @@ export async function fetchInvoices(): Promise<Invoice[]> {
 
 
   return [...obInvoices, ...invoices];
+}
+
+// ---- Customer Phones (override) ----
+export async function fetchCustomerPhones(): Promise<Record<string, string>> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-customer-phones`, { headers });
+  if (!response.ok) return {};
+  const data = await response.json();
+  const rows: string[][] = data.values || [];
+  if (rows.length === 0) return {};
+  const startIdx = rows[0]?.[0] === "Customer Name" || rows[0]?.[0] === "customerName" ? 1 : 0;
+  const map: Record<string, string> = {};
+  for (let i = startIdx; i < rows.length; i++) {
+    const name = (rows[i][0] || "").trim();
+    const mobile = (rows[i][1] || "").trim();
+    if (name && mobile) map[name] = mobile;
+  }
+  return map;
+}
+
+export async function upsertCustomerPhone(customerName: string, mobile: string, updatedBy?: string): Promise<void> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=upsert-customer-phone`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ customerName, mobile, updatedBy }),
+  });
+  if (!response.ok) throw new Error(`Failed to save mobile: ${await response.text()}`);
 }
 
 export interface OpeningBalance {

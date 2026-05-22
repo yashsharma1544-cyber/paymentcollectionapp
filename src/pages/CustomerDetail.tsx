@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, fetchStoppedReminders, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, fetchStoppedReminders, upsertCustomerPhone, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +99,29 @@ const CustomerDetail = () => {
   const [editPaymentOpen, setEditPaymentOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RecordedPayment | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleSavePhone = async () => {
+    const cleaned = phoneInput.trim().replace(/[\s\-()]/g, "");
+    if (!/^\+?\d{10,15}$/.test(cleaned)) {
+      toast({ title: "Invalid mobile number", description: "Enter 10–15 digits.", variant: "destructive" });
+      return;
+    }
+    setSavingPhone(true);
+    try {
+      await upsertCustomerPhone(decoded, cleaned, currentUser || undefined);
+      toast({ title: "✅ Mobile updated" });
+      setPhoneDialogOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    } catch (e) {
+      toast({ title: "Failed to save", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   const handleDeletePayment = async () => {
     if (!deleteTarget) return;
@@ -247,7 +273,17 @@ const CustomerDetail = () => {
                 </div>
                 {info && (
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2.5 flex-wrap">
-                    {customerPhone && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{customerPhone}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <Phone className="h-3.5 w-3.5" />
+                      {customerPhone || <span className="italic text-muted-foreground/70">No mobile</span>}
+                      <button
+                        onClick={() => { setPhoneInput(customerPhone || ""); setPhoneDialogOpen(true); }}
+                        className="ml-1 p-0.5 rounded hover:bg-accent/30 transition-colors"
+                        title="Edit mobile"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </span>
                     {info.beat && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{info.beat}</span>}
                     {lastWA ? (
                       <span className="inline-flex items-center gap-1 text-success">
@@ -648,6 +684,30 @@ const CustomerDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={phoneDialogOpen} onOpenChange={setPhoneDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Mobile Number</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <p className="text-sm text-muted-foreground">For <b>{decoded}</b></p>
+            <Input
+              type="tel"
+              placeholder="e.g. 9876543210"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              maxLength={16}
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">Saved to CustomerPhones tab; overrides invoice mobile.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhoneDialogOpen(false)} disabled={savingPhone}>Cancel</Button>
+            <Button onClick={handleSavePhone} disabled={savingPhone}>{savingPhone ? "Saving..." : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <WhatsAppInvoiceSelector
         open={whatsAppSelectorOpen}
