@@ -99,6 +99,29 @@ const CustomerDetail = () => {
   const [editPaymentOpen, setEditPaymentOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RecordedPayment | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleSavePhone = async () => {
+    const cleaned = phoneInput.trim().replace(/[\s\-()]/g, "");
+    if (!/^\+?\d{10,15}$/.test(cleaned)) {
+      toast({ title: "Invalid mobile number", description: "Enter 10–15 digits.", variant: "destructive" });
+      return;
+    }
+    setSavingPhone(true);
+    try {
+      await upsertCustomerPhone(decoded, cleaned, currentUser || undefined);
+      toast({ title: "✅ Mobile updated" });
+      setPhoneDialogOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["invoices"] });
+    } catch (e) {
+      toast({ title: "Failed to save", description: (e as Error).message, variant: "destructive" });
+    } finally {
+      setSavingPhone(false);
+    }
+  };
 
   const handleDeletePayment = async () => {
     if (!deleteTarget) return;
