@@ -685,6 +685,30 @@ const CustomerDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <Dialog open={phoneDialogOpen} onOpenChange={setPhoneDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Mobile Number</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <p className="text-sm text-muted-foreground">For <b>{decoded}</b></p>
+            <Input
+              type="tel"
+              placeholder="e.g. 9876543210"
+              value={phoneInput}
+              onChange={(e) => setPhoneInput(e.target.value)}
+              maxLength={16}
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">Saved to CustomerPhones tab; overrides invoice mobile.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhoneDialogOpen(false)} disabled={savingPhone}>Cancel</Button>
+            <Button onClick={handleSavePhone} disabled={savingPhone}>{savingPhone ? "Saving..." : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <WhatsAppInvoiceSelector
         open={whatsAppSelectorOpen}
         onClose={() => setWhatsAppSelectorOpen(false)}
