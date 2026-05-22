@@ -629,6 +629,58 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
 
+    } else if (action === "fetch-customer-phones") {
+      try {
+        const data = await fetchSheet(accessToken, "CustomerPhones!A1:D100000");
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch {
+        return new Response(JSON.stringify({ values: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+    } else if (action === "upsert-customer-phone") {
+      const body = await req.json();
+      const { customerName, mobile, updatedBy } = body;
+      if (!customerName || !mobile) throw new Error("Missing customerName or mobile");
+      await ensureSheetTab(accessToken, "CustomerPhones");
+
+      const existing = await fetchSheet(accessToken, "CustomerPhones!A1:D100000").catch(() => ({ values: [] as string[][] }));
+      const rows: string[][] = existing.values || [];
+      if (rows.length === 0) {
+        const headerRange = encodeURIComponent("CustomerPhones!A1:D1");
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${headerRange}?valueInputOption=USER_ENTERED`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ values: [["Customer Name", "Mobile", "Updated At", "Updated By"]] }),
+        });
+      }
+
+      let targetRow = -1;
+      const startIdx = rows.length > 0 && (rows[0][0] === "Customer Name" || rows[0][0] === "customerName") ? 1 : 0;
+      for (let i = startIdx; i < rows.length; i++) {
+        if ((rows[i][0] || "") === customerName) {
+          targetRow = i + 1;
+          break;
+        }
+      }
+
+      if (targetRow === -1) {
+        await appendToSheet(accessToken, "CustomerPhones", [[customerName, mobile, timestamp, updatedBy || ""]]);
+      } else {
+        const range = encodeURIComponent(`CustomerPhones!A${targetRow}:D${targetRow}`);
+        await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?valueInputOption=USER_ENTERED`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ values: [[customerName, mobile, timestamp, updatedBy || ""]] }),
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+
     } else {
       throw new Error("Invalid action");
     }
