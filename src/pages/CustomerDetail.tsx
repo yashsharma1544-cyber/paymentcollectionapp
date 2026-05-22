@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, fetchStoppedReminders, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { fetchInvoices, fetchRecordedPayments, fetchFollowUps, fetchWhatsAppLog, logWhatsApp, addFollowUp, deletePayment, fetchStoppedReminders, upsertCustomerPhone, type RecordedPayment, type FollowUp } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
