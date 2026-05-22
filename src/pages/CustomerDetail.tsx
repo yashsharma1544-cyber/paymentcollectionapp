@@ -273,7 +273,17 @@ const CustomerDetail = () => {
                 </div>
                 {info && (
                   <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2.5 flex-wrap">
-                    {customerPhone && <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{customerPhone}</span>}
+                    <span className="inline-flex items-center gap-1">
+                      <Phone className="h-3.5 w-3.5" />
+                      {customerPhone || <span className="italic text-muted-foreground/70">No mobile</span>}
+                      <button
+                        onClick={() => { setPhoneInput(customerPhone || ""); setPhoneDialogOpen(true); }}
+                        className="ml-1 p-0.5 rounded hover:bg-accent/30 transition-colors"
+                        title="Edit mobile"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </span>
                     {info.beat && <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{info.beat}</span>}
                     {lastWA ? (
                       <span className="inline-flex items-center gap-1 text-success">
