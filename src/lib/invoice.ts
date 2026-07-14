@@ -1,8 +1,8 @@
 import { getOverdueDays, parseDateDMY } from "@/lib/date-utils";
 
 /** Cutoff: ignore any invoice/payment dated before this. */
-export const DATA_CUTOFF_DMY = "01/04/2026";
-export const DATA_CUTOFF_DATE = new Date(2026, 3, 1);
+export const DATA_CUTOFF_DMY = "01/04/2020";
+export const DATA_CUTOFF_DATE = new Date(2020, 3, 1);
 
 
 export interface Invoice {
@@ -18,6 +18,7 @@ export interface Invoice {
   reminderLevel: string;
   beat: string;
   paymentStatus: string;
+  company?: string;
   isOpeningBalance?: boolean;
 }
 
@@ -69,6 +70,7 @@ export function parseSheetData(data: { values?: string[][] }): Invoice[] {
       billNo: row[0] || "",
       customerName: row[1] || "",
       mobileNo: row[2] || "",
+      company: row[3] || "",
       billDate: row[4] || "",
       billAmount: Math.round(parseFloat(row[5]?.replace(/[₹,]/g, "") || "0") || 0),
       paidAmount: Math.round(parseFloat(row[6]?.replace(/[₹,]/g, "") || "0") || 0),

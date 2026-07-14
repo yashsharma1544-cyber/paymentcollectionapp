@@ -3,7 +3,7 @@ import { parseSheetData, openingBalanceToInvoice, DATA_CUTOFF_DATE } from "@/lib
 import { parseDateDMY } from "@/lib/date-utils";
 
 
-const FUNCTION_NAME = "google-sheets";
+const FUNCTION_NAME = "app-data";
 
 function getApiBase() {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -410,4 +410,51 @@ export async function resumeReminders(customerName: string): Promise<void> {
     body: JSON.stringify({ customerName }),
   });
   if (!response.ok) throw new Error(`Failed to resume reminders: ${await response.text()}`);
+}
+
+// ---- Tally CSV Upload API ----
+export interface OutstandingRow {
+  customer: string;
+  ref: string;
+  billDate?: string;   // DD/MM/YYYY
+  pending: number;
+  dueDate?: string;    // DD/MM/YYYY
+  overdue?: number;
+}
+
+export interface UploadResult {
+  ok: boolean;
+  inserted: number;
+  customers: number;
+  totalPending: number;
+  newCustomers: string[];
+}
+
+export async function uploadOutstanding(company: string, asOnDate: string, rows: OutstandingRow[], uploadedBy?: string): Promise<UploadResult> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=upload-outstanding`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ company, asOnDate, rows, uploadedBy }),
+  });
+  if (!response.ok) throw new Error(`Upload failed: ${await response.text()}`);
+  return await response.json();
+}
+
+export interface UploadLogEntry {
+  company: string; asOn: string; bills: number; customers: number;
+  totalPending: number; newCustomers: number; uploadedAt: string;
+}
+
+export async function fetchUploadLog(): Promise<UploadLogEntry[]> {
+  const { baseUrl, headers } = getApiBase();
+  const response = await fetch(`${baseUrl}?action=fetch-upload-log`, { headers });
+  if (!response.ok) return [];
+  const data = await response.json();
+  if (!data.values || data.values.length < 2) return [];
+  return data.values.slice(1).map((r: string[]) => ({
+    company: r[0] || "", asOn: r[1] || "", bills: parseInt(r[2] || "0", 10),
+    customers: parseInt(r[3] || "0", 10), totalPending: parseFloat(r[4] || "0"),
+    newCustomers: parseInt(r[5] || "0", 10), uploadedAt: r[6] || "",
+  }));
 }

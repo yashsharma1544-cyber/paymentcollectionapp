@@ -2,6 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, CalendarClock, Star, Users, History, AlertTriangle,
   ClipboardList, BarChart3, Brain, Route, IndianRupee, ChevronLeft, ChevronRight, Download,
+  Upload as UploadIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
@@ -30,6 +31,7 @@ const sections: { label: string; items: { to: string; label: string; icon: typeo
       { to: "/route-planner", label: "Route Planner", icon: Route },
       { to: "/daily-report", label: "Daily Report", icon: ClipboardList },
       { to: "/monthly-report", label: "Monthly Report", icon: BarChart3 },
+      { to: "/upload", label: "Upload Data", icon: UploadIcon },
     ],
   },
 ];

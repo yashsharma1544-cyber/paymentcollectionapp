@@ -14,6 +14,7 @@ import BeatDetail from "./pages/BeatDetail";
 import CustomerDetail from "./pages/CustomerDetail";
 import DueToday from "./pages/DueToday";
 import Install from "./pages/Install";
+import UploadData from "./pages/UploadData";
 import DailyReport from "./pages/DailyReport";
 import CRM from "./pages/CRM";
 import MonthlyReport from "./pages/MonthlyReport";
@@ -46,6 +47,7 @@ function ShellWithRoutes() {
           <Route path="/predictions" element={<PaymentPredictions />} />
           <Route path="/defaulters" element={<Defaulters />} />
           <Route path="/focus" element={<FocusCustomers />} />
+          <Route path="/upload" element={<UploadData />} />
           <Route path="/install" element={<Install />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
