@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
       manifest: {
-        name: "Payment Collector - Sushil Agencies",
-        short_name: "PayCollect",
+        name: "FMCG Collect - Receivables",
+        short_name: "FMCG Collect",
         description: "Manage invoices & collect payments",
         theme_color: "#1e40af",
         background_color: "#ffffff",

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, CalendarClock, History, Star, Users, UserCircle } from "lucide-react";
+import { LayoutDashboard, CalendarClock, History, Star, Users, UserCircle, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/contexts/UserContext";
 
@@ -9,6 +9,7 @@ const navItems = [
   { to: "/focus", label: "Focus", icon: Star },
   { to: "/crm", label: "CRM", icon: Users },
   { to: "/payments", label: "Log", icon: History },
+  { to: "/upload", label: "Upload", icon: Upload },
 ];
 
 export function BottomNav() {

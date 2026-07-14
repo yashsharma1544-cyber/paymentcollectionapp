@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchInvoices } from "@/lib/api";
-import { Search, RefreshCw, Bell, Download } from "lucide-react";
+import { Search, RefreshCw, Bell, Download , Upload as UploadIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -64,6 +64,11 @@ export function TopBar({ onRefresh, isFetching }: { onRefresh?: () => void; isFe
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
+        <Link to="/upload">
+          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-md" title="Upload Data">
+            <UploadIcon className="h-4 w-4" />
+          </Button>
+        </Link>
         <Link to="/install" className="hidden md:block">
           <Button variant="ghost" size="icon" className="h-9 w-9 rounded-md" title="Install app">
             <Download className="h-4 w-4" />
